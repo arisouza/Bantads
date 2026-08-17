@@ -2,10 +2,12 @@
 
 Event Store
 - Todos os eventos possuem `id`, `objeto_id`, `tipo`, `payload`, `versao`, `timestamp`
+- `objeto_id` preserva o número da conta como texto de 4 dígitos
 - Existe `UNIQUE(objeto_id, versao)`
 
 Eventos
 - Presença dos tipos: `Criado`, `Depósito`, `Saque`, `TransferênciaOrigem`, `TransferênciaDestino`, `GerenteAlterado`
+- Valores monetários em payloads JSON são serializados como `string`
 
 Read Model
 - Dados atuais da conta (`conta_read`) e saldo consistente

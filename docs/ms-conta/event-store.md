@@ -17,11 +17,15 @@ O Event Store armazena todos os eventos que alteraram uma conta. Ele é a fonte 
 | Campo      | Tipo sugerido  | Obrigatório | Descrição                                      |
 |------------|----------------|-------------|------------------------------------------------|
 | id         | UUID           | Sim         | Identificador único do evento                  |
-| objeto_id  | BIGINT / UUID  | Sim         | Identificador da conta afetada                 |
+| objeto_id  | CHAR(4)        | Sim         | Identificador textual da conta afetada         |
 | tipo       | VARCHAR(50)    | Sim         | Tipo do evento                                 |
 | payload    | JSONB          | Sim         | Dados específicos do evento                    |
 | versao     | INTEGER        | Sim         | Número sequencial do evento para aquela conta  |
 | timestamp  | TIMESTAMPTZ    | Sim         | Data e hora em que o evento ocorreu            |
+
+`objeto_id` representa o número da conta como texto de 4 dígitos, preservando zeros à esquerda, como `0950`.
+
+Nos payloads JSON, valores monetários devem ser serializados como `string`. Nas colunas relacionais, valores monetários permanecem em `NUMERIC(19,4)`.
 
 ### Restrição de versão única
 
@@ -53,4 +57,3 @@ Fluxo em caso de conflito:
 4. Tentar novamente quando aplicável
 
 Isso evita gravações perdidas e força revalidação sobre o estado atual.
-

@@ -2,6 +2,8 @@
 
 O replay reconstrói o estado atual de uma conta aplicando eventos em ordem.
 
+O identificador usado no replay é o número da conta em formato textual de 4 dígitos, preservando zeros à esquerda.
+
 ## Exemplo
 
 - v1 Criado

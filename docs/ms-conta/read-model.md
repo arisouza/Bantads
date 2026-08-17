@@ -6,13 +6,13 @@ O Read Model é uma estrutura otimizada para consultas. Será desnormalizado e a
 
 Campos sugeridos:
 
-| Campo         | Descrição                     |
-|---------------|-------------------------------|
-| numero_conta  | Número da conta               |
-| cpf_cliente   | CPF do cliente                |
-| data_criacao  | Data de criação da conta      |
-| saldo         | Saldo atual projetado         |
-| cpf_gerente   | CPF do gerente responsável    |
+| Campo         | Descrição                             |
+|---------------|---------------------------------------|
+| numero_conta  | Número da conta em texto de 4 dígitos |
+| cpf_cliente   | CPF do cliente                        |
+| data_criacao  | Data de criação da conta              |
+| saldo         | Saldo atual projetado                 |
+| cpf_gerente   | CPF do gerente responsável            |
 
 Exemplo:
 
@@ -22,6 +22,8 @@ Exemplo:
 - saldo: 800.00
 - cpf_gerente: 11111111111
 
+O número da conta deve ser armazenado em formato textual fixo de 4 dígitos para preservar zeros à esquerda, como `0950`.
+
 ## `movimentacao_read` (histórico)
 
 Campos sugeridos:
@@ -29,7 +31,7 @@ Campos sugeridos:
 | Campo         | Descrição                                 |
 |---------------|-------------------------------------------|
 | id            | Identificador da movimentação / evento    |
-| numero_conta  | Número da conta                           |
+| numero_conta  | Número da conta em texto de 4 dígitos     |
 | timestamp     | Data e hora da movimentação               |
 | tipo          | Tipo da movimentação                      |
 | cpf_origem    | CPF da origem, quando aplicável           |
@@ -51,6 +53,8 @@ Problema: um mesmo evento pode ser entregue mais de uma vez — o consumidor dev
 - Manter tabela `eventos_processados` com os campos: `event_id`, `objeto_id`, `versao`, `processado_em`.
 - Aplicar transação que grava o `eventos_processados` e atualiza o Read Model; se `event_id` já existir, ignorar.
 - Garantir `UNIQUE(event_id)` para evitar duplicação.
+
+`objeto_id` em `eventos_processados` deve usar a mesma representação textual de 4 dígitos adotada pelo Event Store.
 
 Exemplo de fluxo:
 

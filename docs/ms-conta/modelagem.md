@@ -11,6 +11,8 @@ Definir a modelagem do **MS Conta** para suportar:
 - Replay dos eventos
 - Optimistic Locking
 - Projeção idempotente dos eventos
+- Número da conta textual com 4 dígitos, preservando zeros à esquerda
+- Valores monetários em payloads JSON representados como `string`
 
 
 ## 2. Visão geral da arquitetura
@@ -46,3 +48,10 @@ Operações que alteram estado (depósito, saque, transferência, alteração de
 ### Query
 
 Operações de leitura (consultar conta, consultar saldo, histórico). Consultas devem usar o Read Model denormalizado para leitura rápida.
+
+## 3. Convenções da modelagem
+
+- O número da conta é um identificador textual de 4 dígitos e deve preservar zeros à esquerda, como `0950`.
+- No PostgreSQL, esse identificador deve ser modelado como tipo textual fixo de 4 posições.
+- Valores monetários persistidos em colunas relacionais devem usar `NUMERIC(19,4)`.
+- Valores monetários dentro do payload JSON dos eventos devem ser serializados como `string` para evitar perda de precisão.

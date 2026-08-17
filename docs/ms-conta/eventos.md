@@ -23,6 +23,11 @@ Cada evento deve carregar informações suficientes para o histórico (conta opo
 
 O processamento deve garantir atomicidade lógica (ambos eventos criados) na camada de comando/gateway — ou registrar compensação/rollback em caso de falha parcial.
 
+Regras de representação:
+
+- `numeroConta`, `contaOrigem` e `contaDestino` devem ser strings de 4 dígitos, preservando zeros à esquerda.
+- Valores monetários dentro de payloads JSON devem ser strings.
+
 
 ## Estrutura por evento
 
@@ -34,7 +39,7 @@ Exemplo:
 
 ```json
 {
-  "numeroConta": 1291,
+  "numeroConta": "1291",
   "cpfCliente": "00000000000",
   "cpfGerente": "11111111111",
   "dataCriacao": "2026-08-16T10:00:00"
@@ -46,7 +51,7 @@ Exemplo:
 Payload:
 
 ```json
-{ "valor": 1000.00 }
+{ "valor": "1000.00" }
 ```
 
 Aplicação em replay:
@@ -60,7 +65,7 @@ saldo = saldo + valor
 Payload:
 
 ```json
-{ "valor": 200.00 }
+{ "valor": "200.00" }
 ```
 
 Aplicação em replay:
@@ -77,10 +82,10 @@ Payload exemplo:
 
 ```json
 {
-  "contaDestino": 2000,
+  "contaDestino": "2000",
   "cpfDestino": "00000000000",
   "nomeDestino": "Nome do cliente",
-  "valor": 500.00
+  "valor": "500.00"
 }
 ```
 
@@ -98,10 +103,10 @@ Payload exemplo:
 
 ```json
 {
-  "contaOrigem": 1291,
+  "contaOrigem": "1291",
   "cpfOrigem": "00000000000",
   "nomeOrigem": "Nome do cliente",
-  "valor": 500.00
+  "valor": "500.00"
 }
 ```
 
