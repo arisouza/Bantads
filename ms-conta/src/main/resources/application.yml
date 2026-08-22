@@ -1,0 +1,43 @@
+server:
+  port: 8081
+
+spring:
+  application:
+    name: ms-conta
+
+  datasource:
+    url: jdbc:postgresql://${DB_HOST:postgres}:5432/${DB_NAME:bantads}
+    username: ${DB_USER:postgres}
+    password: ${DB_PASSWORD:postgres}
+    driver-class-name: org.postgresql.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        default_schema: conta
+    show-sql: false
+
+  rabbitmq:
+    host: ${RABBITMQ_HOST:rabbitmq}
+    port: 5672
+    username: ${RABBITMQ_USER:admin}
+    password: ${RABBITMQ_PASSWORD:admin}
+    listener:
+      simple:
+        retry:
+          enabled: true
+          initial-interval: 5000
+          max-attempts: 4
+          multiplier: 1.0
+
+bantads:
+  rabbitmq:
+    queues:
+      conta-cmd: ms.conta.cmd
+      conta-events: ms.conta.events
+      conta-events-dlq: ms.conta.events.dlq
+      conta-cmd-dlq: ms.conta.cmd.dlq
+      orquestrador-reply: orquestrador.reply
