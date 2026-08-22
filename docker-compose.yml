@@ -16,6 +16,8 @@ services:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+      - ./database/ms-conta/schema.sql:/docker-entrypoint-initdb.d/01-conta-schema.sql:ro
+      - ./database/ms-conta/seed.sql:/docker-entrypoint-initdb.d/02-conta-seed.sql:ro
     networks:
       - bantads-network
     healthcheck:
@@ -39,6 +41,7 @@ services:
       - "27017:27017"
     volumes:
       - mongo_data:/data/db
+      - ./database/ms-auth/mongo-init.js:/docker-entrypoint-initdb.d/mongo-init.js:ro
     networks:
       - bantads-network
     healthcheck:
