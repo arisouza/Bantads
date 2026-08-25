@@ -1,59 +1,58 @@
-# BanTADS
+# BANTADS - Frontend
 
-This project was generated using [Angular CLI](https://github.com/angular/angular-cli) version 22.1.5.
+Frontend do **BANTADS**, desenvolvido em Angular para o projeto da disciplina de Desenvolvimento de Aplicações Corporativas.
 
-## Development server
+## Tecnologias
 
-To start a local development server, run:
+- Angular 22
+- TypeScript
+- Angular Material
+- Decimal.js
+- Luxon
 
-```bash
-ng serve
-```
+## Requisitos
 
-Once the server is running, open your browser and navigate to `http://localhost:4200/`. The application will automatically reload whenever you modify any of the source files.
+- Node.js 24.15.0 ou versão compatível
+- npm
 
-## Code scaffolding
-
-Angular CLI includes powerful code scaffolding tools. To generate a new component, run:
-
-```bash
-ng generate component component-name
-```
-
-For a complete list of available schematics (such as `components`, `directives`, or `pipes`), run:
+Caso utilize NVM:
 
 ```bash
-ng generate --help
+nvm use 24.15.0
 ```
 
-## Building
+## Instalação
 
-To build the project run:
+Dentro da pasta `frontend`:
 
 ```bash
-ng build
+npm install
 ```
 
-This will compile your project and store the build artifacts in the `dist/` directory. By default, the production build optimizes your application for performance and speed.
-
-## Running unit tests
-
-To execute unit tests with the [Vitest](https://vitest.dev/) test runner, use the following command:
+## Executar
 
 ```bash
-ng test
+npm start
 ```
 
-## Running end-to-end tests
+A aplicação ficará disponível em:
 
-For end-to-end (e2e) testing, run:
+```text
+http://localhost:4200
+```
+
+## Build
 
 ```bash
-ng e2e
+npm run build
 ```
 
-Angular CLI does not come with an end-to-end testing framework by default. You can choose one that suits your needs.
+O build será gerado em:
 
-## Additional Resources
+```text
+dist/banTADS
+```
 
-For more information on using the Angular CLI, including detailed command references, visit the [Angular CLI Overview and Command Reference](https://angular.dev/tools/cli) page.
+## UI
+
+O projeto utiliza **Angular Material** como UI Kit.
