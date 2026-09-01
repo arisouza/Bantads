@@ -1,5 +1,5 @@
 server:
-  port: 8081
+  port: ${SERVER_PORT:8081}
 
 spring:
   application:
@@ -19,6 +19,7 @@ spring:
         dialect: org.hibernate.dialect.PostgreSQLDialect
         default_schema: conta
     show-sql: false
+    open-in-view: false
 
   rabbitmq:
     host: ${RABBITMQ_HOST:rabbitmq}
