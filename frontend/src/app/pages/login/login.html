@@ -1,38 +1,58 @@
 <section class="login-page">
+
   <div class="login-layout">
+
     <aside class="login-brand-panel">
+
       <div class="login-brand-panel__content">
+
         <div class="login-brand-panel__visual" aria-hidden="true">
+
           <div class="login-brand-panel__blob"></div>
+
           <img
             class="login-brand-panel__image"
             src="/images/icon-login.png"
             alt=""
           />
+
         </div>
 
         <div class="login-brand-panel__text">
           <h2>Seu dinheiro em movimento, sem complicação.</h2>
           <p>Conta, movimentações e controle financeiro em um só lugar.</p>
         </div>
+
       </div>
+
     </aside>
 
     <main class="login-form-panel">
+
       <div class="login-form-panel__brand">
         <span class="login-form-panel__brand-name">BANTADS</span>
         <span class="login-form-panel__brand-subtitle">Internet Banking</span>
       </div>
 
       <div class="login-form-card">
+
         <div class="login-form-card__header">
           <h1>Acesse sua conta</h1>
           <p>Entre com seu e-mail e senha para continuar.</p>
         </div>
 
-        <form class="login-form" novalidate>
-          <mat-form-field class="login-form__field" appearance="outline">
+        <form
+          class="login-form"
+          (ngSubmit)="entrar()"
+          novalidate
+        >
+
+          <mat-form-field
+            class="login-form__field"
+            appearance="outline"
+          >
             <mat-label>E-mail</mat-label>
+
             <input
               matInput
               id="email"
@@ -40,31 +60,54 @@
               type="email"
               placeholder="nome@exemplo.com"
               autocomplete="email"
+              [(ngModel)]="email"
+              required
             />
           </mat-form-field>
 
-          <mat-form-field class="login-form__field" appearance="outline">
+          <mat-form-field
+            class="login-form__field"
+            appearance="outline"
+          >
             <mat-label>Senha</mat-label>
+
             <input
               matInput
               id="password"
-              name="password"
+              name="senha"
               type="password"
               placeholder="Digite sua senha"
               autocomplete="current-password"
+              [(ngModel)]="senha"
+              required
             />
           </mat-form-field>
 
-          <button class="login-form__submit" mat-flat-button type="button">
+          @if (erro) {
+            <p class="login-form__error">
+              {{ erro }}
+            </p>
+          }
+
+          <button
+            class="login-form__submit"
+            mat-flat-button
+            type="submit"
+          >
             Entrar
           </button>
+
         </form>
 
         <p class="login-form-card__footer">
           Ainda não possui conta?
           <a routerLink="/autocadastro">Solicite sua conta</a>
         </p>
+
       </div>
+
     </main>
+
   </div>
+
 </section>

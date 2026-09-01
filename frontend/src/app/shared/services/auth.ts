@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable, finalize, map, tap } from 'rxjs';
+import { environment } from '../../../environments/environment';
 
 export type UserTipo = 'CLIENTE' | 'GERENTE';
 
@@ -19,21 +20,30 @@ export interface LoginResponse {
   providedIn: 'root'
 })
 export class AuthService {
-  private readonly API_URL = 'http://localhost:3000';
+
+  private readonly API_URL = environment.apiUrl;
 
   constructor(private http: HttpClient) {}
 
-  login(credentials: { email: string; senha: string }): Observable<LoginResponse> {
-    return this.http.post<LoginResponse>(`${this.API_URL}/login`, credentials).pipe(
-      tap((res) => {
-        if (res && res.token) {
-          // Salva o token que o auth.interceptor.ts vai usar no cabeçalho x-access-token
-          localStorage.setItem('token', res.token);
-          localStorage.setItem('tipo', res.tipo);
-          localStorage.setItem('usuario', JSON.stringify(res.usuario));
-        }
-      })
-    );
+  login(credentials: {
+    email: string;
+    senha: string;
+  }): Observable<LoginResponse> {
+
+    return this.http
+      .post<LoginResponse>(`${this.API_URL}/login`, credentials)
+      .pipe(
+        tap((res) => {
+          if (res?.auth && res.token) {
+            localStorage.setItem('token', res.token);
+            localStorage.setItem('tipo', res.tipo);
+            localStorage.setItem(
+              'usuario',
+              JSON.stringify(res.usuario)
+            );
+          }
+        })
+      );
   }
 
   getToken(): string | null {
@@ -42,7 +52,10 @@ export class AuthService {
 
   getTipo(): UserTipo | null {
     const tipo = localStorage.getItem('tipo');
-    return tipo === 'CLIENTE' || tipo === 'GERENTE' ? tipo : null;
+
+    return tipo === 'CLIENTE' || tipo === 'GERENTE'
+      ? tipo
+      : null;
   }
 
   getHomeRouteByTipo(): '/cliente' | '/gerente' | '/login' {
@@ -59,9 +72,12 @@ export class AuthService {
     return '/login';
   }
 
-  getUsuario(): any {
-    const user = localStorage.getItem('usuario');
-    return user ? JSON.parse(user) : null;
+  getUsuario(): LoginResponse['usuario'] | null {
+    const usuario = localStorage.getItem('usuario');
+
+    return usuario
+      ? JSON.parse(usuario)
+      : null;
   }
 
   clearSession(): void {
