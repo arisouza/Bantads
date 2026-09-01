@@ -9,6 +9,9 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
 import java.util.List;
 
 @Service
@@ -26,24 +29,18 @@ public class ContaReplayService {
     }
 
     public Conta reconstruirConta(String numeroConta) {
-        List<EventStore> eventos =
-                eventStoreRepository.findByObjetoIdOrderByVersaoAsc(numeroConta);
-
+        List<EventStore> eventos = eventStoreRepository.findByObjetoIdOrderByVersaoAsc(numeroConta);
         Conta conta = new Conta();
-
         for (EventStore evento : eventos) {
             aplicarEvento(conta, evento);
         }
-
         return conta;
     }
 
     private void aplicarEvento(Conta conta, EventStore evento) {
         try {
             JsonNode payload = objectMapper.readTree(evento.getPayload());
-
-            TipoEventoEnum tipo =
-                    TipoEventoEnum.valueOf(evento.getTipo());
+            TipoEventoEnum tipo = TipoEventoEnum.fromValor(evento.getTipo());
 
             switch (tipo) {
                 case CRIADO -> aplicarCriado(conta, payload);
@@ -53,10 +50,9 @@ public class ContaReplayService {
                 case TRANSFERENCIA_DESTINO -> aplicarTransferenciaDestino(conta, payload);
                 case GERENTE_ALTERADO -> aplicarGerenteAlterado(conta, payload);
             }
-
         } catch (Exception e) {
             throw new IllegalStateException(
-                    "Erro ao aplicar evento " + evento.getEventId(),
+                    "Erro ao aplicar evento " + evento.getId(),
                     e
             );
         }
@@ -66,58 +62,38 @@ public class ContaReplayService {
         conta.setNumeroConta(payload.get("numeroConta").asText());
         conta.setCpfCliente(payload.get("cpfCliente").asText());
         conta.setCpfGerente(payload.get("cpfGerente").asText());
-        conta.setDataCriacao(
-                java.time.LocalDateTime.parse(
-                        payload.get("dataCriacao").asText()
-                )
-        );
+        conta.setDataCriacao(parseDateTime(payload.get("dataCriacao").asText()));
         conta.setSaldo(BigDecimal.ZERO);
     }
 
     private void aplicarDeposito(Conta conta, JsonNode payload) {
-        BigDecimal valor = new BigDecimal(
-                payload.get("valor").asText()
-        );
-
-        conta.setSaldo(conta.getSaldo().add(valor));
+        conta.setSaldo(conta.getSaldo().add(lerValor(payload)));
     }
 
     private void aplicarSaque(Conta conta, JsonNode payload) {
-        BigDecimal valor = new BigDecimal(
-                payload.get("valor").asText()
-        );
-
-        conta.setSaldo(conta.getSaldo().subtract(valor));
+        conta.setSaldo(conta.getSaldo().subtract(lerValor(payload)));
     }
 
-    private void aplicarTransferenciaOrigem(
-            Conta conta,
-            JsonNode payload
-    ) {
-        BigDecimal valor = new BigDecimal(
-                payload.get("valor").asText()
-        );
-
-        conta.setSaldo(conta.getSaldo().subtract(valor));
+    private void aplicarTransferenciaOrigem(Conta conta, JsonNode payload) {
+        conta.setSaldo(conta.getSaldo().subtract(lerValor(payload)));
     }
 
-    private void aplicarTransferenciaDestino(
-            Conta conta,
-            JsonNode payload
-    ) {
-        BigDecimal valor = new BigDecimal(
-                payload.get("valor").asText()
-        );
-
-        conta.setSaldo(conta.getSaldo().add(valor));
+    private void aplicarTransferenciaDestino(Conta conta, JsonNode payload) {
+        conta.setSaldo(conta.getSaldo().add(lerValor(payload)));
     }
 
-    private void aplicarGerenteAlterado(
-            Conta conta,
-            JsonNode payload
-    ) {
-        conta.setCpfGerente(
-                payload.get("cpfGerenteNovo").asText()
-        );
+    private void aplicarGerenteAlterado(Conta conta, JsonNode payload) {
+        conta.setCpfGerente(payload.get("cpfGerenteNovo").asText());
+    }
+
+    private BigDecimal lerValor(JsonNode payload) {
+        return new BigDecimal(payload.get("valor").asText());
+    }
+
+    private OffsetDateTime parseDateTime(String valor) {
+        if (valor.endsWith("Z") || valor.contains("+") || valor.matches(".*-\\d{2}:\\d{2}$")) {
+            return OffsetDateTime.parse(valor);
+        }
+        return LocalDateTime.parse(valor).atOffset(ZoneOffset.UTC);
     }
 }

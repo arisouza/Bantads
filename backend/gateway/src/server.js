@@ -122,7 +122,7 @@ app.post('/contas/:id/transferencia', verifyJWT, async (req, res) => {
       return res.status(404).json({ message: 'Conta destino não encontrada' });
     }
     const contaDestinoData = await contaDestinoRes.json();
-    const cpfDestino = contaDestinoData.cpf_cliente;
+    const cpfDestino = contaDestinoData.cpfCliente;
     const clienteOrigemRes = await fetch(`http://ms-cliente:3002/clientes/${cpfOrigem}`);
     const clienteOrigemData = await clienteOrigemRes.json();
     const nomeOrigem = clienteOrigemData.nome;

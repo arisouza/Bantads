@@ -1,48 +1,53 @@
 package com.bantads.msconta.domain.entity;
 
 import jakarta.persistence.Column;
+import jakarta.persistence.Convert;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 import java.util.UUID;
 
 @Entity
-@Table(name = "event_store")
+@Table(name = "eventos_conta")
 public class EventStore {
 
     @Id
-    @Column(name = "event_id", nullable = false, updatable = false)
-    private UUID eventId;
+    @Column(name = "id", nullable = false, updatable = false)
+    private UUID id;
 
+    @Convert(converter = Char4Converter.class)
     @Column(name = "objeto_id", nullable = false, length = 4)
     private String objetoId;
 
-    @Column(name = "tipo", nullable = false)
+    @Column(name = "tipo", nullable = false, length = 50)
     private String tipo;
 
-    @Column(name = "versao", nullable = false)
-    private Long versao;
-
-    @Column(name = "timestamp", nullable = false)
-    private LocalDateTime timestamp;
-
+    @JdbcTypeCode(SqlTypes.JSON)
     @Column(name = "payload", nullable = false, columnDefinition = "jsonb")
     private String payload;
+
+    @Column(name = "versao", nullable = false)
+    private Integer versao;
+
+    @Column(name = "timestamp", nullable = false)
+    private OffsetDateTime timestamp;
 
     public EventStore() {
     }
 
     public EventStore(
-            UUID eventId,
+            UUID id,
             String objetoId,
             String tipo,
-            Long versao,
-            LocalDateTime timestamp,
+            Integer versao,
+            OffsetDateTime timestamp,
             String payload
     ) {
-        this.eventId = eventId;
+        this.id = id;
         this.objetoId = objetoId;
         this.tipo = tipo;
         this.versao = versao;
@@ -50,12 +55,12 @@ public class EventStore {
         this.payload = payload;
     }
 
-    public UUID getEventId() {
-        return eventId;
+    public UUID getId() {
+        return id;
     }
 
-    public void setEventId(UUID eventId) {
-        this.eventId = eventId;
+    public void setId(UUID id) {
+        this.id = id;
     }
 
     public String getObjetoId() {
@@ -74,19 +79,19 @@ public class EventStore {
         this.tipo = tipo;
     }
 
-    public Long getVersao() {
+    public Integer getVersao() {
         return versao;
     }
 
-    public void setVersao(Long versao) {
+    public void setVersao(Integer versao) {
         this.versao = versao;
     }
 
-    public LocalDateTime getTimestamp() {
+    public OffsetDateTime getTimestamp() {
         return timestamp;
     }
 
-    public void setTimestamp(LocalDateTime timestamp) {
+    public void setTimestamp(OffsetDateTime timestamp) {
         this.timestamp = timestamp;
     }
 

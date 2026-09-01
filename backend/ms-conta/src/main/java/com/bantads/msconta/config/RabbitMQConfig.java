@@ -8,12 +8,15 @@ import org.springframework.amqp.core.QueueBuilder;
 import org.springframework.amqp.rabbit.config.SimpleRabbitListenerContainerFactory;
 import org.springframework.amqp.rabbit.connection.ConnectionFactory;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
+import org.springframework.amqp.support.converter.DefaultJackson2JavaTypeMapper;
 import org.springframework.amqp.support.converter.Jackson2JsonMessageConverter;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.amqp.rabbit.annotation.EnableRabbit;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 @Configuration
+@EnableRabbit
 public class RabbitMQConfig {
 
     @Value("${bantads.rabbitmq.queues.conta-cmd}")
@@ -82,10 +85,13 @@ public class RabbitMQConfig {
         return BindingBuilder.bind(contaEventsDlqQueue()).to(dlxExchange()).with(contaEventsDlqQueue);
     }
 
-    // Conversor JSON para mensagens RabbitMQ
     @Bean
     public Jackson2JsonMessageConverter messageConverter() {
-        return new Jackson2JsonMessageConverter();
+        Jackson2JsonMessageConverter converter = new Jackson2JsonMessageConverter();
+        DefaultJackson2JavaTypeMapper typeMapper = new DefaultJackson2JavaTypeMapper();
+        typeMapper.setTrustedPackages("com.bantads.msconta");
+        converter.setJavaTypeMapper(typeMapper);
+        return converter;
     }
 
     @Bean

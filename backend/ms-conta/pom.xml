@@ -47,12 +47,6 @@
             <scope>runtime</scope>
         </dependency>
 
-        <!-- MongoDB - Read Model -->
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-data-mongodb</artifactId>
-        </dependency>
-
         <!-- RabbitMQ -->
         <dependency>
             <groupId>org.springframework.boot</groupId>

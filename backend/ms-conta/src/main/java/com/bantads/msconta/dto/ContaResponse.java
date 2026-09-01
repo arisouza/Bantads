@@ -1,22 +1,20 @@
-package com.bantads.msconta.domain.entity;
+package com.bantads.msconta.dto;
 
-import java.math.BigDecimal;
+import org.springframework.hateoas.RepresentationModel;
+import org.springframework.hateoas.server.core.Relation;
+
 import java.time.OffsetDateTime;
 
-public class Conta {
+@Relation(collectionRelation = "contas", itemRelation = "conta")
+public class ContaResponse extends RepresentationModel<ContaResponse> {
 
     private String numeroConta;
     private String cpfCliente;
-    private String cpfGerente;
     private OffsetDateTime dataCriacao;
-    private BigDecimal saldo;
+    private String saldo;
+    private String cpfGerente;
 
-    public Conta() {
-        this.saldo = BigDecimal.ZERO;
-    }
-
-    public boolean existe() {
-        return numeroConta != null && !numeroConta.isBlank();
+    public ContaResponse() {
     }
 
     public String getNumeroConta() {
@@ -35,14 +33,6 @@ public class Conta {
         this.cpfCliente = cpfCliente;
     }
 
-    public String getCpfGerente() {
-        return cpfGerente;
-    }
-
-    public void setCpfGerente(String cpfGerente) {
-        this.cpfGerente = cpfGerente;
-    }
-
     public OffsetDateTime getDataCriacao() {
         return dataCriacao;
     }
@@ -51,11 +41,19 @@ public class Conta {
         this.dataCriacao = dataCriacao;
     }
 
-    public BigDecimal getSaldo() {
+    public String getSaldo() {
         return saldo;
     }
 
-    public void setSaldo(BigDecimal saldo) {
+    public void setSaldo(String saldo) {
         this.saldo = saldo;
+    }
+
+    public String getCpfGerente() {
+        return cpfGerente;
+    }
+
+    public void setCpfGerente(String cpfGerente) {
+        this.cpfGerente = cpfGerente;
     }
 }
