@@ -1,0 +1,20 @@
+@use '@angular/material' as mat;
+
+$bantads-theme: mat.define-theme((
+  color: (
+    theme-type: light,
+    primary: mat.$blue-palette,
+    tertiary: mat.$azure-palette,
+  ),
+  density: (
+    scale: 0,
+  ),
+));
+
+@include mat.core();
+
+html {
+  @include mat.button-theme($bantads-theme);
+  @include mat.form-field-theme($bantads-theme);
+  @include mat.input-theme($bantads-theme);
+}

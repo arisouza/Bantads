@@ -31,29 +31,31 @@
         </div>
 
         <form class="login-form" novalidate>
-          <div class="login-form__field">
-            <label for="email">E-mail</label>
+          <mat-form-field class="login-form__field" appearance="outline">
+            <mat-label>E-mail</mat-label>
             <input
+              matInput
               id="email"
               name="email"
               type="email"
               placeholder="nome@exemplo.com"
               autocomplete="email"
             />
-          </div>
+          </mat-form-field>
 
-          <div class="login-form__field">
-            <label for="password">Senha</label>
+          <mat-form-field class="login-form__field" appearance="outline">
+            <mat-label>Senha</mat-label>
             <input
+              matInput
               id="password"
               name="password"
               type="password"
               placeholder="Digite sua senha"
               autocomplete="current-password"
             />
-          </div>
+          </mat-form-field>
 
-          <button class="login-form__submit" type="button">
+          <button class="login-form__submit" mat-flat-button type="button">
             Entrar
           </button>
         </form>
