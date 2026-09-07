@@ -48,6 +48,13 @@ const verifyJWT = async (req, res, next) => {
   }
 };
 
+const requireRole = (tipo) => (req, res, next) => {
+  if (req.userIdentity?.tipo !== tipo) {
+    return res.status(403).json({ status: 403, erro: "Forbidden", mensagem: "Acesso não permitido." });
+  }
+  next();
+};
+
 app.post('/login', async (req, res) => {
   const { email, senha } = req.body;
   if (!email || !senha) {
@@ -237,8 +244,8 @@ const proxyOptions = {
   }
 };
 
-app.use('/clientes', verifyJWT, createProxyMiddleware({ target: CLIENTE_URL, ...proxyOptions }));
-app.use('/gerentes', verifyJWT, createProxyMiddleware({ target: GERENTE_URL, ...proxyOptions }));
+app.use('/clientes', verifyJWT, requireRole('CLIENTE'), createProxyMiddleware({ target: CLIENTE_URL, ...proxyOptions }));
+app.use('/gerentes', verifyJWT, requireRole('GERENTE'), createProxyMiddleware({ target: GERENTE_URL, ...proxyOptions }));
 app.use('/contas', verifyJWT, createProxyMiddleware({ target: 'http://ms-conta:3004', ...proxyOptions }));
 
 app.use((req, res) => {
