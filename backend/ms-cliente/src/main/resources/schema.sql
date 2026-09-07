@@ -1,0 +1,6 @@
+CREATE SCHEMA IF NOT EXISTS cliente;
+CREATE TABLE IF NOT EXISTS cliente.clientes (
+    cpf VARCHAR(11) PRIMARY KEY,
+    nome TEXT NOT NULL,
+    email TEXT NOT NULL UNIQUE
+);

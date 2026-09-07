@@ -2,10 +2,13 @@ const express = require('express');
 const cors = require('cors');
 const jwt = require('jsonwebtoken');
 const { createClient } = require('redis');
-const { createProxyMiddleware } = require('http-proxy-middleware');
+const { createProxyMiddleware, fixRequestBody } = require('http-proxy-middleware');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+const AUTH_URL = process.env.AUTH_URL || 'http://ms-auth:8082';
+const CLIENTE_URL = process.env.CLIENTE_URL || 'http://ms-cliente:3002';
+const GERENTE_URL = process.env.GERENTE_URL || 'http://ms-gerente:3003';
 const SECRET = process.env.JWT_SECRET || 'bantads-secret-key';
 
 const redisClient = createClient({
@@ -23,12 +26,13 @@ const verifyJWT = async (req, res, next) => {
     return res.status(401).json({ auth: false, message: 'Token não fornecido.' });
   }
   try {
-    const isRevoked = await redisClient.get(`revoked:${token}`);
+    const decoded = jwt.verify(token, SECRET);
+    const jti = decoded.jti;
+    if (typeof jti !== 'string' || !jti) throw new Error('Token sem jti');
+    const isRevoked = await redisClient.get(`revoked:${jti}`);
     if (isRevoked) {
       return res.status(401).json({ auth: false, message: 'Falha ao autenticar o token.' });
     }
-    const decoded = jwt.verify(token, SECRET);
-    const jti = decoded.jti;
     const sessionExists = await redisClient.exists(`sessao:${jti}`);
     if (!sessionExists) {
       return res.status(401).json({ auth: false, message: 'Falha ao autenticar o token.' });
@@ -36,8 +40,8 @@ const verifyJWT = async (req, res, next) => {
     await redisClient.expire(`sessao:${jti}`, 1800);
     await redisClient.expire(`sessao:cpf:${decoded.cpf}`, 1800);
     req.userIdentity = decoded;
-    req.headers['X-User-CPF'] = decoded.cpf;
-    req.headers['X-User-Tipo'] = decoded.tipo;
+    req.headers['x-user-cpf'] = decoded.cpf;
+    req.headers['x-user-tipo'] = decoded.tipo;
     next();
   } catch (error) {
     return res.status(401).json({ auth: false, message: 'Falha ao autenticar o token.' });
@@ -50,7 +54,7 @@ app.post('/login', async (req, res) => {
     return res.status(400).json({ auth: false, message: 'Credenciais ausentes' });
   }
   try {
-    const authResponse = await fetch('http://ms-auth:3001/auth/login', {
+    const authResponse = await fetch(`${AUTH_URL}/auth/login`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email, senha })
@@ -65,13 +69,13 @@ app.post('/login', async (req, res) => {
     const { cpf, tipo } = authData;
     let nome = '';
     if (tipo === 'CLIENTE') {
-      const clienteResponse = await fetch(`http://ms-cliente:3002/clientes/${cpf}`);
+      const clienteResponse = await fetch(`${CLIENTE_URL}/clientes/${cpf}`);
       if (clienteResponse.ok) {
         const clienteData = await clienteResponse.json();
         nome = clienteData.nome;
       }
     } else if (tipo === 'GERENTE') {
-      const gerenteResponse = await fetch(`http://ms-gerente:3003/gerentes/${cpf}`);
+      const gerenteResponse = await fetch(`${GERENTE_URL}/gerentes/${cpf}`);
       if (gerenteResponse.ok) {
         const gerenteData = await gerenteResponse.json();
         nome = gerenteData.nome;
@@ -94,19 +98,20 @@ app.post('/login', async (req, res) => {
 
 app.post('/logout', verifyJWT, async (req, res) => {
   try {
-    const token = req.headers['x-access-token'];
-    const decoded = jwt.decode(token);
+    const decoded = req.userIdentity;
     const jti = decoded.jti;
     const cpf = decoded.cpf;
     const exp = decoded.exp;
     const currentTime = Math.floor(Date.now() / 1000);
     const timeRemaining = exp - currentTime;
     if (timeRemaining > 0) {
-      await redisClient.set(`revoked:${token}`, 'true', { EX: timeRemaining });
+      await redisClient.set(`revoked:${jti}`, 'true', { EX: timeRemaining });
     }
     await redisClient.del(`sessao:${jti}`);
-    await redisClient.del(`sessao:cpf:${cpf}`);
-    return res.status(200).json({ auth: false, message: 'Logout efetuado com sucesso' });
+    if (await redisClient.get(`sessao:cpf:${cpf}`) === jti) {
+      await redisClient.del(`sessao:cpf:${cpf}`);
+    }
+    return res.status(204).end();
   } catch (error) {
     return res.status(500).json({ message: 'Erro ao efetuar logout' });
   }
@@ -220,16 +225,20 @@ app.get('/jobs/:jobId/result', verifyJWT, async (req, res) => {
 
 const proxyOptions = {
   changeOrigin: true,
-  onProxyReq: (proxyReq, req) => {
-    if (req.userIdentity) {
-      proxyReq.setHeader('X-User-CPF', req.userIdentity.cpf);
-      proxyReq.setHeader('X-User-Tipo', req.userIdentity.tipo);
+  pathRewrite: (_path, req) => req.originalUrl,
+  on: {
+    proxyReq: (proxyReq, req, res) => {
+      if (req.userIdentity) {
+        proxyReq.setHeader('X-User-CPF', req.userIdentity.cpf);
+        proxyReq.setHeader('X-User-Tipo', req.userIdentity.tipo);
+      }
+      fixRequestBody(proxyReq, req, res);
     }
   }
 };
 
-app.use('/clientes', verifyJWT, createProxyMiddleware({ target: 'http://ms-cliente:3002', ...proxyOptions }));
-app.use('/gerentes', verifyJWT, createProxyMiddleware({ target: 'http://ms-gerente:3003', ...proxyOptions }));
+app.use('/clientes', verifyJWT, createProxyMiddleware({ target: CLIENTE_URL, ...proxyOptions }));
+app.use('/gerentes', verifyJWT, createProxyMiddleware({ target: GERENTE_URL, ...proxyOptions }));
 app.use('/contas', verifyJWT, createProxyMiddleware({ target: 'http://ms-conta:3004', ...proxyOptions }));
 
 app.use((req, res) => {
