@@ -1,1 +1,303 @@
-<p>autocadastro works!</p>
+<main class="autocadastro-page">
+
+  <header class="autocadastro-header">
+    <a
+      class="autocadastro-header__brand"
+      routerLink="/login"
+    >
+      BANTADS
+    </a>
+
+    <a
+      class="autocadastro-header__login"
+      routerLink="/login"
+    >
+      Voltar para o login
+    </a>
+  </header>
+
+  <section class="autocadastro-card">
+
+    <div class="autocadastro-card__heading">
+      <span class="autocadastro-card__eyebrow">
+        Abra sua conta
+      </span>
+
+      <h1>Solicitação de autocadastro</h1>
+
+      <p>
+        Preencha seus dados. Após o envio, um gerente
+        analisará sua solicitação.
+      </p>
+    </div>
+
+    <form
+      class="autocadastro-form"
+      [formGroup]="formulario"
+      (ngSubmit)="solicitarCadastro()"
+      novalidate
+    >
+
+      <h2>Dados pessoais</h2>
+
+      <div class="autocadastro-form__grid">
+
+        <mat-form-field
+          class="span-2"
+          appearance="outline"
+        >
+          <mat-label>Nome completo</mat-label>
+
+          <input
+            matInput
+            formControlName="nome"
+            autocomplete="name"
+          />
+
+          @if (
+            formulario.controls.nome.touched &&
+            formulario.controls.nome.invalid
+          ) {
+            <mat-error>
+              Informe seu nome completo.
+            </mat-error>
+          }
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>CPF</mat-label>
+
+          <input
+            matInput
+            formControlName="cpf"
+            inputmode="numeric"
+            maxlength="11"
+            placeholder="Somente números"
+          />
+
+          @if (
+            formulario.controls.cpf.touched &&
+            formulario.controls.cpf.invalid
+          ) {
+            <mat-error>
+              Informe os 11 números do CPF.
+            </mat-error>
+          }
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Telefone</mat-label>
+
+          <input
+            matInput
+            formControlName="telefone"
+            inputmode="tel"
+            maxlength="11"
+            placeholder="DDD + número"
+            autocomplete="tel"
+          />
+
+          @if (
+            formulario.controls.telefone.touched &&
+            formulario.controls.telefone.invalid
+          ) {
+            <mat-error>
+              Informe um telefone com DDD.
+            </mat-error>
+          }
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>E-mail</mat-label>
+
+          <input
+            matInput
+            formControlName="email"
+            type="email"
+            autocomplete="email"
+          />
+
+          @if (
+            formulario.controls.email.touched &&
+            formulario.controls.email.invalid
+          ) {
+            <mat-error>
+              Informe um e-mail válido.
+            </mat-error>
+          }
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Salário</mat-label>
+
+          <span matTextPrefix>R$&nbsp;</span>
+
+          <input
+            matInput
+            formControlName="salario"
+            inputmode="decimal"
+            placeholder="0,00"
+          />
+
+          @if (
+            formulario.controls.salario.touched &&
+            formulario.controls.salario.invalid
+          ) {
+            <mat-error>
+              Informe um salário válido.
+            </mat-error>
+          }
+        </mat-form-field>
+
+      </div>
+
+      <h2>Endereço</h2>
+
+      <div class="autocadastro-form__grid">
+
+        <mat-form-field
+          class="span-2"
+          appearance="outline"
+        >
+          <mat-label>Logradouro</mat-label>
+
+          <input
+            matInput
+            formControlName="logradouro"
+            autocomplete="address-line1"
+          />
+
+          @if (
+            formulario.controls.logradouro.touched &&
+            formulario.controls.logradouro.invalid
+          ) {
+            <mat-error>
+              Informe o logradouro.
+            </mat-error>
+          }
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Número</mat-label>
+
+          <input
+            matInput
+            formControlName="numero"
+          />
+
+          @if (
+            formulario.controls.numero.touched &&
+            formulario.controls.numero.invalid
+          ) {
+            <mat-error>
+              Informe o número.
+            </mat-error>
+          }
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Complemento</mat-label>
+
+          <input
+            matInput
+            formControlName="complemento"
+            placeholder="Opcional"
+          />
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>CEP</mat-label>
+
+          <input
+            matInput
+            formControlName="cep"
+            inputmode="numeric"
+            maxlength="8"
+            placeholder="Somente números"
+            autocomplete="postal-code"
+          />
+
+          @if (
+            formulario.controls.cep.touched &&
+            formulario.controls.cep.invalid
+          ) {
+            <mat-error>
+              Informe os 8 números do CEP.
+            </mat-error>
+          }
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Cidade</mat-label>
+
+          <input
+            matInput
+            formControlName="cidade"
+            autocomplete="address-level2"
+          />
+
+          @if (
+            formulario.controls.cidade.touched &&
+            formulario.controls.cidade.invalid
+          ) {
+            <mat-error>
+              Informe a cidade.
+            </mat-error>
+          }
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>UF</mat-label>
+
+          <mat-select formControlName="uf">
+            @for (estado of estados; track estado) {
+              <mat-option [value]="estado">
+                {{ estado }}
+              </mat-option>
+            }
+          </mat-select>
+
+          @if (
+            formulario.controls.uf.touched &&
+            formulario.controls.uf.invalid
+          ) {
+            <mat-error>
+              Selecione a UF.
+            </mat-error>
+          }
+        </mat-form-field>
+
+      </div>
+
+      @if (mensagemSucesso) {
+        <p
+          class="autocadastro-message autocadastro-message--success"
+          role="status"
+        >
+          {{ mensagemSucesso }}
+        </p>
+      }
+
+      @if (mensagemErro) {
+        <p
+          class="autocadastro-message autocadastro-message--error"
+          role="alert"
+        >
+          {{ mensagemErro }}
+        </p>
+      }
+
+      <button
+        class="autocadastro-form__submit"
+        mat-flat-button
+        type="submit"
+        [disabled]="enviando"
+      >
+        {{ enviando ? 'Enviando...' : 'Enviar solicitação' }}
+      </button>
+
+    </form>
+
+  </section>
+
+</main>

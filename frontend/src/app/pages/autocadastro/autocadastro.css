@@ -1,0 +1,175 @@
+:host {
+  display: block;
+  min-height: 100vh;
+}
+
+.autocadastro-page {
+  min-height: 100vh;
+  padding: 32px clamp(20px, 5vw, 72px) 64px;
+
+  background:
+    radial-gradient(
+      circle at top left,
+      rgba(71, 112, 255, 0.16),
+      transparent 34rem
+    ),
+    var(--color-background);
+}
+
+/* Cabeçalho */
+
+.autocadastro-header {
+  width: min(100%, 980px);
+  margin: 0 auto 32px;
+
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+}
+
+.autocadastro-header__brand {
+  color: var(--color-primary);
+  font-size: 1.5rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+}
+
+.autocadastro-header__login {
+  color: var(--color-primary);
+  font-weight: 700;
+}
+
+.autocadastro-header__login:hover {
+  text-decoration: underline;
+}
+
+/* Card principal */
+
+.autocadastro-card {
+  width: min(100%, 980px);
+  margin: 0 auto;
+
+  padding: clamp(28px, 5vw, 56px);
+
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+
+  background: var(--color-surface);
+  box-shadow: 0 20px 50px var(--color-shadow);
+}
+
+/* Título */
+
+.autocadastro-card__heading {
+  max-width: 700px;
+  margin-bottom: 36px;
+}
+
+.autocadastro-card__eyebrow {
+  display: block;
+  margin-bottom: 8px;
+
+  color: var(--color-primary);
+  font-size: 0.82rem;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.autocadastro-card__heading h1 {
+  margin: 0 0 12px;
+
+  color: var(--color-text);
+  font-size: clamp(2rem, 5vw, 2.75rem);
+  line-height: 1.15;
+}
+
+.autocadastro-card__heading p {
+  margin: 0;
+
+  color: var(--color-text-muted);
+  line-height: 1.65;
+}
+
+/* Formulário */
+
+.autocadastro-form h2 {
+  margin: 32px 0 18px;
+
+  color: var(--color-text);
+  font-size: 1.1rem;
+}
+
+.autocadastro-form__grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px 20px;
+}
+
+.span-2 {
+  grid-column: span 2;
+}
+
+/* Mensagens */
+
+.autocadastro-message {
+  margin: 24px 0 0;
+  padding: 14px 16px;
+
+  border-radius: var(--radius-sm);
+  line-height: 1.5;
+}
+
+.autocadastro-message--success {
+  color: #17643a;
+  background: #e9f8ef;
+  border: 1px solid #a7dfbd;
+}
+
+.autocadastro-message--error {
+  color: #942626;
+  background: #fff0f0;
+  border: 1px solid #f0b5b5;
+}
+
+/* Botão */
+
+.autocadastro-form__submit {
+  width: 100%;
+  min-height: 54px;
+  margin-top: 28px;
+
+  border-radius: 9px;
+  font-weight: 700;
+}
+
+/* Celular */
+
+@media (max-width: 680px) {
+
+  .autocadastro-page {
+    padding: 24px 16px 40px;
+  }
+
+  .autocadastro-header {
+    margin-bottom: 24px;
+  }
+
+  .autocadastro-header__login {
+    font-size: 0.9rem;
+  }
+
+  .autocadastro-card {
+    padding: 26px 20px;
+    border-radius: var(--radius-md);
+  }
+
+  .autocadastro-form__grid {
+    grid-template-columns: 1fr;
+  }
+
+  .span-2 {
+    grid-column: auto;
+  }
+}

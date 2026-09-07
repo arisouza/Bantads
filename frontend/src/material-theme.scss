@@ -14,7 +14,5 @@ $bantads-theme: mat.define-theme((
 @include mat.core();
 
 html {
-  @include mat.button-theme($bantads-theme);
-  @include mat.form-field-theme($bantads-theme);
-  @include mat.input-theme($bantads-theme);
+  @include mat.all-component-themes($bantads-theme);
 }
