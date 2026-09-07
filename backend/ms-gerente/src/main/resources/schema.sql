@@ -1,0 +1,6 @@
+CREATE SCHEMA IF NOT EXISTS gerente;
+CREATE TABLE IF NOT EXISTS gerente.gerentes (
+    cpf VARCHAR(11) PRIMARY KEY,
+    nome TEXT NOT NULL,
+    email TEXT NOT NULL UNIQUE
+);

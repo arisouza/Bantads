@@ -4,7 +4,7 @@ db.createCollection('usuarios');
 db.usuarios.createIndex({ "email": 1 }, { unique: true });
 
 // senha 'tads'
-const hashSenhaTads = "$argon2id$v=19$m=16384,t=2,p=1$c2FsdHNhbHRzYWx0$LqV9aQZJ1Z2W8+tE3Z+iX/T2z3B7lQoXmJ4hXjD7wYk";
+const hashSenhaTads = "$argon2id$v=19$m=19456,t=2,p=1$I/uDJP8rQ8G7VcdjsGj6yg$hfVDzW7NkVMRWxf6CLMNxIEIx1wD1EmDLC0eT7rkt1s";
 
 db.usuarios.insertMany([
 

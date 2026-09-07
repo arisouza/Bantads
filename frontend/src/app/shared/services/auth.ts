@@ -1,4 +1,4 @@
-import { Injectable } from '@angular/core';
+import { Injectable, signal } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable, finalize, map, tap } from 'rxjs';
 import { environment } from '../../../environments/environment';
@@ -22,6 +22,7 @@ export interface LoginResponse {
 export class AuthService {
 
   private readonly API_URL = environment.apiUrl;
+  private readonly loggedIn = signal(!!localStorage.getItem('token'));
 
   constructor(private http: HttpClient) {}
 
@@ -41,6 +42,7 @@ export class AuthService {
               'usuario',
               JSON.stringify(res.usuario)
             );
+            this.loggedIn.set(true);
           }
         })
       );
@@ -84,6 +86,7 @@ export class AuthService {
     localStorage.removeItem('token');
     localStorage.removeItem('tipo');
     localStorage.removeItem('usuario');
+    this.loggedIn.set(false);
   }
 
   logout(): Observable<void> {
@@ -94,6 +97,6 @@ export class AuthService {
   }
 
   isLoggedIn(): boolean {
-    return !!this.getToken();
+    return this.loggedIn();
   }
 }
