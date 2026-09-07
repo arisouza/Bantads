@@ -11,6 +11,10 @@ import { AuthService } from '../services/auth';
 export class Navbar {
   constructor(public authService: AuthService, private router: Router) {}
 
+  mostrarNavbar(): boolean {
+    return this.authService.isLoggedIn() && this.router.url.split("?")[0] !== "/login";
+  }
+
   sair(): void {
     this.authService.logout().subscribe({
       next: () => void this.router.navigate(['/login']),
