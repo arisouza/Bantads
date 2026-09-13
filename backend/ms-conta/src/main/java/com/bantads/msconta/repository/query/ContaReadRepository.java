@@ -10,6 +10,8 @@ public interface ContaReadRepository extends JpaRepository<ContaRead, String> {
 
     Optional<ContaRead> findByCpfCliente(String cpfCliente);
 
+    boolean existsByCpfCliente(String cpfCliente);
+
     List<ContaRead> findByCpfGerente(String cpfGerente);
 
     long countByCpfGerente(String cpfGerente);
