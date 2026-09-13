@@ -1,35 +1,73 @@
 package com.bantads.msconta.service;
 
 import com.bantads.msconta.domain.entity.Conta;
+import com.bantads.msconta.domain.entity.ContaRead;
 import com.bantads.msconta.domain.event.TipoEventoEnum;
 import com.bantads.msconta.exception.ConflitoVersaoException;
+import com.bantads.msconta.exception.ContaJaExistenteException;
 import com.bantads.msconta.exception.ContaNaoEncontradaException;
 import com.bantads.msconta.exception.ContaNaoPertenceException;
 import com.bantads.msconta.exception.SaldoInsuficienteException;
 import com.bantads.msconta.exception.ValorInvalidoException;
+import com.bantads.msconta.repository.event.EventStoreRepository;
+import com.bantads.msconta.repository.query.ContaReadRepository;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.time.OffsetDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.function.Supplier;
 
 @Service
 public class ContaCommandService {
 
     private static final int MAX_TENTATIVAS = 3;
+    private static final int MAX_SORTEIOS = 50;
 
     private final ContaReplayService contaReplayService;
     private final ContaEventService contaEventService;
+    private final EventStoreRepository eventStoreRepository;
+    private final ContaReadRepository contaReadRepository;
 
     public ContaCommandService(
             ContaReplayService contaReplayService,
-            ContaEventService contaEventService
+            ContaEventService contaEventService,
+            EventStoreRepository eventStoreRepository,
+            ContaReadRepository contaReadRepository
     ) {
         this.contaReplayService = contaReplayService;
         this.contaEventService = contaEventService;
+        this.eventStoreRepository = eventStoreRepository;
+        this.contaReadRepository = contaReadRepository;
+    }
+
+    public Conta criarConta(String cpfCliente, List<String> cpfsGerentesAtivos) {
+        if (cpfCliente == null || cpfCliente.isBlank()) {
+            throw new ValorInvalidoException("CPF do cliente é obrigatório");
+        }
+        if (contaReadRepository.existsByCpfCliente(cpfCliente)) {
+            throw new ContaJaExistenteException(cpfCliente);
+        }
+
+        String cpfGerente = escolherGerenteComMenosContas(cpfsGerentesAtivos);
+        String numeroConta = sortearNumeroLivre();
+        OffsetDateTime dataCriacao = OffsetDateTime.now();
+
+        Map<String, String> payload = new LinkedHashMap<>();
+        payload.put("numeroConta", numeroConta);
+        payload.put("cpfCliente", cpfCliente);
+        payload.put("cpfGerente", cpfGerente);
+        payload.put("dataCriacao", dataCriacao.format(DateTimeFormatter.ISO_OFFSET_DATE_TIME));
+
+        contaEventService.registrarEvento(numeroConta, TipoEventoEnum.CRIADO, payload);
+        return contaReplayService.reconstruirConta(numeroConta);
     }
 
     public void depositar(String numeroConta, String valorStr, String cpfUsuario) {
@@ -90,6 +128,48 @@ public class ContaCommandService {
             contaEventService.registrarEvento(contaDestino, TipoEventoEnum.TRANSFERENCIA_DESTINO, payloadDestino);
             return null;
         });
+    }
+
+    private String escolherGerenteComMenosContas(List<String> cpfsGerentesAtivos) {
+        List<String> candidatos = new ArrayList<>();
+        if (cpfsGerentesAtivos != null) {
+            for (String cpf : cpfsGerentesAtivos) {
+                if (cpf != null && !cpf.isBlank()) {
+                    candidatos.add(cpf);
+                }
+            }
+        }
+        if (candidatos.isEmpty()) {
+            for (ContaRead conta : contaReadRepository.findAll()) {
+                if (!candidatos.contains(conta.getCpfGerente())) {
+                    candidatos.add(conta.getCpfGerente());
+                }
+            }
+        }
+        if (candidatos.isEmpty()) {
+            throw new ValorInvalidoException("Não há gerentes disponíveis para vincular a conta");
+        }
+
+        String escolhido = candidatos.get(0);
+        long menorQuantidade = Long.MAX_VALUE;
+        for (String cpfGerente : candidatos) {
+            long quantidade = contaReadRepository.countByCpfGerente(cpfGerente);
+            if (quantidade < menorQuantidade) {
+                menorQuantidade = quantidade;
+                escolhido = cpfGerente;
+            }
+        }
+        return escolhido;
+    }
+
+    private String sortearNumeroLivre() {
+        for (int i = 0; i < MAX_SORTEIOS; i++) {
+            String numero = String.format("%04d", ThreadLocalRandom.current().nextInt(10000));
+            if (!eventStoreRepository.existsByObjetoId(numero) && !contaReadRepository.existsById(numero)) {
+                return numero;
+            }
+        }
+        throw new IllegalStateException("Não foi possível sortear um número de conta livre");
     }
 
     private Conta reconstruirExistente(String numeroConta) {

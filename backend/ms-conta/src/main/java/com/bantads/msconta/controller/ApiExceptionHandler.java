@@ -1,6 +1,7 @@
 package com.bantads.msconta.controller;
 
 import com.bantads.msconta.dto.MensagemResponse;
+import com.bantads.msconta.exception.ContaJaExistenteException;
 import com.bantads.msconta.exception.ConflitoVersaoException;
 import com.bantads.msconta.exception.ContaNaoEncontradaException;
 import com.bantads.msconta.exception.ContaNaoPertenceException;
@@ -30,8 +31,8 @@ public class ApiExceptionHandler {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new MensagemResponse(ex.getMessage()));
     }
 
-    @ExceptionHandler(ConflitoVersaoException.class)
-    public ResponseEntity<MensagemResponse> conflito(ConflitoVersaoException ex) {
+    @ExceptionHandler({ConflitoVersaoException.class, ContaJaExistenteException.class})
+    public ResponseEntity<MensagemResponse> conflito(RuntimeException ex) {
         return ResponseEntity.status(HttpStatus.CONFLICT).body(new MensagemResponse(ex.getMessage()));
     }
 

@@ -1,9 +1,11 @@
 package com.bantads.msconta.service;
 
+import com.bantads.msconta.domain.entity.Conta;
 import com.bantads.msconta.domain.entity.ContaRead;
 import com.bantads.msconta.domain.entity.MovimentacaoRead;
 import com.bantads.msconta.domain.event.TipoEventoEnum;
 import com.bantads.msconta.dto.ContaResponse;
+import com.bantads.msconta.dto.ContasGerenteResponse;
 import com.bantads.msconta.dto.ExtratoResponse;
 import com.bantads.msconta.dto.MovimentacaoResponse;
 import com.bantads.msconta.exception.ContaNaoEncontradaException;
@@ -46,6 +48,29 @@ public class ContaQueryService {
         ContaRead conta = contaReadRepository.findByCpfCliente(cpfCliente)
                 .orElseThrow(() -> new ContaNaoEncontradaException(cpfCliente));
         return toContaResponse(conta);
+    }
+
+    public ContasGerenteResponse buscarPorGerente(String cpfGerente) {
+        List<ContaRead> contas = contaReadRepository.findByCpfGerente(cpfGerente);
+        List<ContaResponse> itens = new ArrayList<>();
+        for (ContaRead conta : contas) {
+            itens.add(toContaResponse(conta));
+        }
+        ContasGerenteResponse response = new ContasGerenteResponse();
+        response.setCpfGerente(cpfGerente);
+        response.setQuantidadeClientes(itens.size());
+        response.setContas(itens);
+        return response;
+    }
+
+    public ContaResponse deAgregado(Conta conta) {
+        ContaResponse response = new ContaResponse();
+        response.setNumeroConta(conta.getNumeroConta());
+        response.setCpfCliente(conta.getCpfCliente());
+        response.setDataCriacao(conta.getDataCriacao());
+        response.setSaldo(conta.getSaldo().toPlainString());
+        response.setCpfGerente(conta.getCpfGerente());
+        return response;
     }
 
     public ExtratoResponse buscarExtrato(String numeroConta, String inicioRaw, String fimRaw) {

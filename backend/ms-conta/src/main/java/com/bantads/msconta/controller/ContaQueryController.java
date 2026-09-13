@@ -1,6 +1,7 @@
 package com.bantads.msconta.controller;
 
 import com.bantads.msconta.dto.ContaResponse;
+import com.bantads.msconta.dto.ContasGerenteResponse;
 import com.bantads.msconta.dto.ExtratoResponse;
 import com.bantads.msconta.service.ContaQueryService;
 import org.springframework.http.ResponseEntity;
@@ -34,6 +35,16 @@ public class ContaQueryController {
     public ResponseEntity<ContaResponse> buscarPorCpf(@PathVariable String cpf) {
         ContaResponse response = contaQueryService.buscarPorCpf(cpf);
         adicionarLinks(response);
+        return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/gerente/{cpf}")
+    public ResponseEntity<ContasGerenteResponse> buscarPorGerente(@PathVariable String cpf) {
+        ContasGerenteResponse response = contaQueryService.buscarPorGerente(cpf);
+        response.add(linkTo(methodOn(ContaQueryController.class).buscarPorGerente(cpf)).withSelfRel());
+        for (ContaResponse conta : response.getContas()) {
+            adicionarLinks(conta);
+        }
         return ResponseEntity.ok(response);
     }
 
