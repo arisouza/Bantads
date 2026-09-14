@@ -1,1 +1,88 @@
-<p>cliente works!</p>
+<main class="cliente-page">
+  @if (erro) {
+    <section class="cliente-state cliente-state--error" aria-live="assertive">
+      <mat-icon aria-hidden="true">error_outline</mat-icon>
+      <p>{{ erro }}</p>
+    </section>
+  }
+
+  <section class="cliente-header">
+    <div>
+      <p class="cliente-eyebrow">Visão geral da conta</p>
+      <h1>Olá, {{ usuario?.nome || 'Cliente' }}!</h1>
+      <p class="cliente-subtitle">
+        Confira os dados da sua conta e acesse suas operações.
+      </p>
+    </div>
+  </section>
+
+  <mat-card class="conta-card">
+    <mat-card-content class="conta-card__content">
+      <div class="conta-card__detail">
+        <span class="conta-card__label">Conta</span>
+        <strong class="conta-card__number">{{ conta?.numeroConta || '—' }}</strong>
+      </div>
+
+      <div class="conta-card__detail conta-card__detail--balance">
+        <span class="conta-card__label">Saldo atual</span>
+        <strong class="conta-card__balance">{{ saldoFormatado || '—' }}</strong>
+      </div>
+    </mat-card-content>
+  </mat-card>
+
+  <section class="operacoes" aria-labelledby="operacoes-title">
+    <div class="operacoes__header">
+      <div>
+        <p class="cliente-eyebrow">Acesso rápido</p>
+        <h2 id="operacoes-title">Operações</h2>
+      </div>
+      <p>Escolha uma operação para continuar.</p>
+    </div>
+
+    <div class="operacoes__grid">
+      <a class="operacao-card" routerLink="/cliente/deposito">
+        <span class="operacao-card__icon operacao-card__icon--deposito">
+          <mat-icon aria-hidden="true">add_circle</mat-icon>
+        </span>
+        <span class="operacao-card__body">
+          <strong>Depositar</strong>
+          <span>Adicione dinheiro à sua conta</span>
+        </span>
+        <mat-icon class="operacao-card__arrow" aria-hidden="true">arrow_forward</mat-icon>
+      </a>
+
+      <a class="operacao-card" routerLink="/cliente/saque">
+        <span class="operacao-card__icon operacao-card__icon--saque">
+          <mat-icon aria-hidden="true">remove_circle</mat-icon>
+        </span>
+        <span class="operacao-card__body">
+          <strong>Sacar</strong>
+          <span>Retire dinheiro da sua conta</span>
+        </span>
+        <mat-icon class="operacao-card__arrow" aria-hidden="true">arrow_forward</mat-icon>
+      </a>
+
+      <a class="operacao-card" routerLink="/cliente/transferencia">
+        <span class="operacao-card__icon operacao-card__icon--transferencia">
+          <mat-icon aria-hidden="true">swap_horiz</mat-icon>
+        </span>
+        <span class="operacao-card__body">
+          <strong>Transferir</strong>
+          <span>Envie dinheiro para outra conta</span>
+        </span>
+        <mat-icon class="operacao-card__arrow" aria-hidden="true">arrow_forward</mat-icon>
+      </a>
+
+      <a class="operacao-card" routerLink="/cliente/extrato">
+        <span class="operacao-card__icon operacao-card__icon--extrato">
+          <mat-icon aria-hidden="true">receipt_long</mat-icon>
+        </span>
+        <span class="operacao-card__body">
+          <strong>Extrato</strong>
+          <span>Consulte suas movimentações</span>
+        </span>
+        <mat-icon class="operacao-card__arrow" aria-hidden="true">arrow_forward</mat-icon>
+      </a>
+    </div>
+  </section>
+</main>
