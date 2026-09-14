@@ -1,0 +1,29 @@
+@if (aberto) {
+  <div
+    class="modal-backdrop"
+    role="presentation"
+    (click)="aoClicarBackdrop($event)"
+  >
+    <section
+      class="modal"
+      role="dialog"
+      aria-modal="true"
+      [attr.aria-label]="titulo || 'Janela modal'"
+    >
+      <header class="modal__header">
+        <h2>{{ titulo }}</h2>
+        <button
+          type="button"
+          class="modal__close"
+          aria-label="Fechar"
+          (click)="fechar.emit()"
+        >
+          <mat-icon aria-hidden="true">close</mat-icon>
+        </button>
+      </header>
+      <div class="modal__content">
+        <ng-content></ng-content>
+      </div>
+    </section>
+  </div>
+}
