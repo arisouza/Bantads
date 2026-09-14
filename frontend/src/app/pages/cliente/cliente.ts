@@ -1,17 +1,18 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, computed, OnInit, signal } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
-import { RouterLink } from '@angular/router';
 import Decimal from 'decimal.js';
 
+import { AuthenticatedLayoutComponent } from '../../shared/components/authenticated-layout/authenticated-layout';
+import { SidebarItem } from '../../shared/components/sidebar/sidebar';
 import { Conta } from '../../shared/models/conta';
 import { AuthService, LoginResponse } from '../../shared/services/auth';
 import { ContaService } from '../../shared/services/conta';
 
 @Component({
   imports: [
-    RouterLink,
+    AuthenticatedLayoutComponent,
     MatButtonModule,
     MatCardModule,
     MatIconModule
@@ -23,9 +24,19 @@ import { ContaService } from '../../shared/services/conta';
 export class Cliente implements OnInit {
 
   usuario: LoginResponse['usuario'] | null = null;
-  conta: Conta | null = null;
-  saldoFormatado: string | null = null;
-  erro = '';
+  readonly conta = signal<Conta | null>(null);
+  readonly saldoFormatado = computed(() => {
+    const conta = this.conta();
+    return conta?.saldo ? this.formatarSaldo(conta.saldo) : null;
+  });
+  readonly erro = signal<string | null>(null);
+  readonly menuItems: SidebarItem[] = [
+    { label: 'Início', route: '/cliente', icon: 'home' },
+    { label: 'Depositar', route: '/cliente/deposito', icon: 'add_circle' },
+    { label: 'Sacar', route: '/cliente/saque', icon: 'remove_circle' },
+    { label: 'Transferir', route: '/cliente/transferencia', icon: 'swap_horiz' },
+    { label: 'Extrato', route: '/cliente/extrato', icon: 'receipt_long' }
+  ];
 
   constructor(
     private authService: AuthService,
@@ -36,17 +47,16 @@ export class Cliente implements OnInit {
     this.usuario = this.authService.getUsuario();
 
     if (!this.usuario?.cpf) {
-      this.erro = 'Não foi possível identificar o usuário autenticado.';
+      this.erro.set('Não foi possível identificar o usuário autenticado.');
       return;
     }
 
     this.contaService.buscarPorCpf(this.usuario.cpf).subscribe({
       next: (conta) => {
-        this.conta = conta;
-        this.saldoFormatado = this.formatarSaldo(conta.saldo);
+        this.conta.set(conta);
       },
       error: () => {
-        this.erro = 'Não foi possível carregar os dados da conta.';
+        this.erro.set('Não foi possível carregar os dados da conta.');
       }
     });
   }

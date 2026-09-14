@@ -1,10 +1,11 @@
-<main class="cliente-page">
-  @if (erro) {
-    <section class="cliente-state cliente-state--error" aria-live="assertive">
-      <mat-icon aria-hidden="true">error_outline</mat-icon>
-      <p>{{ erro }}</p>
-    </section>
-  }
+<app-authenticated-layout [menuItems]="menuItems">
+  <div class="cliente-page">
+    @if (erro()) {
+      <section class="cliente-state cliente-state--error" aria-live="assertive">
+        <mat-icon aria-hidden="true">error_outline</mat-icon>
+        <p>{{ erro() }}</p>
+      </section>
+    }
 
   <section class="cliente-header">
     <div>
@@ -20,12 +21,12 @@
     <mat-card-content class="conta-card__content">
       <div class="conta-card__detail">
         <span class="conta-card__label">Conta</span>
-        <strong class="conta-card__number">{{ conta?.numeroConta || '—' }}</strong>
+        <strong class="conta-card__number">{{ conta()?.numeroConta || '—' }}</strong>
       </div>
 
       <div class="conta-card__detail conta-card__detail--balance">
         <span class="conta-card__label">Saldo atual</span>
-        <strong class="conta-card__balance">{{ saldoFormatado || '—' }}</strong>
+        <strong class="conta-card__balance">{{ saldoFormatado() || '—' }}</strong>
       </div>
     </mat-card-content>
   </mat-card>
@@ -84,5 +85,6 @@
         <mat-icon class="operacao-card__arrow" aria-hidden="true">arrow_forward</mat-icon>
       </a>
     </div>
-  </section>
-</main>
+    </section>
+  </div>
+</app-authenticated-layout>
