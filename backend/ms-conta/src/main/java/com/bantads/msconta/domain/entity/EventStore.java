@@ -20,7 +20,8 @@ public class EventStore {
     private UUID id;
 
     @Convert(converter = Char4Converter.class)
-    @Column(name = "objeto_id", nullable = false, length = 4)
+    @JdbcTypeCode(SqlTypes.CHAR)
+    @Column(name = "objeto_id", nullable = false, columnDefinition = "char(4)")
     private String objetoId;
 
     @Column(name = "tipo", nullable = false, length = 50)

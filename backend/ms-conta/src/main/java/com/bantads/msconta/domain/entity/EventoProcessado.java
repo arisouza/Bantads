@@ -5,6 +5,8 @@ import jakarta.persistence.Convert;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 import java.time.OffsetDateTime;
 import java.util.UUID;
@@ -18,7 +20,8 @@ public class EventoProcessado {
     private UUID eventId;
 
     @Convert(converter = Char4Converter.class)
-    @Column(name = "objeto_id", nullable = false, length = 4)
+    @JdbcTypeCode(SqlTypes.CHAR)
+    @Column(name = "objeto_id", nullable = false, columnDefinition = "char(4)")
     private String objetoId;
 
     @Column(name = "versao", nullable = false)

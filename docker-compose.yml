@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   postgres:
     image: postgres:16
@@ -8,23 +6,21 @@ services:
     mem_limit: 384m
     command: ["postgres", "-c", "shared_buffers=128MB"]
     environment:
-      - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-postgres}
-      - POSTGRES_DB=bantads
-      - TZ=America/Sao_Paulo
-    ports:
-      - "5432:5432"
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      POSTGRES_DB: bantads
+      TZ: America/Sao_Paulo
+    ports: ["5432:5432"]
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./database/ms-conta/schema.sql:/docker-entrypoint-initdb.d/01-conta-schema.sql:ro
       - ./database/ms-conta/seed.sql:/docker-entrypoint-initdb.d/02-conta-seed.sql:ro
-    networks:
-      - bantads-network
+    networks: [bantads-network]
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
-      interval: 30s
-      timeout: 30s
-      retries: 3
+      test: ["CMD-SHELL", "pg_isready -U postgres -d bantads"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
       start_period: 10s
 
   mongo:
@@ -34,22 +30,20 @@ services:
     mem_limit: 384m
     command: ["mongod", "--wiredTigerCacheSizeGB", "0.25"]
     environment:
-      - MONGO_INITDB_ROOT_USERNAME=admin
-      - MONGO_INITDB_ROOT_PASSWORD=${MONGO_PASSWORD:-admin}
-      - TZ=America/Sao_Paulo
-    ports:
-      - "27017:27017"
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_PASSWORD:-admin}
+      TZ: America/Sao_Paulo
+    ports: ["27017:27017"]
     volumes:
       - mongo_data:/data/db
       - ./database/ms-auth/mongo-init.js:/docker-entrypoint-initdb.d/mongo-init.js:ro
-    networks:
-      - bantads-network
+    networks: [bantads-network]
     healthcheck:
-      test: ["CMD", "mongosh", "--quiet", "-eval", "db.adminCommand('ping')"]
-      interval: 30s
-      timeout: 30s
-      retries: 3
-      start_period: 10s
+      test: ["CMD", "mongosh", "--quiet", "-u", "admin", "-p", "${MONGO_PASSWORD:-admin}", "--authenticationDatabase", "admin", "--eval", "db.adminCommand('ping').ok"]
+      interval: 10s
+      timeout: 10s
+      retries: 10
+      start_period: 15s
 
   redis:
     image: redis:7
@@ -58,18 +52,14 @@ services:
     mem_limit: 128m
     mem_reservation: 64m
     command: ["redis-server", "--maxmemory", "100mb", "--maxmemory-policy", "noeviction"]
-    ports:
-      - "6379:6379"
-    volumes:
-      - redis_data:/data
-    networks:
-      - bantads-network
+    ports: ["6379:6379"]
+    volumes: [redis_data:/data]
+    networks: [bantads-network]
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
-      interval: 30s
-      timeout: 30s
-      retries: 3
-      start_period: 10s
+      interval: 10s
+      timeout: 5s
+      retries: 10
 
   rabbitmq:
     image: rabbitmq:3-management
@@ -78,38 +68,167 @@ services:
     mem_limit: 512m
     mem_reservation: 256m
     environment:
-      - RABBITMQ_DEFAULT_USER=${RABBITMQ_USER:-admin}
-      - RABBITMQ_DEFAULT_PASS=${RABBITMQ_PASSWORD:-admin}
-      - RABBITMQ_VM_MEMORY_HIGH_WATERMARK=0.6
-      - TZ=America/Sao_Paulo
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER:-admin}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD:-admin}
+      RABBITMQ_SERVER_ADDITIONAL_ERL_ARGS: -rabbit vm_memory_high_watermark 0.6
+      TZ: America/Sao_Paulo
     ports:
       - "5672:5672"
       - "15672:15672"
-    volumes:
-      - rabbitmq_data:/var/lib/rabbitmq
-    networks:
-      - bantads-network
+    volumes: [rabbitmq_data:/var/lib/rabbitmq]
+    networks: [bantads-network]
     logging:
       driver: json-file
-      options:
-        max-size: "10m"
-        max-file: "3"
+      options: {max-size: 10m, max-file: "3"}
     healthcheck:
       test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
-      interval: 30s
-      timeout: 30s
-      retries: 3
+      interval: 10s
+      timeout: 10s
+      retries: 10
       start_period: 30s
 
+  ms-auth:
+    build: {context: ./backend/ms-auth}
+    container_name: bantads-ms-auth
+    restart: unless-stopped
+    mem_limit: 384m
+    environment:
+      SERVER_PORT: 3001
+      MONGODB_URI: mongodb://admin:${MONGO_PASSWORD:-admin}@mongo:27017/bantads_auth?authSource=admin
+      JAVA_TOOL_OPTIONS: -XX:MaxRAMPercentage=60
+    expose: ["3001"]
+    depends_on: {mongo: {condition: service_healthy}}
+    networks: [bantads-network]
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://localhost:3001/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 30s
+
+  ms-cliente:
+    build: {context: ./backend/ms-cliente}
+    container_name: bantads-ms-cliente
+    restart: unless-stopped
+    mem_limit: 256m
+    environment:
+      SERVER_PORT: 3002
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: bantads
+      DB_USER: postgres
+      DB_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      JAVA_TOOL_OPTIONS: -XX:MaxRAMPercentage=60
+    expose: ["3002"]
+    depends_on: {postgres: {condition: service_healthy}}
+    networks: [bantads-network]
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://localhost:3002/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 30s
+
+  ms-gerente:
+    build: {context: ./backend/ms-gerente}
+    container_name: bantads-ms-gerente
+    restart: unless-stopped
+    mem_limit: 256m
+    environment:
+      SERVER_PORT: 3003
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: bantads
+      DB_USER: postgres
+      DB_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      JAVA_TOOL_OPTIONS: -XX:MaxRAMPercentage=60
+    expose: ["3003"]
+    depends_on: {postgres: {condition: service_healthy}}
+    networks: [bantads-network]
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://localhost:3003/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 30s
+
+  ms-conta:
+    build: {context: ./backend/ms-conta}
+    container_name: bantads-ms-conta
+    restart: unless-stopped
+    mem_limit: 512m
+    environment:
+      SERVER_PORT: 3004
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: bantads
+      DB_USER: postgres
+      DB_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_PORT: 5672
+      RABBITMQ_USER: ${RABBITMQ_USER:-admin}
+      RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD:-admin}
+      JAVA_TOOL_OPTIONS: -XX:MaxRAMPercentage=60
+    expose: ["3004"]
+    depends_on:
+      postgres: {condition: service_healthy}
+      rabbitmq: {condition: service_healthy}
+    networks: [bantads-network]
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://localhost:3004/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 40s
+
+  gateway:
+    build: {context: ./backend/gateway}
+    container_name: bantads-gateway
+    restart: unless-stopped
+    mem_limit: 256m
+    environment:
+      PORT: 3000
+      REDIS_URL: redis://redis:6379
+      AUTH_URL: http://ms-auth:3001
+      CLIENTE_URL: http://ms-cliente:3002
+      GERENTE_URL: http://ms-gerente:3003
+      CONTA_URL: http://ms-conta:3004
+      NODE_OPTIONS: --max-old-space-size=192
+    ports: ["3000:3000"]
+    depends_on:
+      redis: {condition: service_healthy}
+      ms-auth: {condition: service_healthy}
+      ms-cliente: {condition: service_healthy}
+      ms-gerente: {condition: service_healthy}
+      ms-conta: {condition: service_healthy}
+    networks: [bantads-network]
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O - http://localhost:3000/health >/dev/null || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 15s
+
+  frontend:
+    build: {context: ./frontend}
+    container_name: bantads-frontend
+    restart: unless-stopped
+    mem_limit: 64m
+    ports: ["4200:80"]
+    depends_on: {gateway: {condition: service_healthy}}
+    networks: [bantads-network]
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O - http://127.0.0.1/health >/dev/null || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+      start_period: 5s
+
 volumes:
-  postgres_data:
-    name: bantads_postgres_data
-  mongo_data:
-    name: bantads_mongo_data
-  redis_data:
-    name: bantads_redis_data
-  rabbitmq_data:
-    name: bantads_rabbitmq_data
+  postgres_data: {name: bantads_postgres_data}
+  mongo_data: {name: bantads_mongo_data}
+  redis_data: {name: bantads_redis_data}
+  rabbitmq_data: {name: bantads_rabbitmq_data}
 
 networks:
   bantads-network:

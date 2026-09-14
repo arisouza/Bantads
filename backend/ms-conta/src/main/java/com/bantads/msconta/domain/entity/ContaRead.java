@@ -5,6 +5,8 @@ import jakarta.persistence.Convert;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 import java.math.BigDecimal;
 import java.time.OffsetDateTime;
@@ -15,7 +17,8 @@ public class ContaRead {
 
     @Id
     @Convert(converter = Char4Converter.class)
-    @Column(name = "numero_conta", nullable = false, length = 4)
+    @JdbcTypeCode(SqlTypes.CHAR)
+    @Column(name = "numero_conta", nullable = false, columnDefinition = "char(4)")
     private String numeroConta;
 
     @Column(name = "cpf_cliente", nullable = false, length = 14)

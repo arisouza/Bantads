@@ -8,6 +8,10 @@ const { verifyJWT, requireRole, SECRET } = require('./middlewares/auth');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+const AUTH_URL = process.env.AUTH_URL || 'http://ms-auth:3001';
+const CLIENTE_URL = process.env.CLIENTE_URL || 'http://ms-cliente:3002';
+const GERENTE_URL = process.env.GERENTE_URL || 'http://ms-gerente:3003';
+const CONTA_URL = process.env.CONTA_URL || 'http://ms-conta:3004';
 
 app.use(cors());
 app.use(express.json());
@@ -17,7 +21,7 @@ app.post('/login', async (req, res) => {
     if (!email || !senha) return res.status(400).json({ auth: false, message: 'Credenciais ausentes' });
 
     try {
-        const authRes = await fetch('http://ms-auth:3001/auth/login', {
+        const authRes = await fetch(`${AUTH_URL}/auth/login`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ email, senha })
@@ -29,7 +33,7 @@ app.post('/login', async (req, res) => {
         const { cpf, tipo } = await authRes.json();
         let nome = '';
 
-        const userUrl = tipo === 'CLIENTE' ? `http://ms-cliente:3002/clientes/${cpf}` : `http://ms-gerente:3003/gerentes/${cpf}`;
+        const userUrl = tipo === 'CLIENTE' ? `${CLIENTE_URL}/clientes/${cpf}` : `${GERENTE_URL}/gerentes/${cpf}`;
         const userRes = await fetch(userUrl);
         if (userRes.ok) {
             const userData = await userRes.json();
@@ -76,11 +80,23 @@ const proxyOptions = {
     }
 };
 
-app.post('/clientes/solicitacao', createProxyMiddleware({ target: 'http://ms-cliente:3002', changeOrigin: true }));
+app.post('/clientes/solicitacao', createProxyMiddleware({ target: CLIENTE_URL, changeOrigin: true }));
 
-app.use('/clientes', verifyJWT, createProxyMiddleware({ target: 'http://ms-cliente:3002', ...proxyOptions }));
-app.use('/gerentes', verifyJWT, createProxyMiddleware({ target: 'http://ms-gerente:3003', ...proxyOptions }));
-app.use('/contas', verifyJWT, createProxyMiddleware({ target: 'http://ms-conta:3004', ...proxyOptions }));
+app.use('/clientes', verifyJWT, createProxyMiddleware({
+    target: CLIENTE_URL,
+    pathRewrite: (path) => `/clientes${path}`,
+    ...proxyOptions
+}));
+app.use('/gerentes', verifyJWT, createProxyMiddleware({
+    target: GERENTE_URL,
+    pathRewrite: (path) => `/gerentes${path}`,
+    ...proxyOptions
+}));
+app.use('/contas', verifyJWT, createProxyMiddleware({
+    target: CONTA_URL,
+    pathRewrite: (path) => `/contas${path}`,
+    ...proxyOptions
+}));
 
 //FIX da Joyce
 // app.use('/clientes', verifyJWT, requireRole('CLIENTE'), createProxyMiddleware({ target: 'http://ms-cliente:3002', ...proxyOptions }));
