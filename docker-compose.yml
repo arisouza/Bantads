@@ -1,3 +1,5 @@
+version: '3.8'
+
 services:
   postgres:
     image: postgres:16
@@ -189,14 +191,17 @@ services:
     environment:
       PORT: 3000
       REDIS_URL: redis://redis:6379
+      RABBITMQ_URL: amqp://rabbitmq:5672
       AUTH_URL: http://ms-auth:3001
       CLIENTE_URL: http://ms-cliente:3002
       GERENTE_URL: http://ms-gerente:3003
       CONTA_URL: http://ms-conta:3004
+      JWT_SECRET: ${JWT_SECRET}
       NODE_OPTIONS: --max-old-space-size=192
     ports: ["3000:3000"]
     depends_on:
       redis: {condition: service_healthy}
+      rabbitmq: {condition: service_healthy}
       ms-auth: {condition: service_healthy}
       ms-cliente: {condition: service_healthy}
       ms-gerente: {condition: service_healthy}
@@ -208,6 +213,34 @@ services:
       timeout: 5s
       retries: 12
       start_period: 15s
+
+  saga:
+    build: {context: ./backend/saga}
+    container_name: bantads-saga
+    restart: unless-stopped
+    mem_limit: 128m
+    environment:
+      NODE_OPTIONS: --max-old-space-size=96
+      REDIS_URL: redis://redis:6379
+      RABBITMQ_URL: amqp://rabbitmq:5672
+    depends_on:
+      redis: {condition: service_healthy}
+      rabbitmq: {condition: service_healthy}
+    networks: [bantads-network]
+
+  ms-email:
+    build: {context: ./backend/ms-email}
+    container_name: bantads-ms-email
+    restart: unless-stopped
+    mem_limit: 128m
+    environment:
+      NODE_OPTIONS: --max-old-space-size=96
+      RABBITMQ_URL: amqp://rabbitmq:5672
+      EMAIL_USER: ${EMAIL_USER}
+      EMAIL_PASS: ${EMAIL_PASS}
+    depends_on:
+      rabbitmq: {condition: service_healthy}
+    networks: [bantads-network]
 
   frontend:
     build: {context: ./frontend}
