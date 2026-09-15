@@ -1,1 +1,150 @@
-<p>extrato works!</p>
+<main class="extrato">
+
+  <a
+      class="botao-voltar"
+      routerLink="/cliente"
+      aria-label="Voltar para a página inicial do cliente"
+  >
+      <span aria-hidden="true">←</span>
+          Voltar
+  </a>
+
+  <header class="extrato__cabecalho">
+    <div>
+      <h1>Extrato</h1>
+      <p>Consulte as movimentações da sua conta.</p>
+    </div>
+
+    @if (extrato) {
+      <div class="extrato__conta">
+        Conta <strong>{{ extrato.numeroConta }}</strong>
+      </div>
+    }
+  </header>
+
+  <form
+    class="filtros"
+    [formGroup]="formulario"
+    (ngSubmit)="consultarExtrato()"
+  >
+    <label class="campo">
+      <span>Data inicial</span>
+
+      <input
+        type="date"
+        formControlName="inicio"
+      >
+    </label>
+
+    <label class="campo">
+      <span>Data final</span>
+
+      <input
+        type="date"
+        formControlName="fim"
+      >
+    </label>
+
+    <button
+      type="submit"
+      [disabled]="carregando"
+    >
+      {{ carregando ? 'Consultando...' : 'Consultar' }}
+    </button>
+  </form>
+
+  @if (mensagemErro) {
+    <p class="mensagem mensagem--erro">
+      {{ mensagemErro }}
+    </p>
+  }
+
+  @if (carregando) {
+    <section class="estado">
+      <p>Carregando extrato...</p>
+    </section>
+  } @else if (diasDoExtrato.length > 0) {
+    <section class="linha-tempo">
+      @for (dia of diasDoExtrato; track dia.data) {
+        <article class="dia">
+          <header class="dia__cabecalho">
+            <h2>
+              {{ dia.data | date:'dd/MM/yyyy':'UTC' }}
+            </h2>
+
+            <div class="dia__saldo">
+              Saldo do dia:
+              <strong>
+                {{ dia.saldo | currency:'BRL':'symbol':'1.2-2' }}
+              </strong>
+            </div>
+          </header>
+
+          @if (dia.movimentacoes.length === 0) {
+            <p class="dia__vazio">
+              Nenhuma movimentação neste dia.
+            </p>
+          } @else {
+            <div class="movimentacoes">
+              @for (
+                movimentacao of dia.movimentacoes;
+                track movimentacao.id
+              ) {
+                <div
+                  class="movimentacao"
+                  [class.movimentacao--entrada]="
+                    movimentacaoAumentaSaldo(movimentacao)
+                  "
+                  [class.movimentacao--saida]="
+                    movimentacaoDiminuiSaldo(movimentacao)
+                  "
+                >
+                  <div class="movimentacao__informacoes">
+                    <strong>{{ movimentacao.tipo }}</strong>
+
+                    <span>
+                      {{ movimentacao.timestamp | date:'HH:mm' }}
+                    </span>
+
+                    @if (movimentacao.nomeOrigem) {
+                      <span>
+                        De: {{ movimentacao.nomeOrigem }}
+                      </span>
+                    }
+
+                    @if (movimentacao.nomeDestino) {
+                      <span>
+                        Para: {{ movimentacao.nomeDestino }}
+                      </span>
+                    }
+                  </div>
+
+                  <strong class="movimentacao__valor">
+                    @if (
+                      movimentacaoAumentaSaldo(movimentacao)
+                    ) {
+                      +
+                    } @else if (
+                      movimentacaoDiminuiSaldo(movimentacao)
+                    ) {
+                      -
+                    }
+
+                    {{
+                      movimentacao.valor
+                        | currency:'BRL':'symbol':'1.2-2'
+                    }}
+                  </strong>
+                </div>
+              }
+            </div>
+          }
+        </article>
+      }
+    </section>
+  } @else if (!mensagemErro) {
+    <section class="estado">
+      <p>Nenhum dado encontrado para o período.</p>
+    </section>
+  }
+</main>

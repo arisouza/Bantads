@@ -1,0 +1,150 @@
+:host {
+  display: block;
+  min-height: 100vh;
+}
+
+.transferencia-page {
+  min-height: 100vh;
+  padding: 48px 20px;
+
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+
+  background:
+    radial-gradient(
+      circle at top left,
+      rgba(71, 112, 255, 0.15),
+      transparent 32rem
+    ),
+    var(--color-background);
+}
+
+.transferencia-card {
+  width: min(100%, 680px);
+  padding: clamp(28px, 5vw, 48px);
+
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 20px 50px var(--color-shadow);
+}
+
+.transferencia-card__header {
+  margin-bottom: 30px;
+}
+
+.transferencia-card__eyebrow {
+  display: block;
+  margin-bottom: 8px;
+
+  color: var(--color-primary);
+  font-size: 0.82rem;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.transferencia-card__header h1 {
+  margin: 0 0 10px;
+
+  color: var(--color-text);
+  font-size: clamp(1.9rem, 5vw, 2.5rem);
+  line-height: 1.15;
+}
+
+.transferencia-card__header p {
+  margin: 0;
+
+  color: var(--color-text-muted);
+  line-height: 1.6;
+}
+
+.transferencia-loading {
+  padding: 18px;
+
+  color: var(--color-text-muted);
+  text-align: center;
+
+  background: var(--color-background);
+  border-radius: var(--radius-sm);
+}
+
+.conta-resumo {
+  margin-bottom: 30px;
+  padding: 20px;
+
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 20px;
+
+  color: #ffffff;
+  background: var(--color-primary);
+  border-radius: var(--radius-md);
+}
+
+.conta-resumo__item {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.conta-resumo__item span {
+  font-size: 0.85rem;
+  color: rgba(255, 255, 255, 0.78);
+}
+
+.conta-resumo__item strong {
+  font-size: 1.25rem;
+}
+
+.transferencia-form {
+  display: grid;
+  gap: 12px;
+}
+
+.transferencia-message {
+  margin: 8px 0;
+  padding: 14px 16px;
+
+  border-radius: var(--radius-sm);
+  line-height: 1.5;
+}
+
+.transferencia-message--success {
+  color: #17643a;
+  background: #e9f8ef;
+  border: 1px solid #a7dfbd;
+}
+
+.transferencia-message--error {
+  color: #942626;
+  background: #fff0f0;
+  border: 1px solid #f0b5b5;
+}
+
+.transferencia-form__submit {
+  width: 100%;
+  min-height: 54px;
+  margin-top: 8px;
+
+  border-radius: 9px;
+  font-weight: 700;
+}
+
+@media (max-width: 560px) {
+
+  .transferencia-page {
+    padding: 24px 16px;
+  }
+
+  .transferencia-card {
+    padding: 26px 20px;
+    border-radius: var(--radius-md);
+  }
+
+  .conta-resumo {
+    grid-template-columns: 1fr;
+    gap: 14px;
+  }
+}

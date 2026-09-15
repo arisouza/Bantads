@@ -2,20 +2,22 @@ import { Component, computed, OnInit, signal } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
-import Decimal from 'decimal.js';
+import { formatarMoeda } from '../../shared/utils/formatar-moeda';
 
 import { AuthenticatedLayoutComponent } from '../../shared/components/authenticated-layout/authenticated-layout';
 import { SidebarItem } from '../../shared/components/sidebar/sidebar';
 import { Conta } from '../../shared/models/conta';
 import { AuthService, LoginResponse } from '../../shared/services/auth';
 import { ContaService } from '../../shared/services/conta';
+import { RouterLink } from '@angular/router';
 
 @Component({
   imports: [
     AuthenticatedLayoutComponent,
     MatButtonModule,
     MatCardModule,
-    MatIconModule
+    MatIconModule,
+    RouterLink
   ],
   selector: 'app-cliente',
   styleUrl: './cliente.css',
@@ -27,7 +29,7 @@ export class Cliente implements OnInit {
   readonly conta = signal<Conta | null>(null);
   readonly saldoFormatado = computed(() => {
     const conta = this.conta();
-    return conta?.saldo ? this.formatarSaldo(conta.saldo) : null;
+    return conta?.saldo ? formatarMoeda(conta.saldo) : null;
   });
   readonly erro = signal<string | null>(null);
   readonly menuItems: SidebarItem[] = [
@@ -59,28 +61,5 @@ export class Cliente implements OnInit {
         this.erro.set('Não foi possível carregar os dados da conta.');
       }
     });
-  }
-
-  private formatarSaldo(saldo: string | null | undefined): string | null {
-    try {
-      if (typeof saldo !== 'string' || !saldo.trim()) {
-        return null;
-      }
-
-      const valor = new Decimal(saldo);
-      if (!valor.isFinite()) {
-        return null;
-      }
-
-      const [parteInteira, parteDecimal] = valor.toFixed(2).split('.');
-      const parteInteiraFormatada = parteInteira.replace(
-        /\B(?=(\d{3})+(?!\d))/g,
-        '.'
-      );
-
-      return `R$ ${parteInteiraFormatada},${parteDecimal}`;
-    } catch {
-      return null;
-    }
   }
 }

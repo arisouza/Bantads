@@ -53,3 +53,29 @@ img {
   max-width: 100%;
   display: block;
 }
+
+.botao-voltar {
+  width: fit-content;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 24px;
+  color: #4169e1;
+  font-size: 15px;
+  font-weight: 700;
+  text-decoration: none;
+  transition:
+    color 160ms ease,
+    transform 160ms ease;
+}
+
+.botao-voltar:hover {
+  color: #294dbd;
+  transform: translateX(-3px);
+}
+
+.botao-voltar:focus-visible {
+  border-radius: 6px;
+  outline: 3px solid rgb(65 105 225 / 25%);
+  outline-offset: 4px;
+}

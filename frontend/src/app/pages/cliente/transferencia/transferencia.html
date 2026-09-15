@@ -1,1 +1,158 @@
-<p>transferencia works!</p>
+<main class="transferencia-page">
+
+  <a
+  class="botao-voltar"
+  routerLink="/cliente"
+  aria-label="Voltar para a página inicial do cliente"
+>
+  <span aria-hidden="true">←</span>
+  Voltar
+</a>
+
+  <section class="transferencia-card">
+
+    <header class="transferencia-card__header">
+      <span class="transferencia-card__eyebrow">
+        Área do cliente
+      </span>
+
+      <h1>Realizar transferência</h1>
+
+      <p>
+        Informe a conta de destino e o valor que deseja
+        transferir.
+      </p>
+    </header>
+
+    @if (carregandoConta) {
+      <p class="transferencia-loading">
+        Carregando os dados da conta...
+      </p>
+    }
+
+    @if (conta) {
+      <section class="conta-resumo">
+
+        <div class="conta-resumo__item">
+          <span>Conta de origem</span>
+          <strong>{{ conta.numeroConta }}</strong>
+        </div>
+
+        <div class="conta-resumo__item">
+          <span>Saldo disponível</span>
+          <strong>{{ formatarMoeda(conta.saldo) || '—' }}</strong>
+        </div>
+
+      </section>
+    }
+
+    <form
+      class="transferencia-form"
+      [formGroup]="formulario"
+      (ngSubmit)="transferir()"
+      novalidate
+    >
+
+      <mat-form-field appearance="outline">
+        <mat-label>Conta de destino</mat-label>
+
+        <input
+          matInput
+          formControlName="contaDestino"
+          inputmode="numeric"
+          maxlength="4"
+          placeholder="0000"
+          autocomplete="off"
+        />
+
+        <mat-hint>
+          Informe os quatro dígitos da conta.
+        </mat-hint>
+
+        @if (
+          formulario.controls.contaDestino.touched &&
+          formulario.controls.contaDestino.hasError('required')
+        ) {
+          <mat-error>
+            A conta de destino é obrigatória.
+          </mat-error>
+        }
+
+        @if (
+          formulario.controls.contaDestino.touched &&
+          formulario.controls.contaDestino.hasError('pattern')
+        ) {
+          <mat-error>
+            A conta deve possuir exatamente quatro números.
+          </mat-error>
+        }
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Valor</mat-label>
+
+        <span matTextPrefix>R$&nbsp;</span>
+
+        <input
+          matInput
+          formControlName="valor"
+          inputmode="decimal"
+          placeholder="0,00"
+          autocomplete="off"
+        />
+
+        @if (
+          formulario.controls.valor.touched &&
+          formulario.controls.valor.hasError('required')
+        ) {
+          <mat-error>
+            O valor é obrigatório.
+          </mat-error>
+        }
+
+        @if (
+          formulario.controls.valor.touched &&
+          formulario.controls.valor.hasError('pattern')
+        ) {
+          <mat-error>
+            Informe um valor válido. Exemplo: 150,00.
+          </mat-error>
+        }
+      </mat-form-field>
+
+      @if (mensagemSucesso) {
+        <p
+          class="transferencia-message transferencia-message--success"
+          role="status"
+        >
+          {{ mensagemSucesso }}
+        </p>
+      }
+
+      @if (mensagemErro) {
+        <p
+          class="transferencia-message transferencia-message--error"
+          role="alert"
+        >
+          {{ mensagemErro }}
+        </p>
+      }
+
+      <button
+        class="transferencia-form__submit"
+        mat-flat-button
+        type="submit"
+        [disabled]="processando || carregandoConta || !conta"
+      >
+        {{
+          processando
+            ? 'Transferindo...'
+            : 'Confirmar transferência'
+        }}
+      </button>
+
+    </form>
+
+  </section>
+
+</main>

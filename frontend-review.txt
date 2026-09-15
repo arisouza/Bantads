@@ -1,0 +1,3015 @@
+﻿===== ARQUIVO: frontend/package.json =====
+{
+  "name": "ban-tads",
+  "version": "0.0.0",
+  "scripts": {
+    "ng": "ng",
+    "start": "ng serve",
+    "build": "ng build",
+    "watch": "ng build --watch --configuration development",
+    "test": "ng test"
+  },
+  "private": true,
+  "packageManager": "npm@11.17.0",
+  "dependencies": {
+    "@angular/animations": "^22.1.3",
+    "@angular/cdk": "^22.1.0",
+    "@angular/common": "^22.1.0",
+    "@angular/compiler": "^22.1.0",
+    "@angular/core": "^22.1.0",
+    "@angular/forms": "^22.1.0",
+    "@angular/material": "^22.1.0",
+    "@angular/platform-browser": "^22.1.0",
+    "@angular/router": "^22.1.0",
+    "decimal.js": "^10.6.0",
+    "luxon": "^3.7.2",
+    "rxjs": "~7.8.0",
+    "tslib": "^2.3.0",
+    "zone.js": "^0.16.2"
+  },
+  "devDependencies": {
+    "@angular/build": "^22.1.5",
+    "@angular/cli": "^22.1.5",
+    "@angular/compiler-cli": "^22.1.0",
+    "@types/decimal.js": "^0.0.32",
+    "@types/luxon": "^3.7.5",
+    "jsdom": "^28.0.0",
+    "prettier": "^3.8.1",
+    "typescript": "~6.0.2",
+    "vitest": "^4.0.8"
+  }
+}
+
+===== ARQUIVO: frontend/angular.json =====
+{
+  "$schema": "./node_modules/@angular/cli/lib/config/schema.json",
+  "version": 1,
+  "cli": {
+    "packageManager": "npm",
+    "analytics": false
+  },
+  "newProjectRoot": "projects",
+  "projects": {
+    "banTADS": {
+      "projectType": "application",
+      "schematics": {},
+      "root": "",
+      "sourceRoot": "src",
+      "prefix": "app",
+      "architect": {
+        "build": {
+          "builder": "@angular/build:application",
+          "options": {
+            "browser": "src/main.ts",
+            "tsConfig": "tsconfig.app.json",
+            "polyfills": [
+              "zone.js"
+            ],
+            "assets": [
+              {
+                "glob": "**/*",
+                "input": "public"
+              }
+            ],
+            "styles": [
+              "src/material-theme.scss",
+              "src/styles.css"
+            ]
+          },
+          "configurations": {
+            "production": {
+              "budgets": [
+                {
+                  "type": "initial",
+                  "maximumWarning": "500kB",
+                  "maximumError": "1MB"
+                },
+                {
+                  "type": "anyComponentStyle",
+                  "maximumWarning": "4kB",
+                  "maximumError": "8kB"
+                }
+              ],
+              "outputHashing": "all"
+            },
+            "development": {
+              "optimization": false,
+              "extractLicenses": false,
+              "sourceMap": true
+            }
+          },
+          "defaultConfiguration": "production"
+        },
+        "serve": {
+          "builder": "@angular/build:dev-server",
+          "configurations": {
+            "production": {
+              "buildTarget": "banTADS:build:production"
+            },
+            "development": {
+              "buildTarget": "banTADS:build:development"
+            }
+          },
+          "defaultConfiguration": "development"
+        },
+        "test": {
+          "builder": "@angular/build:unit-test"
+        }
+      }
+    }
+  }
+}
+
+===== ARQUIVO: C:\Users\Admin\Desktop\bantads\Bantads\frontend\src\index.html =====
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>BanTADS</title>
+  <base href="/">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="icon" type="image/x-icon" href="/favicon.ico?v=2">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+</head>
+<body>
+  <app-root></app-root>
+</body>
+</html>
+
+===== ARQUIVO: C:\Users\Admin\Desktop\bantads\Bantads\frontend\src\main.ts =====
+import { bootstrapApplication } from '@angular/platform-browser';
+import { appConfig } from './app/app.config';
+import { App } from './app/app';
+
+bootstrapApplication(App, appConfig)
+  .catch((err) => console.error(err));
+
+===== ARQUIVO: C:\Users\Admin\Desktop\bantads\Bantads\frontend\src\material-theme.scss =====
+@use '@angular/material' as mat;
+
+$bantads-theme: mat.define-theme((
+  color: (
+    theme-type: light,
+    primary: mat.$blue-palette,
+    tertiary: mat.$azure-palette,
+  ),
+  density: (
+    scale: 0,
+  ),
+));
+
+@include mat.core();
+
+html {
+  @include mat.all-component-themes($bantads-theme);
+}
+
+===== ARQUIVO: C:\Users\Admin\Desktop\bantads\Bantads\frontend\src\styles.css =====
+:root {
+  --color-primary: #4770ff;
+  --color-primary-soft: #5f82ff;
+  --color-background: #f5f7ff;
+  --color-surface: #ffffff;
+  --color-text: #172033;
+  --color-text-muted: #5c6780;
+  --color-border: #d7def2;
+  --color-shadow: rgba(19, 36, 84, 0.12);
+  --radius-lg: 24px;
+  --radius-md: 16px;
+  --radius-sm: 12px;
+  --container-width: 1180px;
+  --font-family-base: "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  font-size: 16px;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  min-height: 100vh;
+  font-family: var(--font-family-base);
+  background: var(--color-background);
+  color: var(--color-text);
+}
+
+button,
+input,
+textarea,
+select {
+  font: inherit;
+}
+
+button {
+  cursor: pointer;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+img {
+  max-width: 100%;
+  display: block;
+}
+
+===== ARQUIVO: C:\Users\Admin\Desktop\bantads\Bantads\frontend\src\app\app.config.ts =====
+import { ApplicationConfig, provideZoneChangeDetection } from '@angular/core';
+import { provideRouter } from '@angular/router';
+import { provideHttpClient, withInterceptors } from '@angular/common/http';
+import { provideAnimationsAsync } from '@angular/platform-browser/animations/async';
+
+import { routes } from './app.routes';
+import { authInterceptor } from './shared/interceptors/auth-interceptor';
+
+export const appConfig: ApplicationConfig = {
+  providers: [
+    provideZoneChangeDetection({ eventCoalescing: true }),
+    provideAnimationsAsync(),
+    provideRouter(routes),
+    provideHttpClient(
+      withInterceptors([authInterceptor]) // Registra o interceptor do JWT
+    )
+  ]
+};
+
+===== ARQUIVO: C:\Users\Admin\Desktop\bantads\Bantads\frontend\src\app\app.css =====
+:host {
+  display: block;
+  min-height: 100vh;
+}
+
+===== ARQUIVO: C:\Users\Admin\Desktop\bantads\Bantads\frontend\src\app\app.html =====
+<router-outlet />
+
+===== ARQUIVO: C:\Users\Admin\Desktop\bantads\Bantads\frontend\src\app\app.routes.ts =====
+import { Routes } from '@angular/router';
+import { authGuard } from './shared/guards/auth.guard';
+
+// AutenticaÃ§Ã£o / pÃºblico
+import { Login } from './pages/login/login';
+import { Autocadastro } from './pages/autocadastro/autocadastro';
+
+// Cliente 
+import { Cliente } from './pages/cliente/cliente';
+import { Deposito } from './pages/cliente/deposito/deposito';
+import { Saque } from './pages/cliente/saque/saque';
+import { Transferencia } from './pages/cliente/transferencia/transferencia';
+import { Extrato } from './pages/cliente/extrato/extrato';
+
+// Gerente
+import { Gerente } from './pages/gerente/gerente';
+import { Clientes } from './pages/gerente/clientes/clientes';
+import { Gerentes } from './pages/gerente/gerentes/gerentes';
+import { Relatorio } from './pages/gerente/relatorio/relatorio';
+
+export const routes: Routes = [
+  { path: '', redirectTo: 'login', pathMatch: 'full' },
+  { path: 'login', component: Login },
+  { path: 'autocadastro', component: Autocadastro },
+
+  // Rotas do cliente
+  { path: 'cliente', component: Cliente, canActivate: [authGuard], data: { roles: ['CLIENTE'] } }, // tela inicial com saldo (R3)
+  { path: 'cliente/deposito', component: Deposito, canActivate: [authGuard], data: { roles: ['CLIENTE'] } }, // R4
+  { path: 'cliente/saque', component: Saque, canActivate: [authGuard], data: { roles: ['CLIENTE'] } }, // R5
+  { path: 'cliente/transferencia', component: Transferencia, canActivate: [authGuard], data: { roles: ['CLIENTE'] } }, // R6
+  { path: 'cliente/extrato', component: Extrato, canActivate: [authGuard], data: { roles: ['CLIENTE'] } }, // R7
+   
+  // Rotas do gerente
+  { path: 'gerente', component: Gerente, canActivate: [authGuard], data: { roles: ['GERENTE'] } }, // tela inicial / solicitaÃ§Ãµes (R8, R9, R10)
+  { path: 'gerente/clientes', component: Clientes, canActivate: [authGuard], data: { roles: ['GERENTE'] } }, // consultar todos (R11)
+  { path: 'gerente/gerentes', component: Gerentes, canActivate: [authGuard], data: { roles: ['GERENTE'] } }, // CRUD gerentes (R12, R13, R14, R15)
+  { path: 'gerente/relatorios', component: Relatorio, canActivate: [authGuard], data: { roles: ['GERENTE'] } }, // relatÃ³rio de clientes (R16)
+
+  { path: '**', redirectTo: 'login' }
+];
+
+===== ARQUIVO: C:\Users\Admin\Desktop\bantads\Bantads\frontend\src\app\app.spec.ts =====
+import { TestBed } from '@angular/core/testing';
+import { App } from './app';
+
+describe('App', () => {
+  beforeEach(async () => {
+    await TestBed.configureTestingModule({
+      imports: [App],
+    })
+      .compileComponents();
+  });
+
+  it('should create the app', () => {
+    const fixture = TestBed.createComponent(App);
+    const app = fixture.componentInstance;
+    expect(app).toBeTruthy();
+  });
+
+  it('should render title', async () => {
+    const fixture = TestBed.createComponent(App);
+    await fixture.whenStable();
+    const compiled = fixture.nativeElement as HTMLElement;
+    expect(compiled.querySelector('h1')?.textContent).toContain('Hello, banTADS');
+  });
+});
+
+===== ARQUIVO: C:\Users\Admin\Desktop\bantads\Bantads\frontend\src\app\app.ts =====
+import { Component, signal } from '@angular/core';
+import { RouterOutlet } from '@angular/router';
+
+@Component({
+  imports: [RouterOutlet],
+  selector: 'app-root',
+  styleUrl: './app.css',
+  templateUrl: './app.html',
+})
+export class App {
+  protected readonly title = signal('banTADS');
+}
+
+===== ARQUIVO: C:\Users\Admin\Desktop\bantads\Bantads\frontend\src\app\pages\autocadastro\autocadastro.css =====
+:host {
+  display: block;
+  min-height: 100vh;
+}
+
+.autocadastro-page {
+  min-height: 100vh;
+  padding: 32px clamp(20px, 5vw, 72px) 64px;
+
+  background:
+    radial-gradient(
+      circle at top left,
+      rgba(71, 112, 255, 0.16),
+      transparent 34rem
+    ),
+    var(--color-background);
+}
+
+/* CabeÃ§alho */
+
+.autocadastro-header {
+  width: min(100%, 980px);
+  margin: 0 auto 32px;
+
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+}
+
+.autocadastro-header__brand {
+  color: var(--color-primary);
+  font-size: 1.5rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+}
+
+.autocadastro-header__login {
+  color: var(--color-primary);
+  font-weight: 700;
+}
+
+.autocadastro-header__login:hover {
+  text-decoration: underline;
+}
+
+/* Card principal */
+
+.autocadastro-card {
+  width: min(100%, 980px);
+  margin: 0 auto;
+
+  padding: clamp(28px, 5vw, 56px);
+
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+
+  background: var(--color-surface);
+  box-shadow: 0 20px 50px var(--color-shadow);
+}
+
+/* TÃ­tulo */
+
+.autocadastro-card__heading {
+  max-width: 700px;
+  margin-bottom: 36px;
+}
+
+.autocadastro-card__eyebrow {
+  display: block;
+  margin-bottom: 8px;
+
+  color: var(--color-primary);
+  font-size: 0.82rem;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.autocadastro-card__heading h1 {
+  margin: 0 0 12px;
+
+  color: var(--color-text);
+  font-size: clamp(2rem, 5vw, 2.75rem);
+  line-height: 1.15;
+}
+
+.autocadastro-card__heading p {
+  margin: 0;
+
+  color: var(--color-text-muted);
+  line-height: 1.65;
+}
+
+/* FormulÃ¡rio */
+
+.autocadastro-form h2 {
+  margin: 32px 0 18px;
+
+  color: var(--color-text);
+  font-size: 1.1rem;
+}
+
+.autocadastro-form__grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px 20px;
+}
+
+.span-2 {
+  grid-column: span 2;
+}
+
+/* Mensagens */
+
+.autocadastro-message {
+  margin: 24px 0 0;
+  padding: 14px 16px;
+
+  border-radius: var(--radius-sm);
+  line-height: 1.5;
+}
+
+.autocadastro-message--success {
+  color: #17643a;
+  background: #e9f8ef;
+  border: 1px solid #a7dfbd;
+}
+
+.autocadastro-message--error {
+  color: #942626;
+  background: #fff0f0;
+  border: 1px solid #f0b5b5;
+}
+
+/* BotÃ£o */
+
+.autocadastro-form__submit {
+  width: 100%;
+  min-height: 54px;
+  margin-top: 28px;
+
+  border-radius: 9px;
+  font-weight: 700;
+}
+
+/* Celular */
+
+@media (max-width: 680px) {
+
+  .autocadastro-page {
+    padding: 24px 16px 40px;
+  }
+
+  .autocadastro-header {
+    margin-bottom: 24px;
+  }
+
+  .autocadastro-header__login {
+    font-size: 0.9rem;
+  }
+
+  .autocadastro-card {
+    padding: 26px 20px;
+    border-radius: var(--radius-md);
+  }
+
+  .autocadastro-form__grid {
+    grid-template-columns: 1fr;
+  }
+
+  .span-2 {
+    grid-column: auto;
+  }
+}
+
+===== ARQUIVO: C:\Users\Admin\Desktop\bantads\Bantads\frontend\src\app\pages\autocadastro\autocadastro.html =====
+<main class="autocadastro-page">
+
+  <header class="autocadastro-header">
+    <a
+      class="autocadastro-header__brand"
+      routerLink="/login"
+    >
+      BANTADS
+    </a>
+
+    <a
+      class="autocadastro-header__login"
+      routerLink="/login"
+    >
+      Voltar para o login
+    </a>
+  </header>
+
+  <section class="autocadastro-card">
+
+    <div class="autocadastro-card__heading">
+      <span class="autocadastro-card__eyebrow">
+        Abra sua conta
+      </span>
+
+      <h1>SolicitaÃ§Ã£o de autocadastro</h1>
+
+      <p>
+        Preencha seus dados. ApÃ³s o envio, um gerente
+        analisarÃ¡ sua solicitaÃ§Ã£o.
+      </p>
+    </div>
+
+    <form
+      class="autocadastro-form"
+      [formGroup]="formulario"
+      (ngSubmit)="solicitarCadastro()"
+      novalidate
+    >
+
+      <h2>Dados pessoais</h2>
+
+      <div class="autocadastro-form__grid">
+
+        <mat-form-field
+          class="span-2"
+          appearance="outline"
+        >
+          <mat-label>Nome completo</mat-label>
+
+          <input
+            matInput
+            formControlName="nome"
+            autocomplete="name"
+          />
+
+          @if (
+            formulario.controls.nome.touched &&
+            formulario.controls.nome.invalid
+          ) {
+            <mat-error>
+              Informe seu nome completo.
+            </mat-error>
+          }
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>CPF</mat-label>
+
+          <input
+            matInput
+            formControlName="cpf"
+            inputmode="numeric"
+            maxlength="11"
+            placeholder="Somente nÃºmeros"
+          />
+
+          @if (
+            formulario.controls.cpf.touched &&
+            formulario.controls.cpf.invalid
+          ) {
+            <mat-error>
+              Informe os 11 nÃºmeros do CPF.
+            </mat-error>
+          }
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Telefone</mat-label>
+
+          <input
+            matInput
+            formControlName="telefone"
+            inputmode="tel"
+            maxlength="11"
+            placeholder="DDD + nÃºmero"
+            autocomplete="tel"
+          />
+
+          @if (
+            formulario.controls.telefone.touched &&
+            formulario.controls.telefone.invalid
+          ) {
+            <mat-error>
+              Informe um telefone com DDD.
+            </mat-error>
+          }
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>E-mail</mat-label>
+
+          <input
+            matInput
+            formControlName="email"
+            type="email"
+            autocomplete="email"
+          />
+
+          @if (
+            formulario.controls.email.touched &&
+            formulario.controls.email.invalid
+          ) {
+            <mat-error>
+              Informe um e-mail vÃ¡lido.
+            </mat-error>
+          }
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>SalÃ¡rio</mat-label>
+
+          <span matTextPrefix>R$&nbsp;</span>
+
+          <input
+            matInput
+            formControlName="salario"
+            inputmode="decimal"
+            placeholder="0,00"
+          />
+
+          @if (
+            formulario.controls.salario.touched &&
+            formulario.controls.salario.invalid
+          ) {
+            <mat-error>
+              Informe um salÃ¡rio vÃ¡lido.
+            </mat-error>
+          }
+        </mat-form-field>
+
+      </div>
+
+      <h2>EndereÃ§o</h2>
+
+      <div class="autocadastro-form__grid">
+
+        <mat-form-field
+          class="span-2"
+          appearance="outline"
+        >
+          <mat-label>Logradouro</mat-label>
+
+          <input
+            matInput
+            formControlName="logradouro"
+            autocomplete="address-line1"
+          />
+
+          @if (
+            formulario.controls.logradouro.touched &&
+            formulario.controls.logradouro.invalid
+          ) {
+            <mat-error>
+              Informe o logradouro.
+            </mat-error>
+          }
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>NÃºmero</mat-label>
+
+          <input
+            matInput
+            formControlName="numero"
+          />
+
+          @if (
+            formulario.controls.numero.touched &&
+            formulario.controls.numero.invalid
+          ) {
+            <mat-error>
+              Informe o nÃºmero.
+            </mat-error>
+          }
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Complemento</mat-label>
+
+          <input
+            matInput
+            formControlName="complemento"
+            placeholder="Opcional"
+          />
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>CEP</mat-label>
+
+          <input
+            matInput
+            formControlName="cep"
+            inputmode="numeric"
+            maxlength="8"
+            placeholder="Somente nÃºmeros"
+            autocomplete="postal-code"
+          />
+
+          @if (
+            formulario.controls.cep.touched &&
+            formulario.controls.cep.invalid
+          ) {
+            <mat-error>
+              Informe os 8 nÃºmeros do CEP.
+            </mat-error>
+          }
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Cidade</mat-label>
+
+          <input
+            matInput
+            formControlName="cidade"
+            autocomplete="address-level2"
+          />
+
+          @if (
+            formulario.controls.cidade.touched &&
+            formulario.controls.cidade.invalid
+          ) {
+            <mat-error>
+              Informe a cidade.
+            </mat-error>
+          }
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>UF</mat-label>
+
+          <mat-select formControlName="uf">
+            @for (estado of estados; track estado) {
+              <mat-option [value]="estado">
+                {{ estado }}
+              </mat-option>
+            }
+          </mat-select>
+
+          @if (
+            formulario.controls.uf.touched &&
+            formulario.controls.uf.invalid
+          ) {
+            <mat-error>
+              Selecione a UF.
+            </mat-error>
+          }
+        </mat-form-field>
+
+      </div>
+
+      @if (mensagemSucesso) {
+        <p
+          class="autocadastro-message autocadastro-message--success"
+          role="status"
+        >
+          {{ mensagemSucesso }}
+        </p>
+      }
+
+      @if (mensagemErro) {
+        <p
+          class="autocadastro-message autocadastro-message--error"
+          role="alert"
+        >
+          {{ mensagemErro }}
+        </p>
+      }
+
+      <button
+        class="autocadastro-form__submit"
+        mat-flat-button
+        type="submit"
+        [disabled]="enviando"
+      >
+        {{ enviando ? 'Enviando...' : 'Enviar solicitaÃ§Ã£o' }}
+      </button>
+
+    </form>
+
+  </section>
+
+</main>
+
+===== ARQUIVO: C:\Users\Admin\Desktop\bantads\Bantads\frontend\src\app\pages\autocadastro\autocadastro.spec.ts =====
+import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { Autocadastro } from './autocadastro';
+
+describe('Autocadastro', () => {
+  let component: Autocadastro;
+  let fixture: ComponentFixture<Autocadastro>;
+
+  beforeEach(async () => {
+    await TestBed.configureTestingModule({
+      imports: [Autocadastro],
+    }).compileComponents();
+
+    fixture = TestBed.createComponent(Autocadastro);
+    component = fixture.componentInstance;
+    await fixture.whenStable();
+  });
+
+  it('should create', () => {
+    expect(component).toBeTruthy();
+  });
+});
+
+===== ARQUIVO: C:\Users\Admin\Desktop\bantads\Bantads\frontend\src\app\pages\autocadastro\autocadastro.ts =====
+import { Component } from '@angular/core';
+import {
+  FormBuilder,
+  ReactiveFormsModule,
+  Validators
+} from '@angular/forms';
+import { MatButtonModule } from '@angular/material/button';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatInputModule } from '@angular/material/input';
+import { MatSelectModule } from '@angular/material/select';
+import { RouterLink } from '@angular/router';
+import Decimal from 'decimal.js';
+
+import {
+  ClienteService,
+  SolicitacaoAutocadastro
+} from '../../shared/services/cliente';
+
+@Component({
+  selector: 'app-autocadastro',
+  imports: [
+    ReactiveFormsModule,
+    RouterLink,
+    MatButtonModule,
+    MatFormFieldModule,
+    MatInputModule,
+    MatSelectModule
+  ],
+  templateUrl: './autocadastro.html',
+  styleUrl: './autocadastro.css'
+})
+export class Autocadastro {
+
+  readonly estados = [
+    'AC', 'AL', 'AP', 'AM', 'BA', 'CE', 'DF',
+    'ES', 'GO', 'MA', 'MT', 'MS', 'MG', 'PA',
+    'PB', 'PR', 'PE', 'PI', 'RJ', 'RN', 'RS',
+    'RO', 'RR', 'SC', 'SP', 'SE', 'TO'
+  ];
+
+  enviando = false;
+  mensagemSucesso = '';
+  mensagemErro = '';
+
+  readonly formulario;
+
+  constructor(
+    private formBuilder: FormBuilder,
+    private clienteService: ClienteService
+  ) {
+    this.formulario = this.formBuilder.nonNullable.group({
+      nome: [
+        '',
+        [Validators.required, Validators.minLength(3)]
+      ],
+
+      email: [
+        '',
+        [Validators.required, Validators.email]
+      ],
+
+      cpf: [
+        '',
+        [Validators.required, Validators.pattern(/^\d{11}$/)]
+      ],
+
+      telefone: [
+        '',
+        [Validators.required, Validators.pattern(/^\d{10,11}$/)]
+      ],
+
+      salario: [
+        '',
+        [
+          Validators.required,
+          Validators.pattern(/^\d+(?:[.,]\d{1,2})?$/)
+        ]
+      ],
+
+      logradouro: ['', Validators.required],
+      numero: ['', Validators.required],
+      complemento: [''],
+
+      cep: [
+        '',
+        [Validators.required, Validators.pattern(/^\d{8}$/)]
+      ],
+
+      cidade: ['', Validators.required],
+
+      uf: [
+        '',
+        [
+          Validators.required,
+          Validators.pattern(/^[A-Z]{2}$/)
+        ]
+      ]
+    });
+  }
+
+  solicitarCadastro(): void {
+    this.mensagemSucesso = '';
+    this.mensagemErro = '';
+
+    if (this.formulario.invalid) {
+      this.formulario.markAllAsTouched();
+      return;
+    }
+
+    const dados = this.formulario.getRawValue();
+
+    const solicitacao: SolicitacaoAutocadastro = {
+      ...dados,
+
+      nome: dados.nome.trim(),
+
+      email: dados.email
+        .trim()
+        .toLowerCase(),
+
+      salario: new Decimal(
+        dados.salario.replace(',', '.')
+      ).toFixed(2),
+
+      logradouro: dados.logradouro.trim(),
+      numero: dados.numero.trim(),
+      complemento: dados.complemento.trim(),
+      cidade: dados.cidade.trim(),
+      uf: dados.uf.toUpperCase()
+    };
+
+    this.enviando = true;
+    this.formulario.disable();
+
+    this.clienteService
+      .solicitarAutocadastro(solicitacao)
+      .subscribe({
+        next: (resposta) => {
+          this.mensagemSucesso =
+            resposta.mensagem ??
+            'SolicitaÃ§Ã£o enviada com sucesso! Aguarde a anÃ¡lise de um gerente.';
+
+          this.formulario.reset();
+        },
+
+        error: (erro) => {
+          if (erro.status === 409) {
+            this.mensagemErro =
+              erro.error?.message ??
+              erro.error?.mensagem ??
+              'CPF ou e-mail jÃ¡ cadastrado.';
+          } else {
+            this.mensagemErro =
+              'NÃ£o foi possÃ­vel enviar a solicitaÃ§Ã£o. Tente novamente.';
+          }
+
+          this.finalizarEnvio();
+        },
+
+        complete: () => {
+          this.finalizarEnvio();
+        }
+      });
+  }
+
+  private finalizarEnvio(): void {
+    this.enviando = false;
+    this.formulario.enable();
+  }
+}
+
+===== ARQUIVO: C:\Users\Admin\Desktop\bantads\Bantads\frontend\src\app\pages\cliente\cliente.css =====
+:host {
+  display: block;
+}
+
+.cliente-page {
+  width: min(100% - 40px, var(--container-width));
+  margin: 0 auto;
+  padding: 56px 0 72px;
+}
+
+.cliente-page--state {
+  min-height: calc(100vh - 64px);
+  display: grid;
+  place-items: center;
+}
+
+.cliente-header {
+  margin-bottom: 32px;
+}
+
+.cliente-eyebrow {
+  margin: 0 0 8px;
+  color: var(--color-primary);
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.cliente-header h1 {
+  margin: 0 0 10px;
+  color: var(--color-text);
+  font-size: clamp(2rem, 4vw, 2.8rem);
+  line-height: 1.15;
+  font-weight: 650;
+}
+
+.cliente-subtitle {
+  margin: 0;
+  color: var(--color-text-muted);
+  font-size: 1rem;
+  line-height: 1.6;
+}
+
+.conta-card {
+  overflow: hidden;
+  border: 0;
+  border-radius: var(--radius-lg);
+  background: linear-gradient(135deg, var(--color-primary), #3657d9);
+  color: #ffffff;
+  box-shadow: 0 18px 40px rgba(71, 112, 255, 0.22);
+}
+
+.conta-card__content {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 32px;
+  padding: 32px 36px;
+}
+
+.conta-card__detail {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.conta-card__detail--balance {
+  align-items: flex-end;
+  text-align: right;
+}
+
+.conta-card__label {
+  color: rgba(255, 255, 255, 0.78);
+  font-size: 0.85rem;
+}
+
+.conta-card__number {
+  font-size: clamp(1.45rem, 3vw, 2rem);
+  letter-spacing: 0.06em;
+}
+
+.conta-card__balance {
+  font-size: clamp(1.55rem, 3vw, 2.2rem);
+  font-weight: 650;
+}
+
+.operacoes {
+  margin-top: 48px;
+}
+
+.operacoes__header {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 24px;
+  margin-bottom: 20px;
+}
+
+.operacoes__header h2 {
+  margin: 0;
+  color: var(--color-text);
+  font-size: 1.55rem;
+}
+
+.operacoes__header > p {
+  margin: 0 0 2px;
+  color: var(--color-text-muted);
+  font-size: 0.9rem;
+}
+
+.operacoes__grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.operacao-card {
+  min-height: 190px;
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+  padding: 22px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  color: var(--color-text);
+  box-shadow: 0 8px 22px rgba(19, 36, 84, 0.05);
+  transition: border-color 160ms ease, box-shadow 160ms ease, transform 160ms ease;
+}
+
+.operacao-card:hover,
+.operacao-card:focus-visible {
+  border-color: var(--color-primary-soft);
+  box-shadow: 0 14px 28px rgba(19, 36, 84, 0.11);
+  outline: none;
+  transform: translateY(-3px);
+}
+
+.operacao-card__icon {
+  width: 44px;
+  height: 44px;
+  display: grid;
+  place-items: center;
+  border-radius: 14px;
+}
+
+.operacao-card__icon mat-icon {
+  font-size: 24px;
+}
+
+.operacao-card__icon--deposito {
+  background: #e7f7ef;
+  color: #15945b;
+}
+
+.operacao-card__icon--saque {
+  background: #fff0ee;
+  color: #d85b50;
+}
+
+.operacao-card__icon--transferencia {
+  background: #eaf0ff;
+  color: var(--color-primary);
+}
+
+.operacao-card__icon--extrato {
+  background: #f3edff;
+  color: #8054c7;
+}
+
+.operacao-card__body {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.operacao-card__body strong {
+  font-size: 1rem;
+}
+
+.operacao-card__body span {
+  color: var(--color-text-muted);
+  font-size: 0.82rem;
+  line-height: 1.45;
+}
+
+.operacao-card__arrow {
+  align-self: flex-end;
+  color: var(--color-primary);
+  font-size: 20px;
+}
+
+.cliente-state {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 20px 24px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  color: var(--color-text-muted);
+  box-shadow: 0 8px 22px rgba(19, 36, 84, 0.05);
+}
+
+.cliente-state p {
+  margin: 0;
+}
+
+.cliente-state mat-icon {
+  color: var(--color-primary);
+}
+
+.cliente-state--error {
+  color: #b33f36;
+  border-color: #f0c4c0;
+  background: #fff8f7;
+}
+
+.cliente-state--error mat-icon {
+  color: #d85b50;
+}
+
+@media (max-width: 900px) {
+  .operacoes__grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 600px) {
+  .cliente-page {
+    width: min(100% - 28px, var(--container-width));
+    padding: 36px 0 48px;
+  }
+
+  .conta-card__content {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 24px;
+    padding: 26px 24px;
+  }
+
+  .conta-card__detail--balance {
+    align-items: flex-start;
+    text-align: left;
+  }
+
+  .operacoes {
+    margin-top: 36px;
+  }
+
+  .operacoes__header {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .operacoes__grid {
+    grid-template-columns: 1fr;
+  }
+
+  .operacao-card {
+    min-height: auto;
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    align-items: center;
+    gap: 14px;
+    padding: 18px;
+  }
+}
+
+===== ARQUIVO: C:\Users\Admin\Desktop\bantads\Bantads\frontend\src\app\pages\cliente\cliente.html =====
+<app-authenticated-layout [menuItems]="menuItems">
+  <div class="cliente-page">
+    @if (erro()) {
+      <section class="cliente-state cliente-state--error" aria-live="assertive">
+        <mat-icon aria-hidden="true">error_outline</mat-icon>
+        <p>{{ erro() }}</p>
+      </section>
+    }
+
+  <section class="cliente-header">
+    <div>
+      <p class="cliente-eyebrow">VisÃ£o geral da conta</p>
+      <h1>OlÃ¡, {{ usuario?.nome || 'Cliente' }}!</h1>
+      <p class="cliente-subtitle">
+        Confira os dados da sua conta e acesse suas operaÃ§Ãµes.
+      </p>
+    </div>
+  </section>
+
+  <mat-card class="conta-card">
+    <mat-card-content class="conta-card__content">
+      <div class="conta-card__detail">
+        <span class="conta-card__label">Conta</span>
+        <strong class="conta-card__number">{{ conta()?.numeroConta || 'â€”' }}</strong>
+      </div>
+
+      <div class="conta-card__detail conta-card__detail--balance">
+        <span class="conta-card__label">Saldo atual</span>
+        <strong class="conta-card__balance">{{ saldoFormatado() || 'â€”' }}</strong>
+      </div>
+    </mat-card-content>
+  </mat-card>
+
+  <section class="operacoes" aria-labelledby="operacoes-title">
+    <div class="operacoes__header">
+      <div>
+        <p class="cliente-eyebrow">Acesso rÃ¡pido</p>
+        <h2 id="operacoes-title">OperaÃ§Ãµes</h2>
+      </div>
+      <p>Escolha uma operaÃ§Ã£o para continuar.</p>
+    </div>
+
+    <div class="operacoes__grid">
+      <a class="operacao-card" routerLink="/cliente/deposito">
+        <span class="operacao-card__icon operacao-card__icon--deposito">
+          <mat-icon aria-hidden="true">add_circle</mat-icon>
+        </span>
+        <span class="operacao-card__body">
+          <strong>Depositar</strong>
+          <span>Adicione dinheiro Ã  sua conta</span>
+        </span>
+        <mat-icon class="operacao-card__arrow" aria-hidden="true">arrow_forward</mat-icon>
+      </a>
+
+      <a class="operacao-card" routerLink="/cliente/saque">
+        <span class="operacao-card__icon operacao-card__icon--saque">
+          <mat-icon aria-hidden="true">remove_circle</mat-icon>
+        </span>
+        <span class="operacao-card__body">
+          <strong>Sacar</strong>
+          <span>Retire dinheiro da sua conta</span>
+        </span>
+        <mat-icon class="operacao-card__arrow" aria-hidden="true">arrow_forward</mat-icon>
+      </a>
+
+      <a class="operacao-card" routerLink="/cliente/transferencia">
+        <span class="operacao-card__icon operacao-card__icon--transferencia">
+          <mat-icon aria-hidden="true">swap_horiz</mat-icon>
+        </span>
+        <span class="operacao-card__body">
+          <strong>Transferir</strong>
+          <span>Envie dinheiro para outra conta</span>
+        </span>
+        <mat-icon class="operacao-card__arrow" aria-hidden="true">arrow_forward</mat-icon>
+      </a>
+
+      <a class="operacao-card" routerLink="/cliente/extrato">
+        <span class="operacao-card__icon operacao-card__icon--extrato">
+          <mat-icon aria-hidden="true">receipt_long</mat-icon>
+        </span>
+        <span class="operacao-card__body">
+          <strong>Extrato</strong>
+          <span>Consulte suas movimentaÃ§Ãµes</span>
+        </span>
+        <mat-icon class="operacao-card__arrow" aria-hidden="true">arrow_forward</mat-icon>
+      </a>
+    </div>
+    </section>
+  </div>
+</app-authenticated-layout>
+
+===== ARQUIVO: C:\Users\Admin\Desktop\bantads\Bantads\frontend\src\app\pages\cliente\cliente.spec.ts =====
+import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { Cliente } from './cliente';
+
+describe('Cliente', () => {
+  let component: Cliente;
+  let fixture: ComponentFixture<Cliente>;
+
+  beforeEach(async () => {
+    await TestBed.configureTestingModule({
+      imports: [Cliente],
+    }).compileComponents();
+
+    fixture = TestBed.createComponent(Cliente);
+    component = fixture.componentInstance;
+    await fixture.whenStable();
+  });
+
+  it('should create', () => {
+    expect(component).toBeTruthy();
+  });
+});
+
+===== ARQUIVO: C:\Users\Admin\Desktop\bantads\Bantads\frontend\src\app\pages\cliente\cliente.ts =====
+import { Component, computed, OnInit, signal } from '@angular/core';
+import { MatButtonModule } from '@angular/material/button';
+import { MatCardModule } from '@angular/material/card';
+import { MatIconModule } from '@angular/material/icon';
+import Decimal from 'decimal.js';
+
+import { AuthenticatedLayoutComponent } from '../../shared/components/authenticated-layout/authenticated-layout';
+import { SidebarItem } from '../../shared/components/sidebar/sidebar';
+import { Conta } from '../../shared/models/conta';
+import { AuthService, LoginResponse } from '../../shared/services/auth';
+import { ContaService } from '../../shared/services/conta';
+
+@Component({
+  imports: [
+    AuthenticatedLayoutComponent,
+    MatButtonModule,
+    MatCardModule,
+    MatIconModule
+  ],
+  selector: 'app-cliente',
+  styleUrl: './cliente.css',
+  templateUrl: './cliente.html',
+})
+export class Cliente implements OnInit {
+
+  usuario: LoginResponse['usuario'] | null = null;
+  readonly conta = signal<Conta | null>(null);
+  readonly saldoFormatado = computed(() => {
+    const conta = this.conta();
+    return conta?.saldo ? this.formatarSaldo(conta.saldo) : null;
+  });
+  readonly erro = signal<string | null>(null);
+  readonly menuItems: SidebarItem[] = [
+    { label: 'InÃ­cio', route: '/cliente', icon: 'home' },
+    { label: 'Depositar', route: '/cliente/deposito', icon: 'add_circle' },
+    { label: 'Sacar', route: '/cliente/saque', icon: 'remove_circle' },
+    { label: 'Transferir', route: '/cliente/transferencia', icon: 'swap_horiz' },
+    { label: 'Extrato', route: '/cliente/extrato', icon: 'receipt_long' }
+  ];
+
+  constructor(
+    private authService: AuthService,
+    private contaService: ContaService
+  ) {}
+
+  ngOnInit(): void {
+    this.usuario = this.authService.getUsuario();
+
+    if (!this.usuario?.cpf) {
+      this.erro.set('NÃ£o foi possÃ­vel identificar o usuÃ¡rio autenticado.');
+      return;
+    }
+
+    this.contaService.buscarPorCpf(this.usuario.cpf).subscribe({
+      next: (conta) => {
+        this.conta.set(conta);
+      },
+      error: () => {
+        this.erro.set('NÃ£o foi possÃ­vel carregar os dados da conta.');
+      }
+    });
+  }
+
+  private formatarSaldo(saldo: string | null | undefined): string | null {
+    try {
+      if (typeof saldo !== 'string' || !saldo.trim()) {
+        return null;
+      }
+
+      const valor = new Decimal(saldo);
+      if (!valor.isFinite()) {
+        return null;
+      }
+
+      const [parteInteira, parteDecimal] = valor.toFixed(2).split('.');
+      const parteInteiraFormatada = parteInteira.replace(
+        /\B(?=(\d{3})+(?!\d))/g,
+        '.'
+      );
+
+      return `R$ ${parteInteiraFormatada},${parteDecimal}`;
+    } catch {
+      return null;
+    }
+  }
+}
+
+===== ARQUIVO: C:\Users\Admin\Desktop\bantads\Bantads\frontend\src\app\pages\cliente\deposito\deposito.css =====
+
+===== ARQUIVO: C:\Users\Admin\Desktop\bantads\Bantads\frontend\src\app\pages\cliente\deposito\deposito.html =====
+<p>deposito works!</p>
+
+===== ARQUIVO: C:\Users\Admin\Desktop\bantads\Bantads\frontend\src\app\pages\cliente\deposito\deposito.spec.ts =====
+import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { Deposito } from './deposito';
+
+describe('Deposito', () => {
+  let component: Deposito;
+  let fixture: ComponentFixture<Deposito>;
+
+  beforeEach(async () => {
+    await TestBed.configureTestingModule({
+      imports: [Deposito],
+    }).compileComponents();
+
+    fixture = TestBed.createComponent(Deposito);
+    component = fixture.componentInstance;
+    await fixture.whenStable();
+  });
+
+  it('should create', () => {
+    expect(component).toBeTruthy();
+  });
+});
+
+===== ARQUIVO: C:\Users\Admin\Desktop\bantads\Bantads\frontend\src\app\pages\cliente\deposito\deposito.ts =====
+import { Component } from '@angular/core';
+
+@Component({
+  imports: [],
+  selector: 'app-deposito',
+  styleUrl: './deposito.css',
+  templateUrl: './deposito.html',
+})
+export class Deposito {}
+
+===== ARQUIVO: C:\Users\Admin\Desktop\bantads\Bantads\frontend\src\app\pages\cliente\extrato\extrato.css =====
+
+===== ARQUIVO: C:\Users\Admin\Desktop\bantads\Bantads\frontend\src\app\pages\cliente\extrato\extrato.html =====
+<p>extrato works!</p>
+
+===== ARQUIVO: C:\Users\Admin\Desktop\bantads\Bantads\frontend\src\app\pages\cliente\extrato\extrato.spec.ts =====
+import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { Extrato } from './extrato';
+
+describe('Extrato', () => {
+  let component: Extrato;
+  let fixture: ComponentFixture<Extrato>;
+
+  beforeEach(async () => {
+    await TestBed.configureTestingModule({
+      imports: [Extrato],
+    }).compileComponents();
+
+    fixture = TestBed.createComponent(Extrato);
+    component = fixture.componentInstance;
+    await fixture.whenStable();
+  });
+
+  it('should create', () => {
+    expect(component).toBeTruthy();
+  });
+});
+
+===== ARQUIVO: C:\Users\Admin\Desktop\bantads\Bantads\frontend\src\app\pages\cliente\extrato\extrato.ts =====
+import { Component } from '@angular/core';
+
+@Component({
+  imports: [],
+  selector: 'app-extrato',
+  styleUrl: './extrato.css',
+  templateUrl: './extrato.html',
+})
+export class Extrato {}
+
+===== ARQUIVO: C:\Users\Admin\Desktop\bantads\Bantads\frontend\src\app\pages\cliente\saque\saque.css =====
+
+===== ARQUIVO: C:\Users\Admin\Desktop\bantads\Bantads\frontend\src\app\pages\cliente\saque\saque.html =====
+<p>saque works!</p>
+
+===== ARQUIVO: C:\Users\Admin\Desktop\bantads\Bantads\frontend\src\app\pages\cliente\saque\saque.spec.ts =====
+import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { Saque } from './saque';
+
+describe('Saque', () => {
+  let component: Saque;
+  let fixture: ComponentFixture<Saque>;
+
+  beforeEach(async () => {
+    await TestBed.configureTestingModule({
+      imports: [Saque],
+    }).compileComponents();
+
+    fixture = TestBed.createComponent(Saque);
+    component = fixture.componentInstance;
+    await fixture.whenStable();
+  });
+
+  it('should create', () => {
+    expect(component).toBeTruthy();
+  });
+});
+
+===== ARQUIVO: C:\Users\Admin\Desktop\bantads\Bantads\frontend\src\app\pages\cliente\saque\saque.ts =====
+import { Component } from '@angular/core';
+
+@Component({
+  imports: [],
+  selector: 'app-saque',
+  styleUrl: './saque.css',
+  templateUrl: './saque.html',
+})
+export class Saque {}
+
+===== ARQUIVO: C:\Users\Admin\Desktop\bantads\Bantads\frontend\src\app\pages\cliente\transferencia\transferencia.css =====
+
+===== ARQUIVO: C:\Users\Admin\Desktop\bantads\Bantads\frontend\src\app\pages\cliente\transferencia\transferencia.html =====
+<p>transferencia works!</p>
+
+===== ARQUIVO: C:\Users\Admin\Desktop\bantads\Bantads\frontend\src\app\pages\cliente\transferencia\transferencia.spec.ts =====
+import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { Transferencia } from './transferencia';
+
+describe('Transferencia', () => {
+  let component: Transferencia;
+  let fixture: ComponentFixture<Transferencia>;
+
+  beforeEach(async () => {
+    await TestBed.configureTestingModule({
+      imports: [Transferencia],
+    }).compileComponents();
+
+    fixture = TestBed.createComponent(Transferencia);
+    component = fixture.componentInstance;
+    await fixture.whenStable();
+  });
+
+  it('should create', () => {
+    expect(component).toBeTruthy();
+  });
+});
+
+===== ARQUIVO: C:\Users\Admin\Desktop\bantads\Bantads\frontend\src\app\pages\cliente\transferencia\transferencia.ts =====
+import { Component } from '@angular/core';
+
+@Component({
+  imports: [],
+  selector: 'app-transferencia',
+  styleUrl: './transferencia.css',
+  templateUrl: './transferencia.html',
+})
+export class Transferencia {}
+
+===== ARQUIVO: C:\Users\Admin\Desktop\bantads\Bantads\frontend\src\app\pages\gerente\gerente.css =====
+
+===== ARQUIVO: C:\Users\Admin\Desktop\bantads\Bantads\frontend\src\app\pages\gerente\gerente.html =====
+<p>gerente works!</p>
+
+===== ARQUIVO: C:\Users\Admin\Desktop\bantads\Bantads\frontend\src\app\pages\gerente\gerente.spec.ts =====
+import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { Gerente } from './gerente';
+
+describe('Gerente', () => {
+  let component: Gerente;
+  let fixture: ComponentFixture<Gerente>;
+
+  beforeEach(async () => {
+    await TestBed.configureTestingModule({
+      imports: [Gerente],
+    }).compileComponents();
+
+    fixture = TestBed.createComponent(Gerente);
+    component = fixture.componentInstance;
+    await fixture.whenStable();
+  });
+
+  it('should create', () => {
+    expect(component).toBeTruthy();
+  });
+});
+
+===== ARQUIVO: C:\Users\Admin\Desktop\bantads\Bantads\frontend\src\app\pages\gerente\gerente.ts =====
+import { Component } from '@angular/core';
+
+@Component({
+  imports: [],
+  selector: 'app-gerente',
+  styleUrl: './gerente.css',
+  templateUrl: './gerente.html',
+})
+export class Gerente {}
+
+===== ARQUIVO: C:\Users\Admin\Desktop\bantads\Bantads\frontend\src\app\pages\gerente\clientes\clientes.css =====
+
+===== ARQUIVO: C:\Users\Admin\Desktop\bantads\Bantads\frontend\src\app\pages\gerente\clientes\clientes.html =====
+<p>clientes works!</p>
+
+===== ARQUIVO: C:\Users\Admin\Desktop\bantads\Bantads\frontend\src\app\pages\gerente\clientes\clientes.spec.ts =====
+import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { Clientes } from './clientes';
+
+describe('Clientes', () => {
+  let component: Clientes;
+  let fixture: ComponentFixture<Clientes>;
+
+  beforeEach(async () => {
+    await TestBed.configureTestingModule({
+      imports: [Clientes],
+    }).compileComponents();
+
+    fixture = TestBed.createComponent(Clientes);
+    component = fixture.componentInstance;
+    await fixture.whenStable();
+  });
+
+  it('should create', () => {
+    expect(component).toBeTruthy();
+  });
+});
+
+===== ARQUIVO: C:\Users\Admin\Desktop\bantads\Bantads\frontend\src\app\pages\gerente\clientes\clientes.ts =====
+import { Component } from '@angular/core';
+
+@Component({
+  imports: [],
+  selector: 'app-clientes',
+  styleUrl: './clientes.css',
+  templateUrl: './clientes.html',
+})
+export class Clientes {}
+
+===== ARQUIVO: C:\Users\Admin\Desktop\bantads\Bantads\frontend\src\app\pages\gerente\gerentes\gerentes.css =====
+
+===== ARQUIVO: C:\Users\Admin\Desktop\bantads\Bantads\frontend\src\app\pages\gerente\gerentes\gerentes.html =====
+<p>gerentes works!</p>
+
+===== ARQUIVO: C:\Users\Admin\Desktop\bantads\Bantads\frontend\src\app\pages\gerente\gerentes\gerentes.spec.ts =====
+import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { Gerentes } from './gerentes';
+
+describe('Gerentes', () => {
+  let component: Gerentes;
+  let fixture: ComponentFixture<Gerentes>;
+
+  beforeEach(async () => {
+    await TestBed.configureTestingModule({
+      imports: [Gerentes],
+    }).compileComponents();
+
+    fixture = TestBed.createComponent(Gerentes);
+    component = fixture.componentInstance;
+    await fixture.whenStable();
+  });
+
+  it('should create', () => {
+    expect(component).toBeTruthy();
+  });
+});
+
+===== ARQUIVO: C:\Users\Admin\Desktop\bantads\Bantads\frontend\src\app\pages\gerente\gerentes\gerentes.ts =====
+import { Component } from '@angular/core';
+
+@Component({
+  imports: [],
+  selector: 'app-gerentes',
+  styleUrl: './gerentes.css',
+  templateUrl: './gerentes.html',
+})
+export class Gerentes {}
+
+===== ARQUIVO: C:\Users\Admin\Desktop\bantads\Bantads\frontend\src\app\pages\gerente\relatorio\relatorio.css =====
+
+===== ARQUIVO: C:\Users\Admin\Desktop\bantads\Bantads\frontend\src\app\pages\gerente\relatorio\relatorio.html =====
+<p>relatorio works!</p>
+
+===== ARQUIVO: C:\Users\Admin\Desktop\bantads\Bantads\frontend\src\app\pages\gerente\relatorio\relatorio.spec.ts =====
+import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { Relatorio } from './relatorio';
+
+describe('Relatorio', () => {
+  let component: Relatorio;
+  let fixture: ComponentFixture<Relatorio>;
+
+  beforeEach(async () => {
+    await TestBed.configureTestingModule({
+      imports: [Relatorio],
+    }).compileComponents();
+
+    fixture = TestBed.createComponent(Relatorio);
+    component = fixture.componentInstance;
+    await fixture.whenStable();
+  });
+
+  it('should create', () => {
+    expect(component).toBeTruthy();
+  });
+});
+
+===== ARQUIVO: C:\Users\Admin\Desktop\bantads\Bantads\frontend\src\app\pages\gerente\relatorio\relatorio.ts =====
+import { Component } from '@angular/core';
+
+@Component({
+  imports: [],
+  selector: 'app-relatorio',
+  styleUrl: './relatorio.css',
+  templateUrl: './relatorio.html',
+})
+export class Relatorio {}
+
+===== ARQUIVO: C:\Users\Admin\Desktop\bantads\Bantads\frontend\src\app\pages\login\login.css =====
+:host {
+  display: block;
+  min-height: 100vh;
+}
+
+.login-page {
+  min-height: 100vh;
+  background: var(--color-surface);
+}
+
+.login-layout {
+  min-height: 100vh;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+}
+
+.login-brand-panel {
+  background: var(--color-primary);
+  color: #ffffff;
+}
+
+.login-brand-panel__content {
+  min-height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 32px;
+  padding: 48px 44px;
+}
+
+.login-brand-panel__visual {
+  width: min(100%, 560px);
+  min-height: 420px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+}
+
+.login-brand-panel__blob {
+  width: clamp(320px, 72%, 430px);
+  aspect-ratio: 1 / 1;
+  position: absolute;
+  background: var(--color-primary-soft);
+  border-radius: 43% 57% 61% 39% / 52% 38% 62% 48%;
+  transform: translate(-1%, 2%) rotate(-12deg);
+}
+
+.login-brand-panel__image {
+  width: clamp(280px, 78%, 500px);
+  object-fit: contain;
+  position: relative;
+  z-index: 1;
+}
+
+.login-brand-panel__text {
+  width: 100%;
+  max-width: 650px;
+  text-align: center;
+}
+
+.login-brand-panel__text h2 {
+  width: 100%;
+  max-width: 650px;
+  margin: 0 auto 14px;
+  font-size: clamp(2rem, 2.8vw, 2.6rem);
+  line-height: 1.2;
+  font-weight: 600;
+}
+
+.login-brand-panel__text p {
+  margin: 0;
+  font-size: 1rem;
+  line-height: 1.7;
+  color: rgba(255, 255, 255, 0.82);
+}
+
+.login-form-panel {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  padding: 48px 56px;
+  background: var(--color-surface);
+}
+
+.login-form-panel__brand {
+  position: absolute;
+  top: 40px;
+  right: 56px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+  text-align: right;
+}
+
+.login-form-panel__brand-name {
+  color: var(--color-primary);
+  font-size: 1.5rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+
+.login-form-panel__brand-subtitle {
+  color: #7a8598;
+  font-size: 0.95rem;
+}
+
+.login-form-card {
+  width: min(100%, 420px);
+}
+
+.login-form-card__header {
+  margin-bottom: 32px;
+}
+
+.login-form-card__header h1 {
+  margin: 0 0 10px;
+  color: #1f2430;
+  font-size: clamp(2rem, 4vw, 2.5rem);
+  line-height: 1.15;
+  font-weight: 600;
+}
+
+.login-form-card__header p {
+  margin: 0;
+  color: #687080;
+  line-height: 1.6;
+}
+
+.login-form {
+  display: grid;
+  gap: 20px;
+}
+
+.login-form__field {
+  width: 100%;
+}
+
+.login-form__submit {
+  min-height: 56px;
+  border-radius: 9px;
+  font-weight: 700;
+}
+
+.login-form-card__footer {
+  margin: 24px 0 0;
+  color: #687080;
+  line-height: 1.6;
+}
+
+.login-form-card__footer a {
+  color: var(--color-primary);
+  font-weight: 700;
+}
+
+.login-form-card__footer a:hover,
+.login-form-card__footer a:focus-visible {
+  text-decoration: underline;
+}
+
+@media (max-width: 1024px) {
+  .login-layout {
+    grid-template-columns: 0.95fr 1.05fr;
+  }
+
+  .login-brand-panel__content,
+  .login-form-panel {
+    padding: 40px;
+  }
+
+  .login-brand-panel__visual {
+    min-height: 360px;
+  }
+
+  .login-brand-panel__blob {
+    width: clamp(280px, 68%, 360px);
+  }
+
+  .login-brand-panel__image {
+    width: clamp(280px, 78%, 500px);
+  }
+
+  .login-form-panel__brand {
+    top: 32px;
+    right: 40px;
+  }
+}
+
+@media (max-width: 820px) {
+  .login-layout {
+    grid-template-columns: 0.88fr 1.12fr;
+  }
+
+  .login-brand-panel__content,
+  .login-form-panel {
+    padding: 32px;
+  }
+
+  .login-brand-panel__text h2 {
+    font-size: 1.8rem;
+  }
+
+  .login-brand-panel__visual {
+    min-height: 300px;
+  }
+
+  .login-brand-panel__blob {
+    width: clamp(220px, 66%, 300px);
+  }
+
+  .login-brand-panel__image {
+    width: clamp(220px, 76%, 340px);
+  }
+
+  .login-form-panel__brand {
+    top: 28px;
+    right: 32px;
+  }
+
+  .login-form-panel__brand-name {
+    font-size: 1.35rem;
+  }
+}
+
+@media (max-width: 640px) {
+  .login-brand-panel {
+    display: none;
+  }
+
+  .login-layout {
+    display: block;
+    min-height: 100vh;
+  }
+
+  .login-form-panel {
+    width: 100%;
+    min-height: 100vh;
+    padding: 28px 20px 36px;
+    display: grid;
+    grid-template-rows: auto 1fr;
+    align-items: stretch;
+  }
+
+  .login-form-panel__brand {
+    position: static;
+    align-items: flex-start;
+    text-align: left;
+    margin-bottom: 56px;
+  }
+
+  .login-form-card {
+    width: 100%;
+    max-width: none;
+    margin: 0;
+    align-self: center;
+  }
+}
+
+===== ARQUIVO: C:\Users\Admin\Desktop\bantads\Bantads\frontend\src\app\pages\login\login.html =====
+<section class="login-page">
+
+  <div class="login-layout">
+
+    <aside class="login-brand-panel">
+
+      <div class="login-brand-panel__content">
+
+        <div class="login-brand-panel__visual" aria-hidden="true">
+
+          <div class="login-brand-panel__blob"></div>
+
+          <img
+            class="login-brand-panel__image"
+            src="/images/icon-login.png"
+            alt=""
+          />
+
+        </div>
+
+        <div class="login-brand-panel__text">
+          <h2>Seu dinheiro em movimento, sem complicaÃ§Ã£o.</h2>
+          <p>Conta, movimentaÃ§Ãµes e controle financeiro em um sÃ³ lugar.</p>
+        </div>
+
+      </div>
+
+    </aside>
+
+    <main class="login-form-panel">
+
+      <div class="login-form-panel__brand">
+        <span class="login-form-panel__brand-name">BANTADS</span>
+        <span class="login-form-panel__brand-subtitle">Internet Banking</span>
+      </div>
+
+      <div class="login-form-card">
+
+        <div class="login-form-card__header">
+          <h1>Acesse sua conta</h1>
+          <p>Entre com seu e-mail e senha para continuar.</p>
+        </div>
+
+        <form
+          class="login-form"
+          (ngSubmit)="entrar()"
+          novalidate
+        >
+
+          <mat-form-field
+            class="login-form__field"
+            appearance="outline"
+          >
+            <mat-label>E-mail</mat-label>
+
+            <input
+              matInput
+              id="email"
+              name="email"
+              type="email"
+              placeholder="nome@exemplo.com"
+              autocomplete="email"
+              [(ngModel)]="email"
+              required
+            />
+          </mat-form-field>
+
+          <mat-form-field
+            class="login-form__field"
+            appearance="outline"
+          >
+            <mat-label>Senha</mat-label>
+
+            <input
+              matInput
+              id="password"
+              name="senha"
+              type="password"
+              placeholder="Digite sua senha"
+              autocomplete="current-password"
+              [(ngModel)]="senha"
+              required
+            />
+          </mat-form-field>
+
+          @if (erro) {
+            <p class="login-form__error">
+              {{ erro }}
+            </p>
+          }
+
+          <button
+            class="login-form__submit"
+            mat-flat-button
+            type="submit"
+          >
+            Entrar
+          </button>
+
+        </form>
+
+        <p class="login-form-card__footer">
+          Ainda nÃ£o possui conta?
+          <a routerLink="/autocadastro">Solicite sua conta</a>
+        </p>
+
+      </div>
+
+    </main>
+
+  </div>
+
+</section>
+
+===== ARQUIVO: C:\Users\Admin\Desktop\bantads\Bantads\frontend\src\app\pages\login\login.spec.ts =====
+import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { Login } from './login';
+
+describe('Login', () => {
+  let component: Login;
+  let fixture: ComponentFixture<Login>;
+
+  beforeEach(async () => {
+    await TestBed.configureTestingModule({
+      imports: [Login],
+    }).compileComponents();
+
+    fixture = TestBed.createComponent(Login);
+    component = fixture.componentInstance;
+    await fixture.whenStable();
+  });
+
+  it('should create', () => {
+    expect(component).toBeTruthy();
+  });
+});
+
+===== ARQUIVO: C:\Users\Admin\Desktop\bantads\Bantads\frontend\src\app\pages\login\login.ts =====
+import { Component } from '@angular/core';
+import { FormsModule } from '@angular/forms';
+import { MatButtonModule } from '@angular/material/button';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatInputModule } from '@angular/material/input';
+import { Router, RouterLink } from '@angular/router';
+
+import { AuthService } from '../../shared/services/auth';
+
+@Component({
+  imports: [
+    RouterLink,
+    FormsModule,
+    MatFormFieldModule,
+    MatInputModule,
+    MatButtonModule
+  ],
+  selector: 'app-login',
+  styleUrl: './login.css',
+  templateUrl: './login.html',
+})
+export class Login {
+
+  email = '';
+  senha = '';
+  erro = '';
+
+  constructor(
+    private authService: AuthService,
+    private router: Router
+  ) {}
+
+  entrar(): void {
+    this.erro = '';
+
+    this.authService.login({
+      email: this.email,
+      senha: this.senha
+    }).subscribe({
+      next: (res) => {
+        if (res.tipo === 'CLIENTE') {
+          this.router.navigate(['/cliente']);
+          return;
+        }
+
+        if (res.tipo === 'GERENTE') {
+          this.router.navigate(['/gerente']);
+        }
+      },
+
+      error: (error) => {
+        if (error.status === 401) {
+          this.erro = 'E-mail ou senha invÃ¡lidos.';
+          return;
+        }
+
+        this.erro = 'NÃ£o foi possÃ­vel realizar o login.';
+      }
+    });
+  }
+}
+
+===== ARQUIVO: C:\Users\Admin\Desktop\bantads\Bantads\frontend\src\app\shared\components\authenticated-layout\authenticated-layout.css =====
+:host {
+  display: block;
+}
+
+.authenticated-layout {
+  display: flex;
+  min-height: 100vh;
+  background: var(--color-background);
+}
+
+.authenticated-layout__content {
+  min-width: 0;
+  flex: 1;
+}
+
+@media (max-width: 700px) {
+  .authenticated-layout {
+    display: block;
+  }
+}
+
+===== ARQUIVO: C:\Users\Admin\Desktop\bantads\Bantads\frontend\src\app\shared\components\authenticated-layout\authenticated-layout.html =====
+<div class="authenticated-layout">
+  <app-sidebar [items]="menuItems"></app-sidebar>
+  <main class="authenticated-layout__content">
+    <ng-content></ng-content>
+  </main>
+</div>
+
+===== ARQUIVO: C:\Users\Admin\Desktop\bantads\Bantads\frontend\src\app\shared\components\authenticated-layout\authenticated-layout.ts =====
+import { Component, Input } from '@angular/core';
+
+import { SidebarComponent, SidebarItem } from '../sidebar/sidebar';
+
+@Component({
+  selector: 'app-authenticated-layout',
+  standalone: true,
+  imports: [SidebarComponent],
+  templateUrl: './authenticated-layout.html',
+  styleUrl: './authenticated-layout.css'
+})
+export class AuthenticatedLayoutComponent {
+  @Input() menuItems: SidebarItem[] = [];
+}
+
+===== ARQUIVO: C:\Users\Admin\Desktop\bantads\Bantads\frontend\src\app\shared\components\modal\modal.css =====
+:host {
+  display: contents;
+}
+
+.modal-backdrop {
+  position: fixed;
+  z-index: 1000;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+  background: rgba(23, 32, 51, 0.48);
+}
+
+.modal {
+  width: min(100%, 520px);
+  border-radius: var(--radius-lg);
+  background: var(--color-surface);
+  box-shadow: 0 24px 70px rgba(19, 36, 84, 0.24);
+}
+
+.modal__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 20px 24px;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.modal__header h2 {
+  margin: 0;
+  color: var(--color-text);
+  font-size: 1.2rem;
+}
+
+.modal__close {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--color-text-muted);
+}
+
+.modal__close:hover,
+.modal__close:focus-visible {
+  outline: 2px solid var(--color-primary-soft);
+  color: var(--color-primary);
+}
+
+.modal__content {
+  padding: 24px;
+}
+
+===== ARQUIVO: C:\Users\Admin\Desktop\bantads\Bantads\frontend\src\app\shared\components\modal\modal.html =====
+@if (aberto) {
+  <div
+    class="modal-backdrop"
+    role="presentation"
+    (click)="aoClicarBackdrop($event)"
+  >
+    <section
+      class="modal"
+      role="dialog"
+      aria-modal="true"
+      [attr.aria-label]="titulo || 'Janela modal'"
+    >
+      <header class="modal__header">
+        <h2>{{ titulo }}</h2>
+        <button
+          type="button"
+          class="modal__close"
+          aria-label="Fechar"
+          (click)="fechar.emit()"
+        >
+          <mat-icon aria-hidden="true">close</mat-icon>
+        </button>
+      </header>
+      <div class="modal__content">
+        <ng-content></ng-content>
+      </div>
+    </section>
+  </div>
+}
+
+===== ARQUIVO: C:\Users\Admin\Desktop\bantads\Bantads\frontend\src\app\shared\components\modal\modal.ts =====
+import { Component, EventEmitter, Input, Output } from '@angular/core';
+import { MatIconModule } from '@angular/material/icon';
+
+@Component({
+  selector: 'app-modal',
+  standalone: true,
+  imports: [MatIconModule],
+  templateUrl: './modal.html',
+  styleUrl: './modal.css'
+})
+export class ModalComponent {
+  @Input() aberto = false;
+  @Input() titulo = '';
+  @Output() fechar = new EventEmitter<void>();
+
+  aoClicarBackdrop(event: MouseEvent): void {
+    if (event.target === event.currentTarget) {
+      this.fechar.emit();
+    }
+  }
+}
+
+===== ARQUIVO: C:\Users\Admin\Desktop\bantads\Bantads\frontend\src\app\shared\components\sidebar\sidebar.css =====
+:host {
+  display: block;
+  flex: 0 0 248px;
+}
+
+.sidebar {
+  position: sticky;
+  top: 0;
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  padding: 28px 16px;
+  background: var(--color-surface);
+  border-right: 1px solid var(--color-border);
+}
+
+.sidebar__brand {
+  padding: 8px 16px 32px;
+  color: var(--color-primary);
+  font-size: 1.35rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+}
+
+.sidebar__nav {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.sidebar__link {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 48px;
+  padding: 0 16px;
+  border-radius: var(--radius-sm);
+  color: var(--color-text-muted);
+  font-weight: 600;
+  transition: background 160ms ease, color 160ms ease;
+}
+
+.sidebar__link:hover,
+.sidebar__link:focus-visible,
+.sidebar__link--active {
+  outline: none;
+  background: #edf1ff;
+  color: var(--color-primary);
+}
+
+.sidebar__link mat-icon {
+  font-size: 21px;
+}
+
+.sidebar__logout {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  min-height: 48px;
+  margin-top: auto;
+  padding-top: 28px;
+  padding: 0 16px;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--color-text-muted);
+  font-weight: 600;
+  text-align: left;
+  transition: background 160ms ease, color 160ms ease;
+}
+
+.sidebar__logout:hover,
+.sidebar__logout:focus-visible {
+  outline: none;
+  background: #fff0ee;
+  color: #d85b50;
+}
+
+.sidebar__logout mat-icon {
+  font-size: 21px;
+}
+
+@media (max-width: 700px) {
+  :host {
+    flex: none;
+  }
+
+  .sidebar {
+    position: static;
+    min-height: auto;
+    padding: 12px;
+    border-right: 0;
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  .sidebar__brand {
+    padding: 6px 8px 12px;
+    font-size: 1.1rem;
+  }
+
+  .sidebar__nav {
+    flex-direction: row;
+    gap: 6px;
+    overflow-x: auto;
+  }
+
+  .sidebar__link {
+    flex: 0 0 auto;
+    min-height: 42px;
+    padding: 0 12px;
+    font-size: 0.85rem;
+  }
+
+  .sidebar__logout {
+    width: auto;
+    min-height: 42px;
+    margin-top: 10px;
+    padding: 0 12px;
+    font-size: 0.85rem;
+  }
+}
+
+===== ARQUIVO: C:\Users\Admin\Desktop\bantads\Bantads\frontend\src\app\shared\components\sidebar\sidebar.html =====
+<aside class="sidebar" aria-label="NavegaÃ§Ã£o principal">
+  <div class="sidebar__brand">BANTADS</div>
+
+  <nav class="sidebar__nav">
+    @for (item of items; track item.route) {
+      <a
+        class="sidebar__link"
+        [routerLink]="item.route"
+        routerLinkActive="sidebar__link--active"
+        [routerLinkActiveOptions]="{ exact: item.route === '/cliente' }"
+      >
+        @if (item.icon) {
+          <mat-icon aria-hidden="true">{{ item.icon }}</mat-icon>
+        }
+        <span>{{ item.label }}</span>
+      </a>
+    }
+  </nav>
+
+  <button type="button" class="sidebar__logout" (click)="sair()">
+    <mat-icon aria-hidden="true">logout</mat-icon>
+    <span>Sair</span>
+  </button>
+</aside>
+
+===== ARQUIVO: C:\Users\Admin\Desktop\bantads\Bantads\frontend\src\app\shared\components\sidebar\sidebar.ts =====
+import { Component, Input } from '@angular/core';
+import { MatIconModule } from '@angular/material/icon';
+import { Router, RouterLink, RouterLinkActive } from '@angular/router';
+
+import { AuthService } from '../../services/auth';
+
+export interface SidebarItem {
+  label: string;
+  route: string;
+  icon?: string;
+}
+
+@Component({
+  selector: 'app-sidebar',
+  standalone: true,
+  imports: [RouterLink, RouterLinkActive, MatIconModule],
+  templateUrl: './sidebar.html',
+  styleUrl: './sidebar.css'
+})
+export class SidebarComponent {
+  @Input() items: SidebarItem[] = [];
+
+  constructor(
+    private authService: AuthService,
+    private router: Router
+  ) {}
+
+  sair(): void {
+    this.authService.logout().subscribe({
+      next: () => void this.router.navigate(['/login']),
+      error: () => void this.router.navigate(['/login'])
+    });
+  }
+}
+
+===== ARQUIVO: C:\Users\Admin\Desktop\bantads\Bantads\frontend\src\app\shared\guards\auth.guard.ts =====
+import { inject } from '@angular/core';
+import { CanActivateFn, Router } from '@angular/router';
+
+import { AuthService, UserTipo } from '../services/auth';
+
+export const authGuard: CanActivateFn = (route) => {
+  const authService = inject(AuthService);
+  const router = inject(Router);
+
+  if (!authService.isLoggedIn()) {
+    return router.createUrlTree(['/login']);
+  }
+
+  const allowedRoles = route.data?.['roles'] as UserTipo[] | undefined;
+  if (!allowedRoles || allowedRoles.length === 0) {
+    return true;
+  }
+
+  const userTipo = authService.getTipo();
+  if (userTipo && allowedRoles.includes(userTipo)) {
+    return true;
+  }
+
+  return router.createUrlTree([authService.getHomeRouteByTipo()]);
+};
+
+===== ARQUIVO: C:\Users\Admin\Desktop\bantads\Bantads\frontend\src\app\shared\interceptors\auth-interceptor.spec.ts =====
+import { TestBed } from '@angular/core/testing';
+import { HttpInterceptorFn } from '@angular/common/http';
+import { authInterceptor } from './auth-interceptor';
+
+describe('authInterceptor', () => {
+  const interceptor: HttpInterceptorFn = (req, next) =>
+    TestBed.runInInjectionContext(() => authInterceptor(req, next));
+
+  beforeEach(() => {
+    TestBed.configureTestingModule({});
+  });
+
+  it('should be created', () => {
+    expect(interceptor).toBeTruthy();
+  });
+});
+
+===== ARQUIVO: C:\Users\Admin\Desktop\bantads\Bantads\frontend\src\app\shared\interceptors\auth-interceptor.ts =====
+import { HttpInterceptorFn, HttpResponse } from '@angular/common/http';
+import { inject } from '@angular/core';
+import { Router } from '@angular/router';
+import { tap } from 'rxjs';
+
+export const authInterceptor: HttpInterceptorFn = (req, next) => {
+
+  const router = inject(Router);
+  const token = localStorage.getItem('token');
+
+  let authReq = req;
+
+  if (token) {
+    authReq = req.clone({
+      headers: req.headers.set('x-access-token', token)
+    });
+  }
+
+  return next(authReq).pipe(
+    tap({
+      next: (event) => {
+
+        if (event instanceof HttpResponse && event.status === 202) {
+          console.log(
+            'OperaÃ§Ã£o aceita de forma assÃ­ncrona (Job/SAGA iniciada):',
+            event.body
+          );
+        }
+
+      },
+
+      error: (error) => {
+
+        if (error.status === 401) {
+          localStorage.removeItem('token');
+          localStorage.removeItem('tipo');
+          localStorage.removeItem('usuario');
+
+          router.navigate(['/login']);
+        }
+
+      }
+    })
+  );
+};
+
+===== ARQUIVO: C:\Users\Admin\Desktop\bantads\Bantads\frontend\src\app\shared\models\conta.ts =====
+export interface ContaLink {
+  href: string;
+  templated?: boolean;
+  hreflang?: string;
+  title?: string;
+  type?: string;
+  deprecation?: string;
+  profile?: string;
+  name?: string;
+}
+
+export interface Conta {
+  numeroConta: string;
+  cpfCliente: string;
+  dataCriacao: string;
+  saldo: string;
+  cpfGerente: string;
+  _links?: Record<string, ContaLink | ContaLink[]>;
+}
+
+===== ARQUIVO: C:\Users\Admin\Desktop\bantads\Bantads\frontend\src\app\shared\navbar\navbar.css =====
+
+===== ARQUIVO: C:\Users\Admin\Desktop\bantads\Bantads\frontend\src\app\shared\navbar\navbar.html =====
+@if (mostrarNavbar()) {
+  <button type="button" (click)="sair()">Sair</button>
+}
+
+===== ARQUIVO: C:\Users\Admin\Desktop\bantads\Bantads\frontend\src\app\shared\navbar\navbar.spec.ts =====
+import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { Navbar } from './navbar';
+
+describe('Navbar', () => {
+  let component: Navbar;
+  let fixture: ComponentFixture<Navbar>;
+
+  beforeEach(async () => {
+    await TestBed.configureTestingModule({
+      imports: [Navbar],
+    }).compileComponents();
+
+    fixture = TestBed.createComponent(Navbar);
+    component = fixture.componentInstance;
+    await fixture.whenStable();
+  });
+
+  it('should create', () => {
+    expect(component).toBeTruthy();
+  });
+});
+
+===== ARQUIVO: C:\Users\Admin\Desktop\bantads\Bantads\frontend\src\app\shared\navbar\navbar.ts =====
+import { Component } from '@angular/core';
+import { Router } from '@angular/router';
+import { AuthService } from '../services/auth';
+
+@Component({
+  imports: [],
+  selector: 'app-navbar',
+  styleUrl: './navbar.css',
+  templateUrl: './navbar.html',
+})
+export class Navbar {
+  constructor(public authService: AuthService, private router: Router) {}
+
+  mostrarNavbar(): boolean {
+    return this.authService.isLoggedIn() && this.router.url.split("?")[0] !== "/login";
+  }
+
+  sair(): void {
+    this.authService.logout().subscribe({
+      next: () => void this.router.navigate(['/login']),
+      error: () => void this.router.navigate(['/login'])
+    });
+  }
+}
+
+===== ARQUIVO: C:\Users\Admin\Desktop\bantads\Bantads\frontend\src\app\shared\services\auth.spec.ts =====
+import { TestBed } from '@angular/core/testing';
+import { AuthService } from './auth';
+
+describe('AuthService', () => {
+  let service: AuthService;
+
+  beforeEach(() => {
+    TestBed.configureTestingModule({});
+    service = TestBed.inject(AuthService);
+  });
+
+  it('should be created', () => {
+    expect(service).toBeTruthy();
+  });
+});
+
+===== ARQUIVO: C:\Users\Admin\Desktop\bantads\Bantads\frontend\src\app\shared\services\auth.ts =====
+import { Injectable, signal } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
+import { Observable, finalize, map, tap } from 'rxjs';
+import { environment } from '../../../environments/environment';
+
+export type UserTipo = 'CLIENTE' | 'GERENTE';
+
+export interface LoginResponse {
+  auth: boolean;
+  token: string;
+  tipo: UserTipo;
+  usuario: {
+    cpf: string;
+    nome: string;
+    email: string;
+  };
+}
+
+@Injectable({
+  providedIn: 'root'
+})
+export class AuthService {
+
+  private readonly API_URL = environment.apiUrl;
+  private readonly loggedIn = signal(!!localStorage.getItem('token'));
+
+  constructor(private http: HttpClient) {}
+
+  login(credentials: {
+    email: string;
+    senha: string;
+  }): Observable<LoginResponse> {
+
+    return this.http
+      .post<LoginResponse>(`${this.API_URL}/login`, credentials)
+      .pipe(
+        tap((res) => {
+          if (res?.auth && res.token) {
+            localStorage.setItem('token', res.token);
+            localStorage.setItem('tipo', res.tipo);
+            localStorage.setItem(
+              'usuario',
+              JSON.stringify(res.usuario)
+            );
+            this.loggedIn.set(true);
+          }
+        })
+      );
+  }
+
+  getToken(): string | null {
+    return localStorage.getItem('token');
+  }
+
+  getTipo(): UserTipo | null {
+    const tipo = localStorage.getItem('tipo');
+
+    return tipo === 'CLIENTE' || tipo === 'GERENTE'
+      ? tipo
+      : null;
+  }
+
+  getHomeRouteByTipo(): '/cliente' | '/gerente' | '/login' {
+    const tipo = this.getTipo();
+
+    if (tipo === 'CLIENTE') {
+      return '/cliente';
+    }
+
+    if (tipo === 'GERENTE') {
+      return '/gerente';
+    }
+
+    return '/login';
+  }
+
+  getUsuario(): LoginResponse['usuario'] | null {
+    const usuario = localStorage.getItem('usuario');
+
+    return usuario
+      ? JSON.parse(usuario)
+      : null;
+  }
+
+  clearSession(): void {
+    localStorage.removeItem('token');
+    localStorage.removeItem('tipo');
+    localStorage.removeItem('usuario');
+    this.loggedIn.set(false);
+  }
+
+  logout(): Observable<void> {
+    return this.http.post<void>(`${this.API_URL}/logout`, {}).pipe(
+      map(() => undefined),
+      finalize(() => this.clearSession())
+    );
+  }
+
+  isLoggedIn(): boolean {
+    return this.loggedIn();
+  }
+}
+
+===== ARQUIVO: C:\Users\Admin\Desktop\bantads\Bantads\frontend\src\app\shared\services\cliente.spec.ts =====
+import { TestBed } from '@angular/core/testing';
+import { Cliente } from './cliente';
+
+describe('Cliente', () => {
+  let service: Cliente;
+
+  beforeEach(() => {
+    TestBed.configureTestingModule({});
+    service = TestBed.inject(Cliente);
+  });
+
+  it('should be created', () => {
+    expect(service).toBeTruthy();
+  });
+});
+
+===== ARQUIVO: C:\Users\Admin\Desktop\bantads\Bantads\frontend\src\app\shared\services\cliente.ts =====
+import { HttpClient } from '@angular/common/http';
+import { Injectable } from '@angular/core';
+import { Observable } from 'rxjs';
+
+import { environment } from '../../../environments/environment';
+
+export interface SolicitacaoAutocadastro {
+  nome: string;
+  email: string;
+  cpf: string;
+  telefone: string;
+  salario: string;
+  logradouro: string;
+  numero: string;
+  complemento: string;
+  cep: string;
+  cidade: string;
+  uf: string;
+}
+
+export interface AutocadastroResponse {
+  mensagem?: string;
+  status?: string;
+}
+
+@Injectable({
+  providedIn: 'root'
+})
+export class ClienteService {
+
+  private readonly API_URL = environment.apiUrl;
+
+  constructor(private http: HttpClient) {}
+
+  solicitarAutocadastro(
+    solicitacao: SolicitacaoAutocadastro
+  ): Observable<AutocadastroResponse> {
+
+    return this.http.post<AutocadastroResponse>(
+      `${this.API_URL}/clientes`,
+      solicitacao
+    );
+  }
+}
+
+===== ARQUIVO: C:\Users\Admin\Desktop\bantads\Bantads\frontend\src\app\shared\services\conta.ts =====
+import { HttpClient } from '@angular/common/http';
+import { Injectable } from '@angular/core';
+import { Observable } from 'rxjs';
+
+import { environment } from '../../../environments/environment';
+import { Conta } from '../models/conta';
+
+@Injectable({
+  providedIn: 'root'
+})
+export class ContaService {
+
+  private readonly API_URL = environment.apiUrl;
+
+  constructor(private http: HttpClient) {}
+
+  buscarPorCpf(cpf: string): Observable<Conta> {
+    return this.http.get<Conta>(
+      `${this.API_URL}/contas/cliente/${encodeURIComponent(cpf)}`
+    );
+  }
+}
+
+===== ARQUIVO: C:\Users\Admin\Desktop\bantads\Bantads\frontend\src\app\shared\services\gerente.spec.ts =====
+import { TestBed } from '@angular/core/testing';
+import { Gerente } from './gerente';
+
+describe('Gerente', () => {
+  let service: Gerente;
+
+  beforeEach(() => {
+    TestBed.configureTestingModule({});
+    service = TestBed.inject(Gerente);
+  });
+
+  it('should be created', () => {
+    expect(service).toBeTruthy();
+  });
+});
+
+===== ARQUIVO: C:\Users\Admin\Desktop\bantads\Bantads\frontend\src\app\shared\services\gerente.ts =====
+import { Service } from '@angular/core';
+
+@Service()
+export class Gerente {}
+
+===== ARQUIVO: C:\Users\Admin\Desktop\bantads\Bantads\frontend\src\environments\environment.ts =====
+export const environment = {
+  production: false,
+  apiUrl: 'http://localhost:3000'
+};
+
