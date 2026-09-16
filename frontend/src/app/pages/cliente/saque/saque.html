@@ -1,1 +1,78 @@
-<p>saque works!</p>
+<main class="saque">
+
+  <a
+    class="botao-voltar"
+    href="/cliente"
+    aria-label="Voltar para a página inicial do cliente"
+  >
+    <span aria-hidden="true">←</span>
+    Voltar
+  </a>
+
+  <header class="saque__cabecalho">
+    <div>
+      <h1>Saque</h1>
+      <p>Informe o valor que deseja retirar da sua conta.</p>
+    </div>
+
+    <div class="saque__info-conta">
+      <div class="saque__conta">
+        Conta <strong>12345-6</strong>
+      </div>
+
+      <div class="saque__saldo">
+        Saldo disponível:
+        <strong>R$ 1.500,00</strong>
+      </div>
+    </div>
+  </header>
+
+  <!-- Exemplo de mensagem de erro
+  <p class="mensagem mensagem--erro">
+    Saldo insuficiente para realizar esta operação.
+  </p>
+  -->
+
+  <!-- Exemplo de comprovante/sucesso
+  <section class="mensagem mensagem--sucesso">
+    <p>Saque realizado com sucesso!</p>
+
+    <div class="comprovante">
+      <p>
+        <strong>Valor sacado:</strong>
+        R$ 100,00
+      </p>
+
+      <p>
+        <strong>Data e hora:</strong>
+        15/09/2026 14:30
+      </p>
+    </div>
+  </section>
+  -->
+
+  <form class="formulario">
+    <label class="campo">
+      <span>Valor do saque (R$)</span>
+
+      <input
+        type="number"
+        step="0.01"
+        min="0.01"
+        placeholder="0,00"
+        name="valor"
+      >
+    </label>
+
+    <button type="submit">
+      Confirmar Saque
+    </button>
+  </form>
+
+  <!-- Exemplo de estado de carregamento
+  <section class="estado">
+    <p>Processando operação de saque...</p>
+  </section>
+  -->
+
+</main>
