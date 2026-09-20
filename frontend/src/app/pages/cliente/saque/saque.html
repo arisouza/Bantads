@@ -1,78 +1,12 @@
-<main class="saque">
-
-  <a
-    class="botao-voltar"
-    href="/cliente"
-    aria-label="Voltar para a página inicial do cliente"
-  >
-    <span aria-hidden="true">←</span>
-    Voltar
-  </a>
-
-  <header class="saque__cabecalho">
-    <div>
-      <h1>Saque</h1>
-      <p>Informe o valor que deseja retirar da sua conta.</p>
-    </div>
-
-    <div class="saque__info-conta">
-      <div class="saque__conta">
-        Conta <strong>12345-6</strong>
-      </div>
-
-      <div class="saque__saldo">
-        Saldo disponível:
-        <strong>R$ 1.500,00</strong>
-      </div>
-    </div>
-  </header>
-
-  <!-- Exemplo de mensagem de erro
-  <p class="mensagem mensagem--erro">
-    Saldo insuficiente para realizar esta operação.
-  </p>
-  -->
-
-  <!-- Exemplo de comprovante/sucesso
-  <section class="mensagem mensagem--sucesso">
-    <p>Saque realizado com sucesso!</p>
-
-    <div class="comprovante">
-      <p>
-        <strong>Valor sacado:</strong>
-        R$ 100,00
-      </p>
-
-      <p>
-        <strong>Data e hora:</strong>
-        15/09/2026 14:30
-      </p>
-    </div>
-  </section>
-  -->
-
-  <form class="formulario">
-    <label class="campo">
-      <span>Valor do saque (R$)</span>
-
-      <input
-        type="number"
-        step="0.01"
-        min="0.01"
-        placeholder="0,00"
-        name="valor"
-      >
-    </label>
-
-    <button type="submit">
-      Confirmar Saque
-    </button>
-  </form>
-
-  <!-- Exemplo de estado de carregamento
-  <section class="estado">
-    <p>Processando operação de saque...</p>
-  </section>
-  -->
-
-</main>
+<app-authenticated-layout [menuItems]="menuItems">
+  <main class="operacao-page">
+    <div class="operacao-page__toolbar"><a class="botao-voltar" routerLink="/cliente"><mat-icon aria-hidden="true">arrow_back</mat-icon> Voltar</a></div>
+    <section class="operacao-card">
+      <header class="operacao-card__header"><span class="operacao-card__eyebrow">Área do cliente</span><h1>Saque</h1><p>Informe o valor que deseja retirar da sua conta.</p></header>
+      @if (carregando) { <p class="operacao-loading">Carregando os dados da conta...</p> }
+      @if (conta) { <section class="conta-resumo"><div><span>Número da conta</span><strong>{{ conta.numeroConta }}</strong></div><div><span>Saldo atual</span><strong>{{ formatarMoeda(conta.saldo) || '—' }}</strong></div></section> }
+      @if (mensagemErro) { <p class="operacao-message" role="alert">{{ mensagemErro }}</p> }
+      <form class="operacao-form" [formGroup]="formulario" novalidate><mat-form-field appearance="outline"><mat-label>Valor do saque</mat-label><span matTextPrefix>R$&nbsp;</span><input matInput formControlName="valor" inputmode="decimal" placeholder="0,00" /></mat-form-field><button mat-flat-button color="primary" type="button" [disabled]="carregando || !conta">Sacar</button></form>
+    </section>
+  </main>
+</app-authenticated-layout>

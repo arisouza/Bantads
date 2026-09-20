@@ -1,1 +1,12 @@
-<p>deposito works!</p>
+<app-authenticated-layout [menuItems]="menuItems">
+  <main class="operacao-page">
+    <div class="operacao-page__toolbar"><a class="botao-voltar" routerLink="/cliente"><mat-icon aria-hidden="true">arrow_back</mat-icon> Voltar</a></div>
+    <section class="operacao-card">
+      <header class="operacao-card__header"><span class="operacao-card__eyebrow">Área do cliente</span><h1>Depósito</h1><p>Informe o valor que deseja adicionar à sua conta.</p></header>
+      @if (carregando) { <p class="operacao-loading">Carregando os dados da conta...</p> }
+      @if (conta) { <section class="conta-resumo"><div><span>Número da conta</span><strong>{{ conta.numeroConta }}</strong></div><div><span>Saldo atual</span><strong>{{ formatarMoeda(conta.saldo) || '—' }}</strong></div></section> }
+      @if (mensagemErro) { <p class="operacao-message" role="alert">{{ mensagemErro }}</p> }
+      <form class="operacao-form" [formGroup]="formulario" novalidate><mat-form-field appearance="outline"><mat-label>Valor do depósito</mat-label><span matTextPrefix>R$&nbsp;</span><input matInput formControlName="valor" inputmode="decimal" placeholder="0,00" /></mat-form-field><button mat-flat-button color="primary" type="button" [disabled]="carregando || !conta">Depositar</button></form>
+    </section>
+  </main>
+</app-authenticated-layout>
