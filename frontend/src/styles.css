@@ -60,18 +60,34 @@ img {
   align-items: center;
   gap: 8px;
   margin-bottom: 24px;
+  padding: 9px 14px;
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
+  background: var(--color-surface);
   color: #4169e1;
   font-size: 15px;
   font-weight: 700;
   text-decoration: none;
+  outline: none;
+  -webkit-tap-highlight-color: transparent;
   transition:
+    background 160ms ease,
+    border-color 160ms ease,
     color 160ms ease,
     transform 160ms ease;
 }
 
 .botao-voltar:hover {
+  border-color: #b9c7f7;
+  background: #edf1ff;
   color: #294dbd;
   transform: translateX(-3px);
+}
+
+.botao-voltar:focus {
+  border-color: var(--color-border);
+  box-shadow: none;
+  outline: none;
 }
 
 .botao-voltar:focus-visible {

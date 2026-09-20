@@ -1,13 +1,12 @@
+<app-authenticated-layout [menuItems]="menuItems">
 <main class="transferencia-page">
 
-  <a
-  class="botao-voltar"
-  routerLink="/cliente"
-  aria-label="Voltar para a página inicial do cliente"
->
-  <span aria-hidden="true">←</span>
-  Voltar
-</a>
+  <div class="transferencia-page__toolbar">
+    <a class="botao-voltar" routerLink="/cliente" aria-label="Voltar para a página inicial do cliente">
+      <mat-icon aria-hidden="true">arrow_back</mat-icon>
+      Voltar
+    </a>
+  </div>
 
   <section class="transferencia-card">
 
@@ -156,3 +155,4 @@
   </section>
 
 </main>
+</app-authenticated-layout>

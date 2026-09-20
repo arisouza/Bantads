@@ -4,24 +4,19 @@
 }
 
 .transferencia-page {
-  min-height: 100vh;
-  padding: 48px 20px;
+  width: min(100% - 40px, var(--container-width));
+  margin: 0 auto;
+  padding: 56px 0 72px;
+}
 
-  display: flex;
-  align-items: flex-start;
-  justify-content: center;
-
-  background:
-    radial-gradient(
-      circle at top left,
-      rgba(71, 112, 255, 0.15),
-      transparent 32rem
-    ),
-    var(--color-background);
+.transferencia-page__toolbar {
+  width: min(100%, 860px);
+  margin: 0 auto;
 }
 
 .transferencia-card {
-  width: min(100%, 680px);
+  width: min(100%, 860px);
+  margin: 0 auto;
   padding: clamp(28px, 5vw, 48px);
 
   background: var(--color-surface);
@@ -135,7 +130,8 @@
 @media (max-width: 560px) {
 
   .transferencia-page {
-    padding: 24px 16px;
+    width: min(100% - 28px, var(--container-width));
+    padding: 36px 0 48px;
   }
 
   .transferencia-card {

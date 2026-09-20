@@ -1,3 +1,4 @@
+<app-authenticated-layout [menuItems]="menuItems">
 <main class="extrato">
 
   <a
@@ -5,7 +6,7 @@
       routerLink="/cliente"
       aria-label="Voltar para a página inicial do cliente"
   >
-      <span aria-hidden="true">←</span>
+      <mat-icon aria-hidden="true">arrow_back</mat-icon>
           Voltar
   </a>
 
@@ -148,3 +149,4 @@
     </section>
   }
 </main>
+</app-authenticated-layout>

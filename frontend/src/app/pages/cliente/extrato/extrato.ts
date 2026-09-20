@@ -18,6 +18,9 @@ import {
 import { AuthService } from '../../../shared/services/auth';
 import { ContaService } from '../../../shared/services/conta';
 import { RouterLink } from '@angular/router';
+import { MatIconModule } from '@angular/material/icon';
+import { AuthenticatedLayoutComponent } from '../../../shared/components/authenticated-layout/authenticated-layout';
+import { CLIENTE_MENU_ITEMS } from '../../../shared/config/menu-items';
 
 interface DiaExtrato {
   data: string;
@@ -31,12 +34,16 @@ interface DiaExtrato {
   imports: [
     CommonModule,
     ReactiveFormsModule,
-    RouterLink
+    RouterLink,
+    MatIconModule,
+    AuthenticatedLayoutComponent
   ],
   templateUrl: './extrato.html',
   styleUrl: './extrato.css'
 })
 export class Extrato implements OnInit {
+
+  readonly menuItems = CLIENTE_MENU_ITEMS;
 
   private readonly formBuilder = inject(FormBuilder);
   private readonly authService = inject(AuthService);

@@ -13,6 +13,7 @@ import {
 import { MatButtonModule } from '@angular/material/button';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
+import { MatIconModule } from '@angular/material/icon';
 
 import Decimal from 'decimal.js';
 import { finalize } from 'rxjs';
@@ -20,6 +21,8 @@ import { finalize } from 'rxjs';
 import { Conta } from '../../../shared/models/conta';
 import { AuthService } from '../../../shared/services/auth';
 import { RouterLink } from '@angular/router';
+import { AuthenticatedLayoutComponent } from '../../../shared/components/authenticated-layout/authenticated-layout';
+import { CLIENTE_MENU_ITEMS } from '../../../shared/config/menu-items';
 import {
   ContaService
 } from '../../../shared/services/conta';
@@ -35,12 +38,16 @@ import {
     MatButtonModule,
     MatFormFieldModule,
     MatInputModule,
-    RouterLink
+    MatIconModule,
+    RouterLink,
+    AuthenticatedLayoutComponent
   ],
   styleUrl: './transferencia.css',
   templateUrl: './transferencia.html'
 })
 export class Transferencia implements OnInit {
+
+  readonly menuItems = CLIENTE_MENU_ITEMS;
 
   readonly formatarMoeda = formatarMoedaUtil;
 
