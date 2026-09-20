@@ -5,7 +5,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { formatarMoeda } from '../../shared/utils/formatar-moeda';
 
 import { AuthenticatedLayoutComponent } from '../../shared/components/authenticated-layout/authenticated-layout';
-import { SidebarItem } from '../../shared/components/sidebar/sidebar';
+import { CLIENTE_MENU_ITEMS } from '../../shared/config/menu-items';
 import { Conta } from '../../shared/models/conta';
 import { AuthService, LoginResponse } from '../../shared/services/auth';
 import { ContaService } from '../../shared/services/conta';
@@ -32,13 +32,7 @@ export class Cliente implements OnInit {
     return conta?.saldo ? formatarMoeda(conta.saldo) : null;
   });
   readonly erro = signal<string | null>(null);
-  readonly menuItems: SidebarItem[] = [
-    { label: 'Início', route: '/cliente', icon: 'home' },
-    { label: 'Depositar', route: '/cliente/deposito', icon: 'add_circle' },
-    { label: 'Sacar', route: '/cliente/saque', icon: 'remove_circle' },
-    { label: 'Transferir', route: '/cliente/transferencia', icon: 'swap_horiz' },
-    { label: 'Extrato', route: '/cliente/extrato', icon: 'receipt_long' }
-  ];
+  readonly menuItems = CLIENTE_MENU_ITEMS;
 
   constructor(
     private authService: AuthService,
