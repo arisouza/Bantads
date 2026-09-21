@@ -17,10 +17,17 @@ const init = async () => {
             }
         });
 
-        channel.consume('saga.reply', async (msg) => {
+        channel.consume('orquestrador.reply', async (msg) => {
             if (msg) {
                 const payload = JSON.parse(msg.content.toString());
-                await orchestrate(payload);
+
+                await orchestrate({
+                    sagaId: payload.sagaId,
+                    action: payload.tipo,
+                    data: payload.payload,
+                    erro: payload.erro
+                });
+
                 channel.ack(msg);
             }
         });

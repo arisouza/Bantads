@@ -21,41 +21,28 @@ public class SagaCommandExecutionService {
     }
 
     @Transactional
-    public SagaCommandExecution iniciar(
+    public Optional<SagaCommandExecution> iniciar(
             String sagaId,
             String tipo
     ) {
-
         Optional<SagaCommandExecution> existente =
-                repository.findBySagaIdAndTipo(
-                        sagaId,
-                        tipo
-                );
+                repository.findBySagaIdAndTipo(sagaId, tipo);
 
         if (existente.isPresent()) {
-            return existente.get();
+            return Optional.empty();
         }
 
-        SagaCommandExecution execution =
-                new SagaCommandExecution();
+        SagaCommandExecution execution = new SagaCommandExecution();
 
         execution.setSagaId(sagaId);
         execution.setTipo(tipo);
-        execution.setStatus(
-                SagaCommandStatus.PROCESSANDO
-        );
+        execution.setStatus(SagaCommandStatus.PROCESSANDO);
 
         try {
-            return repository.save(execution);
+            return Optional.of(repository.save(execution));
 
         } catch (DataIntegrityViolationException exception) {
-
-            return repository
-                    .findBySagaIdAndTipo(
-                            sagaId,
-                            tipo
-                    )
-                    .orElseThrow(() -> exception);
+            return Optional.empty();
         }
     }
 
