@@ -15,11 +15,16 @@ const orchestrate = async (command) => {
                 channel.sendToQueue('auth.cmd', Buffer.from(JSON.stringify({ sagaId, action: 'CREATE_AUTH', data })));
                 break;
             case 'AUTH_CREATED':
-                channel.sendToQueue('conta.cmd', Buffer.from(JSON.stringify({ sagaId, action: 'CREATE_CONTA', data })));
+                channel.sendToQueue('ms.conta.cmd', Buffer.from(JSON.stringify({
+                                                         sagaId,
+                                                         tipo: 'CREATE_CONTA',
+                                                         timestamp: new Date().toISOString(),
+                                                         payload: data
+                                                     }));
                 break;
             case 'CONTA_CREATED':
                 channel.sendToQueue('email.cmd', Buffer.from(JSON.stringify({ sagaId, action: 'SEND_WELCOME_EMAIL', data })));
-                await updateJob(sagaId, 'CONCLUIDO', { resourceId: data.cpf });
+                await updateJob(sagaId, 'CONCLUIDO', { resourceId: data.cpfCliente });
                 break;
             case 'AUTH_FAILED':
             case 'CONTA_FAILED':
