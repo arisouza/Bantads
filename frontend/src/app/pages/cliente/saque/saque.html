@@ -5,8 +5,11 @@
       <header class="operacao-card__header"><span class="operacao-card__eyebrow">Área do cliente</span><h1>Saque</h1><p>Informe o valor que deseja retirar da sua conta.</p></header>
       @if (carregando) { <p class="operacao-loading">Carregando os dados da conta...</p> }
       @if (conta) { <section class="conta-resumo"><div><span>Número da conta</span><strong>{{ conta.numeroConta }}</strong></div><div><span>Saldo atual</span><strong>{{ formatarMoeda(conta.saldo) || '—' }}</strong></div></section> }
+      @if (mensagemSucesso) { <p class="operacao-message operacao-message--success" role="status">{{ mensagemSucesso }}</p> }
+      @if (mensagemInfo) { <p class="operacao-message operacao-message--success" role="status">{{ mensagemInfo }}</p> }
       @if (mensagemErro) { <p class="operacao-message" role="alert">{{ mensagemErro }}</p> }
-      <form class="operacao-form" [formGroup]="formulario" novalidate><mat-form-field appearance="outline"><mat-label>Valor do saque</mat-label><span matTextPrefix>R$&nbsp;</span><input matInput formControlName="valor" inputmode="decimal" placeholder="0,00" /></mat-form-field><button mat-flat-button color="primary" type="button" [disabled]="carregando || !conta">Sacar</button></form>
+      <form class="operacao-form" [formGroup]="formulario" (ngSubmit)="sacar()" novalidate><mat-form-field appearance="outline"><mat-label>Valor do saque</mat-label><span matTextPrefix>R$&nbsp;</span><input matInput formControlName="valor" inputmode="decimal" placeholder="0,00" /><mat-error>Informe um valor válido.</mat-error></mat-form-field><button mat-flat-button color="primary" type="submit" [disabled]="carregando || processando || !conta">{{ processando ? 'Sacando...' : 'Sacar' }}</button></form>
     </section>
   </main>
+  <app-modal [aberto]="modalAberto" titulo="Confirmar saque" (fechar)="cancelarConfirmacao()"><p class="modal-mensagem">Deseja confirmar o saque de <strong>{{ formatarMoeda(valorPendente) }}</strong>?</p><div class="modal-acoes"><button class="modal-botao modal-botao--secundario" type="button" (click)="cancelarConfirmacao()">Cancelar</button><button class="modal-botao" type="button" mat-flat-button color="primary" (click)="confirmarSaque()">Confirmar</button></div></app-modal>
 </app-authenticated-layout>

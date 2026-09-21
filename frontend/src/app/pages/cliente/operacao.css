@@ -13,4 +13,11 @@
 .operacao-form { display: grid; gap: 14px; }
 .operacao-form button { min-height: 52px; border-radius: 9px; font-weight: 700; }
 .operacao-message { padding: 14px 16px; color: #942626; background: #fff0f0; border: 1px solid #f0b5b5; border-radius: var(--radius-sm); }
+.operacao-message--success { color: #17643a; background: #e9f8ef; border-color: #a7dfbd; }
+.modal-mensagem { margin: 0; color: var(--color-text-muted); line-height: 1.6; }
+.modal-acoes { display: flex; justify-content: flex-end; gap: 12px; margin-top: 24px; }
+.modal-botao { min-width: 108px; min-height: 44px; padding: 10px 18px; border-radius: 9px; font-weight: 700; }
+.modal-botao--secundario { color: var(--color-text); background: transparent; border: 1px solid var(--color-border); }
+.modal-botao--secundario:hover { background: var(--color-background); border-color: var(--color-primary); }
+@media (max-width: 560px) { .modal-acoes { gap: 8px; } .modal-botao { flex: 1; min-width: 0; } }
 @media (max-width: 560px) { .operacao-page { width: min(100% - 28px, var(--container-width)); padding: 36px 0 48px; } .operacao-card { padding: 26px 20px; } .conta-resumo { grid-template-columns: 1fr; gap: 14px; } }

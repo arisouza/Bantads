@@ -26,9 +26,14 @@ public class ApiExceptionHandler {
         return ResponseEntity.status(HttpStatus.FORBIDDEN).body(new MensagemResponse(ex.getMessage()));
     }
 
-    @ExceptionHandler({ValorInvalidoException.class, SaldoInsuficienteException.class})
-    public ResponseEntity<MensagemResponse> requisicaoInvalida(RuntimeException ex) {
+    @ExceptionHandler(ValorInvalidoException.class)
+    public ResponseEntity<MensagemResponse> valorInvalido(ValorInvalidoException ex) {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new MensagemResponse(ex.getMessage()));
+    }
+
+    @ExceptionHandler(SaldoInsuficienteException.class)
+    public ResponseEntity<MensagemResponse> saldoInsuficiente(SaldoInsuficienteException ex) {
+        return ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY).body(new MensagemResponse(ex.getMessage()));
     }
 
     @ExceptionHandler({ConflitoVersaoException.class, ContaJaExistenteException.class})

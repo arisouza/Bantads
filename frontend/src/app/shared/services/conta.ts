@@ -43,7 +43,21 @@ export class ContaService {
       }
     }
   );
-}
+  }
+
+  depositar(numeroConta: string, valor: string): Observable<OperacaoResponse> {
+    return this.http.post<OperacaoResponse>(
+      `${this.API_URL}/contas/${encodeURIComponent(numeroConta)}/deposito`,
+      { valor }
+    );
+  }
+
+  sacar(numeroConta: string, valor: string): Observable<OperacaoResponse> {
+    return this.http.post<OperacaoResponse>(
+      `${this.API_URL}/contas/${encodeURIComponent(numeroConta)}/saque`,
+      { valor }
+    );
+  }
 
   transferir(
       numeroConta: string,
