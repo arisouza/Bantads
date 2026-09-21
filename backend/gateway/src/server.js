@@ -1,7 +1,7 @@
 const express = require('express');
 const cors = require('cors');
 const jwt = require('jsonwebtoken');
-const { createProxyMiddleware } = require('http-proxy-middleware');
+const { createProxyMiddleware, fixRequestBody } = require('http-proxy-middleware');
 
 const { redisClient, connectRedis } = require('./config/redis');
 const { verifyJWT, requireRole, SECRET } = require('./middlewares/auth');
@@ -72,15 +72,27 @@ app.post('/logout', verifyJWT, async (req, res) => {
 
 const proxyOptions = {
     changeOrigin: true,
-    onProxyReq: (proxyReq, req) => {
-        if (req.userIdentity) {
-            proxyReq.setHeader('X-User-CPF', req.userIdentity.cpf);
-            proxyReq.setHeader('X-User-Tipo', req.userIdentity.tipo);
+    on: {
+        proxyReq: (proxyReq, req) => {
+            if (req.userIdentity) {
+                proxyReq.setHeader('X-User-CPF', req.userIdentity.cpf);
+                proxyReq.setHeader('X-User-Tipo', req.userIdentity.tipo);
+            }
+
+            fixRequestBody(proxyReq, req);
         }
     }
 };
 
-app.post('/clientes/solicitacao', createProxyMiddleware({ target: CLIENTE_URL, changeOrigin: true }));
+app.post('/clientes/solicitacao', createProxyMiddleware({
+    target: CLIENTE_URL,
+    changeOrigin: true,
+    on: {
+        proxyReq: (proxyReq, req) => {
+            fixRequestBody(proxyReq, req);
+        }
+    }
+}));
 
 app.use('/clientes', verifyJWT, createProxyMiddleware({
     target: CLIENTE_URL,
