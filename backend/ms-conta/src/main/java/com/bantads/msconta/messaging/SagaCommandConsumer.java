@@ -54,6 +54,10 @@ public class SagaCommandConsumer {
                         command,
                         execution
                 );
+                case "ALTERAR_GERENTE" -> processarAlterarGerente(
+                        command,
+                        execution
+                );
 
                 default -> throw new IllegalArgumentException(
                         "Tipo de comando da Saga não suportado: "
@@ -110,6 +114,42 @@ public class SagaCommandConsumer {
 
         reply.setSagaId(command.getSagaId());
         reply.setTipo("CONTA_CREATED");
+        reply.setPayload(responsePayload);
+        reply.setTimestamp(command.getTimestamp());
+        reply.setStatus("CONCLUIDO");
+        reply.setErro(null);
+
+        sagaReplyPublisher.publicar(reply);
+    }
+
+    private void processarAlterarGerente(
+            SagaCommandMessage command,
+            SagaCommandExecution execution
+    ) throws JsonProcessingException {
+
+        Map<String, Object> payload = command.getPayload();
+
+        String numeroConta = getString(payload, "numeroConta");
+        String cpfGerenteNovo = getString(payload, "cpfGerenteNovo");
+
+        Conta conta = contaCommandService.alterarGerente(
+                numeroConta,
+                cpfGerenteNovo
+        );
+
+        Map<String, Object> responsePayload = Map.of(
+                "numeroConta", conta.getNumeroConta(),
+                "cpfCliente", conta.getCpfCliente(),
+                "cpfGerente", conta.getCpfGerente()
+        );
+
+        String responseJson = objectMapper.writeValueAsString(responsePayload);
+
+        sagaCommandExecutionService.concluir(execution, responseJson);
+
+        SagaReplyMessage reply = new SagaReplyMessage();
+        reply.setSagaId(command.getSagaId());
+        reply.setTipo("GERENTE_ALTERADO");
         reply.setPayload(responsePayload);
         reply.setTimestamp(command.getTimestamp());
         reply.setStatus("CONCLUIDO");

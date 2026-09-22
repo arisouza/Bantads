@@ -70,6 +70,24 @@ public class ContaCommandService {
         return contaReplayService.reconstruirConta(numeroConta);
     }
 
+    public Conta alterarGerente(String numeroConta, String cpfGerenteNovo) {
+        if (cpfGerenteNovo == null || cpfGerenteNovo.isBlank()) {
+            throw new ValorInvalidoException("CPF do novo gerente é obrigatório");
+        }
+
+        Conta conta = reconstruirExistente(numeroConta);
+        if (cpfGerenteNovo.equals(conta.getCpfGerente())) {
+            throw new ValorInvalidoException("O novo gerente deve ser diferente do atual");
+        }
+
+        Map<String, String> payload = new LinkedHashMap<>();
+        payload.put("cpfGerenteAnterior", conta.getCpfGerente());
+        payload.put("cpfGerenteNovo", cpfGerenteNovo);
+
+        contaEventService.registrarEvento(numeroConta, TipoEventoEnum.GERENTE_ALTERADO, payload);
+        return contaReplayService.reconstruirConta(numeroConta);
+    }
+
     public void depositar(String numeroConta, String valorStr, String cpfUsuario) {
         BigDecimal valor = parseValor(valorStr);
         executarComRetry(() -> {

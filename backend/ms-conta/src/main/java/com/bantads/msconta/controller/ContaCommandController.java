@@ -1,6 +1,7 @@
 package com.bantads.msconta.controller;
 
 import com.bantads.msconta.domain.entity.Conta;
+import com.bantads.msconta.dto.AlterarGerenteRequest;
 import com.bantads.msconta.dto.ContaResponse;
 import com.bantads.msconta.dto.CriarContaRequest;
 import com.bantads.msconta.dto.MensagemResponse;
@@ -13,6 +14,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -48,6 +50,18 @@ public class ContaCommandController {
         response.add(linkTo(methodOn(ContaCommandController.class).sacar(conta.getNumeroConta(), null, null)).withRel("saque"));
         response.add(linkTo(methodOn(ContaQueryController.class).extrato(conta.getNumeroConta(), null, null)).withRel("extrato"));
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
+    }
+
+    @PutMapping("/{numero:[0-9]{4}}/gerente")
+    public ResponseEntity<ContaResponse> alterarGerente(
+            @PathVariable String numero,
+            @Valid @RequestBody AlterarGerenteRequest request
+    ) {
+        Conta conta = contaCommandService.alterarGerente(numero, request.getCpfGerenteNovo());
+        ContaResponse response = contaQueryService.deAgregado(conta);
+        response.add(linkTo(methodOn(ContaQueryController.class).buscar(numero)).withSelfRel());
+        response.add(linkTo(methodOn(ContaQueryController.class).buscarPorGerente(conta.getCpfGerente())).withRel("gerente"));
+        return ResponseEntity.ok(response);
     }
 
     @PostMapping("/{numero:[0-9]{4}}/deposito")
