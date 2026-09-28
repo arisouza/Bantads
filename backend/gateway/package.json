@@ -11,10 +11,12 @@
   "license": "ISC",
   "type": "commonjs",
   "dependencies": {
+    "amqplib": "^0.10.3",
     "cors": "^2.8.6",
     "express": "^5.2.1",
     "http-proxy-middleware": "^4.2.0",
     "jsonwebtoken": "9.0.2",
-    "redis": "4.7.0"
+    "redis": "4.7.0",
+    "uuid": "^9.0.1"
   }
 }
