@@ -4,7 +4,11 @@ import com.bantads.ms_auth.service.AuthService;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.Map;
 
 @RestController
 @RequestMapping("/auth")
@@ -18,5 +22,24 @@ public class AuthController {
     @PostMapping("/login")
     public AuthService.Identidade login(@Valid @RequestBody Credenciais body) {
         return auth.autenticar(body.email(), body.senha());
+    }
+
+    @PostMapping("/usuarios")
+    public ResponseEntity<Map<String, String>> criar(@RequestBody AuthService.CriarUsuarioCmd body) {
+        var result = auth.criarUsuario(body);
+        return ResponseEntity.status(HttpStatus.CREATED)
+            .body(Map.of("cpf", result.cpf(), "senha", result.senha()));
+    }
+
+    @PutMapping("/usuarios/{cpf}/desativar")
+    public ResponseEntity<Void> desativar(@PathVariable String cpf) {
+        auth.desativarUsuario(cpf);
+        return ResponseEntity.noContent().build();
+    }
+
+    @PostMapping("/reboot")
+    public ResponseEntity<Map<String, String>> reboot() {
+        auth.reboot();
+        return ResponseEntity.ok(Map.of("status", "ok"));
     }
 }

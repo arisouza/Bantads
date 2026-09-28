@@ -10,11 +10,10 @@ const connectRedis = async () => {
 };
 
 const updateJob = async (jobId, status, extra = {}) => {
-    const job = { jobId, status, ...extra };
+    const existing = await redisClient.get(`job:${jobId}`);
+    const prev = existing ? JSON.parse(existing) : {};
+    const job = { ...prev, jobId, status, ...extra };
     await redisClient.set(`job:${jobId}`, JSON.stringify(job), { EX: 300 });
 };
 
-module.exports = {
-    connectRedis,
-    updateJob
-};
+module.exports = { connectRedis, updateJob, redisClient };

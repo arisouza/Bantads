@@ -97,9 +97,15 @@ services:
     environment:
       SERVER_PORT: 3001
       MONGODB_URI: mongodb://admin:${MONGO_PASSWORD:-admin}@mongo:27017/bantads_auth?authSource=admin
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_PORT: 5672
+      RABBITMQ_USER: ${RABBITMQ_USER:-admin}
+      RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD:-admin}
       JAVA_TOOL_OPTIONS: -XX:MaxRAMPercentage=60
     expose: ["3001"]
-    depends_on: {mongo: {condition: service_healthy}}
+    depends_on:
+      mongo: {condition: service_healthy}
+      rabbitmq: {condition: service_healthy}
     networks: [bantads-network]
     healthcheck:
       test: ["CMD-SHELL", "curl -fsS http://localhost:3001/health || exit 1"]
@@ -191,12 +197,13 @@ services:
     environment:
       PORT: 3000
       REDIS_URL: redis://redis:6379
-      RABBITMQ_URL: amqp://rabbitmq:5672
+      RABBITMQ_URL: amqp://${RABBITMQ_USER:-admin}:${RABBITMQ_PASSWORD:-admin}@rabbitmq:5672
       AUTH_URL: http://ms-auth:3001
       CLIENTE_URL: http://ms-cliente:3002
       GERENTE_URL: http://ms-gerente:3003
       CONTA_URL: http://ms-conta:3004
-      JWT_SECRET: ${JWT_SECRET}
+      JWT_SECRET: ${JWT_SECRET:-bantads-secret-key}
+      GATEWAY_BASE: http://localhost:3000
       NODE_OPTIONS: --max-old-space-size=192
     ports: ["3000:3000"]
     depends_on:
