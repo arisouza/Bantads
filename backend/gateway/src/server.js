@@ -148,13 +148,16 @@ app.post('/logout', verifyJWT, async (req, res) => {
     }
 });
 
-app.post('/solicitacoes', createProxyMiddleware(proxyOpts(CLIENTE_URL)));
+const solicitacoesProxyOpts = proxyOpts(CLIENTE_URL);
+solicitacoesProxyOpts.pathRewrite = { '^/solicitacoes': '/clientes/solicitacoes' };
+app.post('/solicitacoes', createProxyMiddleware(solicitacoesProxyOpts));
+app.post('/clientes', createProxyMiddleware(proxyOpts(CLIENTE_URL)));
 
 app.get('/solicitacoes', verifyJWT, requireRole('GERENTE'),
-    createProxyMiddleware(proxyOpts(CLIENTE_URL)));
+    createProxyMiddleware(solicitacoesProxyOpts));
 
 app.get('/solicitacoes/:cpf', verifyJWT, requireRole('GERENTE'),
-    createProxyMiddleware(proxyOpts(CLIENTE_URL)));
+    createProxyMiddleware(solicitacoesProxyOpts));
 
 app.post('/solicitacoes/:cpf/aprovacao', verifyJWT, requireRole('GERENTE'), async (req, res) => {
     const { cpf } = req.params;
@@ -164,7 +167,7 @@ app.post('/solicitacoes/:cpf/aprovacao', verifyJWT, requireRole('GERENTE'), asyn
 });
 
 app.post('/solicitacoes/:cpf/rejeicao', verifyJWT, requireRole('GERENTE'),
-    createProxyMiddleware(proxyOpts(CLIENTE_URL)));
+    createProxyMiddleware(solicitacoesProxyOpts));
 
 app.get('/clientes', verifyJWT, requireRole('GERENTE'), async (req, res) => {
     try {

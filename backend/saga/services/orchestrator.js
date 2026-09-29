@@ -36,6 +36,7 @@ const orchestrate = async (command) => {
                 await updateJob(sagaId, 'CONCLUIDO', { resourceId: data.cpfCliente ?? data.cpf });
                 break;
 
+            case 'CLIENTE_FAILED':
             case 'AUTH_FAILED':
             case 'CONTA_FAILED':
                 channel.sendToQueue('cliente.cmd', Buffer.from(JSON.stringify({
