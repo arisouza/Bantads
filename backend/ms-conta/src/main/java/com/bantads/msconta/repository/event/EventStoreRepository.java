@@ -19,4 +19,6 @@ public interface EventStoreRepository extends JpaRepository<EventStore, UUID> {
     int findMaxVersaoByObjetoId(@Param("objetoId") String objetoId);
 
     boolean existsByObjetoId(String objetoId);
+
+    void deleteByObjetoId(String objetoId);
 }

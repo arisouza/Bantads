@@ -8,4 +8,6 @@ import java.util.UUID;
 public interface EventoProcessadoRepository extends JpaRepository<EventoProcessado, UUID> {
 
     boolean existsByEventId(UUID eventId);
+
+    void deleteByObjetoId(String objetoId);
 }
