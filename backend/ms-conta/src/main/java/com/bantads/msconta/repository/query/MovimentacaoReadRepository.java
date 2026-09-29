@@ -19,4 +19,6 @@ public interface MovimentacaoReadRepository extends JpaRepository<MovimentacaoRe
             OffsetDateTime inicio,
             OffsetDateTime fim
     );
+
+    void deleteByNumeroConta(String numeroConta);
 }

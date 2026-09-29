@@ -11,6 +11,8 @@ import com.bantads.msconta.exception.SaldoInsuficienteException;
 import com.bantads.msconta.exception.ValorInvalidoException;
 import com.bantads.msconta.repository.event.EventStoreRepository;
 import com.bantads.msconta.repository.query.ContaReadRepository;
+import com.bantads.msconta.repository.query.EventoProcessadoRepository;
+import com.bantads.msconta.repository.query.MovimentacaoReadRepository;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -35,17 +37,23 @@ public class ContaCommandService {
     private final ContaEventService contaEventService;
     private final EventStoreRepository eventStoreRepository;
     private final ContaReadRepository contaReadRepository;
+    private final MovimentacaoReadRepository movimentacaoReadRepository;
+    private final EventoProcessadoRepository eventoProcessadoRepository;
 
     public ContaCommandService(
             ContaReplayService contaReplayService,
             ContaEventService contaEventService,
             EventStoreRepository eventStoreRepository,
-            ContaReadRepository contaReadRepository
+            ContaReadRepository contaReadRepository,
+            MovimentacaoReadRepository movimentacaoReadRepository,
+            EventoProcessadoRepository eventoProcessadoRepository
     ) {
         this.contaReplayService = contaReplayService;
         this.contaEventService = contaEventService;
         this.eventStoreRepository = eventStoreRepository;
         this.contaReadRepository = contaReadRepository;
+        this.movimentacaoReadRepository = movimentacaoReadRepository;
+        this.eventoProcessadoRepository = eventoProcessadoRepository;
     }
 
     public Conta criarConta(String cpfCliente, List<String> cpfsGerentesAtivos) {
@@ -86,6 +94,29 @@ public class ContaCommandService {
 
         contaEventService.registrarEvento(numeroConta, TipoEventoEnum.GERENTE_ALTERADO, payload);
         return contaReplayService.reconstruirConta(numeroConta);
+    }
+
+    @Transactional
+    public Conta removerConta(String numeroConta) {
+        Conta conta = reconstruirExistente(numeroConta);
+        apagarDadosDaConta(numeroConta);
+        return conta;
+    }
+
+    @Transactional
+    public Conta removerContaPorCpf(String cpfCliente) {
+        ContaRead contaRead = contaReadRepository.findByCpfCliente(cpfCliente)
+                .orElseThrow(() -> new ContaNaoEncontradaException(cpfCliente));
+        Conta conta = reconstruirExistente(contaRead.getNumeroConta());
+        apagarDadosDaConta(contaRead.getNumeroConta());
+        return conta;
+    }
+
+    private void apagarDadosDaConta(String numeroConta) {
+        movimentacaoReadRepository.deleteByNumeroConta(numeroConta);
+        eventoProcessadoRepository.deleteByObjetoId(numeroConta);
+        contaReadRepository.deleteById(numeroConta);
+        eventStoreRepository.deleteByObjetoId(numeroConta);
     }
 
     public void depositar(String numeroConta, String valorStr, String cpfUsuario) {

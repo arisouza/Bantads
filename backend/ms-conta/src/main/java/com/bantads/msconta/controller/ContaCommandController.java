@@ -12,6 +12,7 @@ import com.bantads.msconta.service.ContaQueryService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -62,6 +63,22 @@ public class ContaCommandController {
         response.add(linkTo(methodOn(ContaQueryController.class).buscar(numero)).withSelfRel());
         response.add(linkTo(methodOn(ContaQueryController.class).buscarPorGerente(conta.getCpfGerente())).withRel("gerente"));
         return ResponseEntity.ok(response);
+    }
+
+    @DeleteMapping("/{numero:[0-9]{4}}")
+    public ResponseEntity<MensagemResponse> remover(@PathVariable String numero) {
+        Conta conta = contaCommandService.removerConta(numero);
+        return ResponseEntity.ok(new MensagemResponse(
+                "Conta " + conta.getNumeroConta() + " removida"
+        ));
+    }
+
+    @DeleteMapping("/cpf/{cpf}")
+    public ResponseEntity<MensagemResponse> removerPorCpf(@PathVariable String cpf) {
+        Conta conta = contaCommandService.removerContaPorCpf(cpf);
+        return ResponseEntity.ok(new MensagemResponse(
+                "Conta " + conta.getNumeroConta() + " do CPF " + cpf + " removida"
+        ));
     }
 
     @PostMapping("/{numero:[0-9]{4}}/deposito")

@@ -58,6 +58,10 @@ public class SagaCommandConsumer {
                         command,
                         execution
                 );
+                case "DELETE_CONTA", "REMOVER_CONTA" -> processarRemoverConta(
+                        command,
+                        execution
+                );
 
                 default -> throw new IllegalArgumentException(
                         "Tipo de comando da Saga não suportado: "
@@ -150,6 +154,41 @@ public class SagaCommandConsumer {
         SagaReplyMessage reply = new SagaReplyMessage();
         reply.setSagaId(command.getSagaId());
         reply.setTipo("GERENTE_ALTERADO");
+        reply.setPayload(responsePayload);
+        reply.setTimestamp(command.getTimestamp());
+        reply.setStatus("CONCLUIDO");
+        reply.setErro(null);
+
+        sagaReplyPublisher.publicar(reply);
+    }
+
+    private void processarRemoverConta(
+            SagaCommandMessage command,
+            SagaCommandExecution execution
+    ) throws JsonProcessingException {
+
+        Map<String, Object> payload = command.getPayload();
+        Conta conta;
+
+        if (payload.get("numeroConta") != null && !payload.get("numeroConta").toString().isBlank()) {
+            conta = contaCommandService.removerConta(payload.get("numeroConta").toString());
+        } else {
+            String cpfCliente = getString(payload, "cpfCliente");
+            conta = contaCommandService.removerContaPorCpf(cpfCliente);
+        }
+
+        Map<String, Object> responsePayload = Map.of(
+                "numeroConta", conta.getNumeroConta(),
+                "cpfCliente", conta.getCpfCliente(),
+                "cpfGerente", conta.getCpfGerente()
+        );
+
+        String responseJson = objectMapper.writeValueAsString(responsePayload);
+        sagaCommandExecutionService.concluir(execution, responseJson);
+
+        SagaReplyMessage reply = new SagaReplyMessage();
+        reply.setSagaId(command.getSagaId());
+        reply.setTipo("CONTA_REMOVIDA");
         reply.setPayload(responsePayload);
         reply.setTimestamp(command.getTimestamp());
         reply.setStatus("CONCLUIDO");
