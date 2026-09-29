@@ -1,1 +1,139 @@
-<app-authenticated-layout [menuItems]="menuItems"><p>gerente works!</p></app-authenticated-layout>
+<app-authenticated-layout [menuItems]="menuItems">
+  <section class="gerente-page">
+    <header class="page-header">
+      <div>
+        <span class="eyebrow">Área do gerente</span>
+        <h1>Solicitações de autocadastro</h1>
+        <p>Acompanhe as solicitações e o histórico de decisões.</p>
+      </div>
+
+      <button
+        mat-stroked-button
+        type="button"
+        (click)="carregarSolicitacoes()"
+        [disabled]="carregando()"
+      >
+        Atualizar
+      </button>
+    </header>
+
+    <section
+      class="solicitacoes-card"
+      aria-label="Solicitações de autocadastro"
+      [attr.aria-busy]="carregando()"
+    >
+      @if (carregando()) {
+        <p class="estado" role="status">
+          Carregando solicitações...
+        </p>
+      } @else if (mensagemErro()) {
+        <p class="estado erro" role="alert">
+          {{ mensagemErro() }}
+        </p>
+      } @else if (solicitacoes().length === 0) {
+        <p class="estado">
+          Nenhuma solicitação de autocadastro encontrada.
+        </p>
+      } @else {
+        <div
+          class="tabela-container"
+          tabindex="0"
+          role="region"
+          aria-label="Tabela de solicitações, com rolagem horizontal"
+        >
+          <table>
+            <caption class="sr-only">
+              Solicitações de autocadastro de todos os status
+            </caption>
+
+            <thead>
+              <tr>
+                <th scope="col">CPF</th>
+                <th scope="col">Nome</th>
+                <th scope="col">Salário</th>
+                <th scope="col">Status</th>
+                <th scope="col">Motivo da recusa</th>
+                <th scope="col">Data/hora da decisão</th>
+                <th scope="col">Ações</th>
+              </tr>
+            </thead>
+
+            <tbody>
+              @for (solicitacao of solicitacoes(); track $index) {
+                <tr>
+                  <td class="sem-quebra">
+                    {{ formatarCpf(solicitacao.cpf) }}
+                  </td>
+
+                  <td>{{ solicitacao.nome }}</td>
+
+                  <td class="sem-quebra">
+                    {{ formatarMoeda(solicitacao.salario) ?? '—' }}
+                  </td>
+
+                  <td>
+                    <span
+                      class="status"
+                      [class.pendente]="solicitacao.status === 'PENDENTE'"
+                      [class.aprovado]="solicitacao.status === 'APROVADO'"
+                      [class.recusado]="solicitacao.status === 'NAO_APROVADO'"
+                    >
+                      {{ rotulosStatus[solicitacao.status] }}
+                    </span>
+                  </td>
+
+                  <td class="motivo">
+                    {{
+                      solicitacao.status === 'NAO_APROVADO'
+                        ? (solicitacao.motivo || 'Não informado')
+                        : '—'
+                    }}
+                  </td>
+
+                  <td class="sem-quebra">
+                    @if (
+                      solicitacao.status !== 'PENDENTE' &&
+                      solicitacao.dataHoraAnalise
+                    ) {
+                      {{
+                        solicitacao.dataHoraAnalise
+                          | date:'dd/MM/yyyy HH:mm'
+                      }}
+                    } @else {
+                      —
+                    }
+                  </td>
+
+                  <td>
+                    @if (solicitacao.status === 'PENDENTE') {
+                      <!-- Habilitar ao integrar R9 e R10. -->
+                      <div class="acoes">
+                        <button
+                          mat-flat-button
+                          type="button"
+                          disabled
+                        >
+                          Aprovar
+                        </button>
+
+                        <button
+                          mat-stroked-button
+                          type="button"
+                          disabled
+                        >
+                          Recusar
+                        </button>
+                      </div>
+                    } @else {
+                      <span class="finalizada">Finalizada</span>
+                    }
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+    </section>
+  </section>
+</app-authenticated-layout>
