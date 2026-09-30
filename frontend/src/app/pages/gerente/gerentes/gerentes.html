@@ -1,1 +1,107 @@
-<app-authenticated-layout [menuItems]="menuItems"><p>gerentes works!</p></app-authenticated-layout>
+<app-authenticated-layout [menuItems]="menuItems">
+  <section class="gerentes-page">
+    <header class="page-header">
+      <div>
+        <span class="eyebrow">Área do gerente</span>
+        <h1>Gerentes</h1>
+        <p>Gerencie os gestores ativos e inativos da instituição.</p>
+      </div>
+
+      <button
+        mat-flat-button
+        type="button"
+      >
+        Novo gerente
+      </button>
+    </header>
+
+    <section
+      class="gerentes-card"
+      aria-label="Lista de gerentes"
+      [attr.aria-busy]="carregando()"
+    >
+      @if (carregando()) {
+        <p class="estado" role="status">
+          Carregando gerentes...
+        </p>
+      } @else if (mensagemErro()) {
+        <p class="estado erro" role="alert">
+          {{ mensagemErro() }}
+        </p>
+      } @else if (gerentes().length === 0) {
+        <p class="estado">
+          Nenhum gerente encontrado.
+        </p>
+      } @else {
+        <div
+          class="tabela-container"
+          tabindex="0"
+          role="region"
+          aria-label="Tabela de gerentes, com rolagem horizontal"
+        >
+          <table>
+            <caption class="sr-only">
+              Lista de gerentes cadastrados
+            </caption>
+
+            <thead>
+              <tr>
+                <th scope="col">CPF</th>
+                <th scope="col">Nome</th>
+                <th scope="col">E-mail</th>
+                <th scope="col">Status</th>
+                <th scope="col">Clientes atendidos</th>
+                <th scope="col">Ações</th>
+              </tr>
+            </thead>
+
+            <tbody>
+              @for (gerente of gerentes(); track gerente.cpf) {
+                <tr>
+                  <td class="sem-quebra">
+                    {{ formatarCpf(gerente.cpf) }}
+                  </td>
+
+                  <td>{{ gerente.nome }}</td>
+
+                  <td>{{ gerente.email }}</td>
+
+                  <td>
+                    <span
+                      class="status"
+                      [class.ativo]="gerente.ativo"
+                      [class.inativo]="!gerente.ativo"
+                    >
+                      {{ gerente.ativo ? 'Ativo' : 'Inativo' }}
+                    </span>
+                  </td>
+
+                  <td>{{ gerente.totalClientes ?? 0 }}</td>
+
+                  <td>
+                    <div class="acoes">
+                      <button
+                        mat-stroked-button
+                        type="button"
+                      >
+                        Editar
+                      </button>
+
+                      <button
+                        mat-flat-button
+                        type="button"
+                        color="warn"
+                      >
+                        Desativar
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+    </section>
+  </section>
+</app-authenticated-layout>
