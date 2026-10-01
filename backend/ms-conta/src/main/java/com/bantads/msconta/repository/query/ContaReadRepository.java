@@ -14,5 +14,7 @@ public interface ContaReadRepository extends JpaRepository<ContaRead, String> {
 
     List<ContaRead> findByCpfGerente(String cpfGerente);
 
+    List<ContaRead> findByCpfGerenteOrderBySaldoAsc(String cpfGerente);
+
     long countByCpfGerente(String cpfGerente);
 }
