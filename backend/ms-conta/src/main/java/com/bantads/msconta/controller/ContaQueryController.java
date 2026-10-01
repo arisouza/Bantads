@@ -1,8 +1,10 @@
 package com.bantads.msconta.controller;
 
+import com.bantads.msconta.dto.ContaMenorSaldoResponse;
 import com.bantads.msconta.dto.ContaResponse;
 import com.bantads.msconta.dto.ContasGerenteResponse;
 import com.bantads.msconta.dto.ExtratoResponse;
+import com.bantads.msconta.dto.GerenteMenosClientesResponse;
 import com.bantads.msconta.service.ContaQueryService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -10,6 +12,10 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+
+import java.util.Arrays;
+import java.util.List;
+import java.util.stream.Collectors;
 
 import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
 import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.methodOn;
@@ -35,6 +41,31 @@ public class ContaQueryController {
     public ResponseEntity<ContaResponse> buscarPorCpf(@PathVariable String cpf) {
         ContaResponse response = contaQueryService.buscarPorCpf(cpf);
         adicionarLinks(response);
+        return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/gerente/menos-clientes")
+    public ResponseEntity<GerenteMenosClientesResponse> gerenteComMenosClientes(
+            @RequestParam("cpfs") String cpfs
+    ) {
+        List<String> lista = Arrays.stream(cpfs.split(","))
+                .map(String::trim)
+                .filter(cpf -> !cpf.isBlank())
+                .collect(Collectors.toList());
+        GerenteMenosClientesResponse response = contaQueryService.escolherGerenteComMenosClientes(lista);
+        response.add(linkTo(methodOn(ContaQueryController.class).gerenteComMenosClientes(cpfs)).withSelfRel());
+        response.add(linkTo(methodOn(ContaQueryController.class).buscarPorGerente(response.getCpfGerente())).withRel("contas"));
+        return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/gerente/{cpf}/menor-saldo")
+    public ResponseEntity<ContaMenorSaldoResponse> contaMenorSaldo(@PathVariable String cpf) {
+        ContaMenorSaldoResponse response = contaQueryService.buscarContaMenorSaldoDoGerente(cpf);
+        response.add(linkTo(methodOn(ContaQueryController.class).contaMenorSaldo(cpf)).withSelfRel());
+        response.add(linkTo(methodOn(ContaQueryController.class).buscarPorGerente(cpf)).withRel("contas"));
+        if (response.getConta() != null) {
+            adicionarLinks(response.getConta());
+        }
         return ResponseEntity.ok(response);
     }
 

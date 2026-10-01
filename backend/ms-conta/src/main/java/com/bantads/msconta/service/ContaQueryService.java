@@ -4,9 +4,11 @@ import com.bantads.msconta.domain.entity.Conta;
 import com.bantads.msconta.domain.entity.ContaRead;
 import com.bantads.msconta.domain.entity.MovimentacaoRead;
 import com.bantads.msconta.domain.event.TipoEventoEnum;
+import com.bantads.msconta.dto.ContaMenorSaldoResponse;
 import com.bantads.msconta.dto.ContaResponse;
 import com.bantads.msconta.dto.ContasGerenteResponse;
 import com.bantads.msconta.dto.ExtratoResponse;
+import com.bantads.msconta.dto.GerenteMenosClientesResponse;
 import com.bantads.msconta.dto.MovimentacaoResponse;
 import com.bantads.msconta.exception.ContaNaoEncontradaException;
 import com.bantads.msconta.exception.ValorInvalidoException;
@@ -60,6 +62,51 @@ public class ContaQueryService {
         response.setCpfGerente(cpfGerente);
         response.setQuantidadeClientes(itens.size());
         response.setContas(itens);
+        return response;
+    }
+
+    public GerenteMenosClientesResponse escolherGerenteComMenosClientes(List<String> cpfsGerentesAtivos) {
+        if (cpfsGerentesAtivos == null || cpfsGerentesAtivos.isEmpty()) {
+            throw new ValorInvalidoException("Informe ao menos um CPF de gerente ativo");
+        }
+
+        String escolhido = null;
+        int menorQuantidade = Integer.MAX_VALUE;
+
+        for (String cpfGerente : cpfsGerentesAtivos) {
+            if (cpfGerente == null || cpfGerente.isBlank()) {
+                continue;
+            }
+            int quantidade = (int) contaReadRepository.countByCpfGerente(cpfGerente);
+            if (escolhido == null || quantidade < menorQuantidade) {
+                escolhido = cpfGerente;
+                menorQuantidade = quantidade;
+            }
+        }
+
+        if (escolhido == null) {
+            throw new ValorInvalidoException("Nenhum CPF de gerente válido foi informado");
+        }
+
+        return new GerenteMenosClientesResponse(escolhido, menorQuantidade);
+    }
+
+    public ContaMenorSaldoResponse buscarContaMenorSaldoDoGerente(String cpfGerente) {
+        if (cpfGerente == null || cpfGerente.isBlank()) {
+            throw new ValorInvalidoException("CPF do gerente é obrigatório");
+        }
+
+        List<ContaRead> contas = contaReadRepository.findByCpfGerenteOrderBySaldoAsc(cpfGerente);
+        ContaMenorSaldoResponse response = new ContaMenorSaldoResponse();
+        response.setCpfGerente(cpfGerente);
+
+        if (contas.isEmpty()) {
+            response.setSemConta(true);
+            return response;
+        }
+
+        response.setSemConta(false);
+        response.setConta(toContaResponse(contas.get(0)));
         return response;
     }
 
