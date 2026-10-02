@@ -214,12 +214,13 @@ app.get('/clientes/:cpf/conta', verifyJWT, async (req, res) => {
     }
 
     try {
-        const r = await fetch(`${CONTA_URL}/clientes/${cpf}/conta`);
+        const r = await fetch(`${CONTA_URL}/contas/cliente/${cpf}`);
         if (r.status === 404) return res.status(404).json({ status: 404, erro: 'Not Found', mensagem: 'Conta não encontrada' });
         if (!r.ok) return res.status(502).json({ status: 502, erro: 'Bad Gateway', mensagem: 'Erro no MS Conta' });
 
         const conta = await r.json();
-        const base = `${GATEWAY_BASE}/contas/${conta.numero}`;
+        const numero = conta.numeroConta ?? conta.numero;
+        const base = `${GATEWAY_BASE}/contas/${numero}`;
         conta._links = {
             self: { href: base },
             deposito: { href: `${base}/deposito` },
@@ -273,20 +274,25 @@ app.get('/contas/:numero', verifyJWT, async (req, res) => {
         if (r.status === 404) return res.status(404).json({ status: 404, erro: 'Not Found', mensagem: 'Conta não encontrada' });
         if (!r.ok) return res.status(502).json({ status: 502, erro: 'Bad Gateway', mensagem: 'Erro no MS Conta' });
 
-        const conta = await r.json();
+        const raw = await r.json();
+        const cpfCliente = raw.cpfCliente;
 
-        if (tipo === 'CLIENTE' && conta.cpfCliente !== userCpf) {
+        if (tipo === 'CLIENTE' && cpfCliente !== userCpf) {
             return res.status(403).json({ status: 403, erro: 'Forbidden', mensagem: 'Acesso não permitido.' });
         }
 
         const base = `${GATEWAY_BASE}/contas/${numero}`;
-        conta._links = {
-            self: { href: base },
-            deposito: { href: `${base}/deposito` },
-            saque: { href: `${base}/saque` },
-            transferencia: { href: `${base}/transferencia` },
-            extrato: { href: `${base}/extrato` },
-            cliente: { href: `${GATEWAY_BASE}/clientes/${conta.cpfCliente}` },
+        const conta = {
+            ...raw,
+            numero: raw.numeroConta ?? raw.numero ?? numero,
+            _links: {
+                self: { href: base },
+                deposito: { href: `${base}/deposito` },
+                saque: { href: `${base}/saque` },
+                transferencia: { href: `${base}/transferencia` },
+                extrato: { href: `${base}/extrato` },
+                cliente: { href: `${GATEWAY_BASE}/clientes/${cpfCliente}` },
+            },
         };
         return res.status(200).json(conta);
     } catch (err) {
@@ -379,9 +385,12 @@ app.post('/contas/:numero/transferencia', verifyJWT, requireRole('CLIENTE'), asy
         if (!destinoRes.ok) return res.status(422).json({ status: 422, erro: 'Unprocessable Entity', mensagem: 'Conta destino não encontrada' });
         const destino = await destinoRes.json();
 
+        const cpfDestino = destino.cpfCliente;
+        const cpfOrigem = origem.cpfCliente;
+
         const [nomeOrigemRes, nomeDestinoRes] = await Promise.all([
-            fetch(`${CLIENTE_URL}/clientes/${origem.cpfCliente}`),
-            fetch(`${CLIENTE_URL}/clientes/${destino.cpfCliente}`),
+            fetch(`${CLIENTE_URL}/clientes/${cpfOrigem}`),
+            fetch(`${CLIENTE_URL}/clientes/${cpfDestino}`),
         ]);
 
         const nomeOrigem = nomeOrigemRes.ok ? (await nomeOrigemRes.json()).nome : '';
@@ -392,20 +401,28 @@ app.post('/contas/:numero/transferencia', verifyJWT, requireRole('CLIENTE'), asy
             headers: { 'Content-Type': 'application/json', 'X-User-CPF': userCpf, 'X-User-Tipo': 'CLIENTE' },
             body: JSON.stringify({
                 contaDestino, valor,
-                cpfDestino: destino.cpfCliente,
+                cpfOrigem,
+                cpfDestino,
                 nomeOrigem,
                 nomeDestino,
             }),
         });
 
-        const body = await r.json();
-        if (!r.ok) return res.status(r.status).json(body);
+        if (!r.ok) {
+            const errBody = await r.json().catch(() => ({}));
+            return res.status(r.status).json(errBody);
+        }
 
-        body._links = {
-            conta: { href: `${GATEWAY_BASE}/contas/${numero}` },
-            extrato: { href: `${GATEWAY_BASE}/contas/${numero}/extrato` },
-        };
-        return res.status(201).json(body);
+        return res.status(201).json({
+            mensagem: 'Transferência registrada',
+            origem: { conta: numero, nome: nomeOrigem },
+            destino: { conta: contaDestino, nome: nomeDestino },
+            valor,
+            _links: {
+                conta: { href: `${GATEWAY_BASE}/contas/${numero}` },
+                extrato: { href: `${GATEWAY_BASE}/contas/${numero}/extrato` },
+            },
+        });
     } catch (err) {
         return res.status(500).json({ status: 500, erro: 'Internal Server Error', mensagem: err.message });
     }
@@ -424,13 +441,13 @@ app.get('/contas/:numero/extrato', verifyJWT, async (req, res) => {
             return res.status(403).json({ status: 403, erro: 'Forbidden', mensagem: 'Acesso não permitido.' });
         }
 
-        const { inicio, fim } = req.query;
-        const params = new URLSearchParams();
-        if (inicio) params.set('inicio', inicio);
-        if (fim) params.set('fim', fim);
+        const hoje = new Date().toISOString().slice(0, 10);
+        const trintaDiasAtras = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
 
-        const query = params.toString() ? `?${params}` : '';
-        const r = await fetch(`${CONTA_URL}/contas/${numero}/extrato${query}`, {
+        const inicio = req.query.inicio || trintaDiasAtras;
+        const fim = req.query.fim || hoje;
+
+        const r = await fetch(`${CONTA_URL}/contas/${numero}/extrato?inicio=${inicio}&fim=${fim}`, {
             headers: { 'X-User-CPF': userCpf, 'X-User-Tipo': tipo },
         });
 
@@ -450,16 +467,25 @@ app.get('/gerentes', verifyJWT, requireRole('GERENTE'), async (req, res) => {
         if (!gerRes.ok) return res.status(502).json({ status: 502, erro: 'Bad Gateway', mensagem: 'Erro no MS Gerente' });
 
         const { gerentes: lista } = await gerRes.json();
-        const ativos = lista.filter(g => g.ativo !== false);
 
-        const cntRes = await fetch(`${CONTA_URL}/contas/gerentes/quantidade`);
+        const cpfs = lista.map(g => g.cpf).join(',');
         const qtdMap = {};
-        if (cntRes.ok) {
-            const { quantidades } = await cntRes.json();
-            for (const q of (quantidades || [])) qtdMap[q.cpfGerente] = q.quantidade;
+        if (cpfs) {
+            try {
+                const cntRes = await fetch(`${CONTA_URL}/contas/gerente/menos-clientes?cpfs=${encodeURIComponent(cpfs)}`);
+                if (cntRes.ok) {
+                    for (const g of lista) {
+                        const r = await fetch(`${CONTA_URL}/contas/gerente/${g.cpf}`);
+                        if (r.ok) {
+                            const body = await r.json();
+                            qtdMap[g.cpf] = (body.contas ?? []).length;
+                        }
+                    }
+                }
+            } catch { }
         }
 
-        const result = ativos.map(g => ({
+        const result = lista.map(g => ({
             ...g,
             quantidadeClientes: qtdMap[g.cpf] ?? 0,
             _links: {

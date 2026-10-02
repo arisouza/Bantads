@@ -8,19 +8,12 @@ const connectRabbitMQ = async () => {
     const conn = await amqp.connect(RABBITMQ_URL);
     channel = await conn.createChannel();
 
-    const queues = [
-        'saga.cmd',
-        'orquestrador.reply',
-        'cliente.cmd',
-        'auth.cmd',
-        'ms.conta.cmd',
-        'email.cmd',
-        'gerente.cmd'
-    ];
-
-    for (const q of queues) {
-        await channel.assertQueue(q, { durable: true });
-    }
+    await channel.assertQueue('saga.cmd', { durable: true });
+    await channel.assertQueue('orquestrador.reply', { durable: true });
+    await channel.assertQueue('cliente.cmd', { durable: true });
+    await channel.assertQueue('auth.cmd', { durable: true });
+    await channel.assertQueue('email.cmd', { durable: true });
+    await channel.assertQueue('gerente.cmd', { durable: true });
 
     return channel;
 };
