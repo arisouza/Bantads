@@ -1,6 +1,6 @@
-const { connectRabbitMQ } = require('./config/rabbitmq');
-const { connectRedis } = require('./config/redis');
-const { orchestrate } = require('./services/orchestrator');
+const { connectRabbitMQ } = require('../config/rabbitmq');
+const { connectRedis } = require('../config/redis');
+const { orchestrate } = require('../services/orchestrator');
 
 const init = async () => {
     try {

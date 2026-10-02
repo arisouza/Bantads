@@ -10,7 +10,7 @@ CREATE TABLE IF NOT EXISTS cliente.clientes (
     complemento TEXT,
     cep VARCHAR(8),
     cidade TEXT,
-    uf CHAR(2)
+    uf VARCHAR(2)
 );
 
 CREATE TABLE IF NOT EXISTS cliente.solicitacoes (
@@ -24,7 +24,7 @@ CREATE TABLE IF NOT EXISTS cliente.solicitacoes (
     complemento TEXT,
     cep VARCHAR(8) NOT NULL,
     cidade TEXT NOT NULL,
-    uf CHAR(2) NOT NULL,
+    uf VARCHAR(2) NOT NULL,
     status VARCHAR(16) NOT NULL DEFAULT 'PENDENTE',
     motivo_rejeicao TEXT,
     criado_em TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -39,4 +39,6 @@ ALTER TABLE cliente.clientes ADD COLUMN IF NOT EXISTS numero VARCHAR(30);
 ALTER TABLE cliente.clientes ADD COLUMN IF NOT EXISTS complemento TEXT;
 ALTER TABLE cliente.clientes ADD COLUMN IF NOT EXISTS cep VARCHAR(8);
 ALTER TABLE cliente.clientes ADD COLUMN IF NOT EXISTS cidade TEXT;
-ALTER TABLE cliente.clientes ADD COLUMN IF NOT EXISTS uf CHAR(2);
+ALTER TABLE cliente.clientes ADD COLUMN IF NOT EXISTS uf VARCHAR(2);
+ALTER TABLE cliente.clientes ALTER COLUMN uf TYPE VARCHAR(2);
+
