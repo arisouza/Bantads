@@ -35,22 +35,22 @@ public class ClienteService {
     @Transactional
     public void solicitar(SolicitacaoRequest solicitacao) {
         if (clientes.existsByCpfOrEmail(solicitacao.cpf(), solicitacao.email()) || solicitacoes.existsByCpfOrEmail(solicitacao.cpf(), solicitacao.email())) {
-            throw new ResponseStatusException(HttpStatus.CONFLICT, "CPF ou e-mail jÃ¡ cadastrado");
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "CPF ou e-mail já cadastrado");
         }
         solicitacoes.save(new SolicitacaoCadastro(solicitacao.cpf(), solicitacao.nome(), solicitacao.email(), solicitacao.telefone(), solicitacao.salario(), endereco(solicitacao)));
     }
 
     public List<SolicitacaoResponse> listarSolicitacoes() { return solicitacoes.findByStatusOrderByCriadoEmAsc(StatusSolicitacao.PENDENTE).stream().map(this::dto).toList(); }
     public SolicitacaoResponse solicitacaoPorCpf(String cpf) { return dto(solicitacaoEntidade(cpf)); }
-    /* ImplementaÃ§Ã£o JDBC anterior, mantida apenas no histÃ³rico do diff.
+    /* Implementação JDBC anterior, mantida apenas no histórico do diff.
     public void rejeitar(String cpf, String motivo) {
-        if (repository.rejeitar(cpf, motivo) == 0) throw new ResponseStatusException(HttpStatus.CONFLICT, "SolicitaÃ§Ã£o nÃ£o estÃ¡ pendente");
+        if (repository.rejeitar(cpf, motivo) == 0) throw new ResponseStatusException(HttpStatus.CONFLICT, "Solicitação não está pendente");
     }
     @Transactional
     public SolicitacaoResponse criarClienteDaSolicitacao(String cpf) {
         SolicitacaoResponse solicitacao = solicitacaoPorCpf(cpf);
-        if (!"PENDENTE".equals(solicitacao.status())) throw new ResponseStatusException(HttpStatus.CONFLICT, "SolicitaÃ§Ã£o nÃ£o estÃ¡ pendente");
-        if (repository.clienteExiste(solicitacao.cpf(), solicitacao.email())) throw new ResponseStatusException(HttpStatus.CONFLICT, "Cliente jÃ¡ existe");
+        if (!"PENDENTE".equals(solicitacao.status())) throw new ResponseStatusException(HttpStatus.CONFLICT, "Solicitação não está pendente");
+        if (repository.clienteExiste(solicitacao.cpf(), solicitacao.email())) throw new ResponseStatusException(HttpStatus.CONFLICT, "Cliente já existe");
         repository.inserirCliente(solicitacao);
         repository.aprovar(cpf);
         return solicitacao;
