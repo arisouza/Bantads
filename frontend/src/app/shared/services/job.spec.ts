@@ -52,7 +52,7 @@ describe('JobService', () => {
     vi.advanceTimersByTime(1000);
     httpTesting.expectOne(`${environment.apiUrl}/jobs/job-pendente/status`)
       .flush({ jobId: 'job-pendente', status: 'CONCLUIDO' });
-    expect(resultados).toEqual(['PENDENTE', 'PENDENTE', 'CONCLUIDO']);
+    expect(resultados).toEqual(['CONCLUIDO']);
   });
 
   it('deve propagar a mensagem de erro quando o status for FALHA', () => {

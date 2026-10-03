@@ -1,7 +1,7 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { Observable, throwError, timer } from 'rxjs';
-import { concatMap, take, takeWhile, timeout } from 'rxjs/operators';
+import { concatMap, filter, take, takeWhile, timeout } from 'rxjs/operators';
 
 import { environment } from '../../../environments/environment';
 import { JobStatusResponse } from '../models/job';
@@ -43,7 +43,8 @@ export class JobService {
 
         return [status];
       }),
-      takeWhile(status => status.status === 'PENDENTE', true)
+      takeWhile(status => status.status === 'PENDENTE', true),
+      filter(status => status.status !== 'PENDENTE')
     );
   }
 }

@@ -29,7 +29,7 @@ public class ClienteController {
     @PostMapping
     public ResponseEntity<Map<String, String>> solicitar(@Valid @RequestBody SolicitacaoRequest solicitacao) {
         service.solicitar(solicitacao);
-        return ResponseEntity.status(HttpStatus.CREATED).body(Map.of("mensagem", "SolicitaÃ§Ã£o enviada para anÃ¡lise"));
+        return ResponseEntity.status(HttpStatus.CREATED).body(Map.of("mensagem", "Solicitação enviada para análise"));
     }
 
     @GetMapping("/solicitacoes")

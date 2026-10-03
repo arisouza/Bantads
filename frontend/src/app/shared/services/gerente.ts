@@ -1,6 +1,7 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { Observable, switchMap, throwError } from 'rxjs';
+import { filter, take } from 'rxjs/operators';
 
 import { environment } from '../../../environments/environment';
 import { Cliente } from '../models/cliente';
@@ -24,7 +25,10 @@ export class GerenteService {
       `${this.API_URL}/solicitacoes/${encodeURIComponent(cpf)}/aprovacao`,
       null
     ).pipe(
-      switchMap(({ jobId }) => this.jobService.pollStatus(jobId)),
+      switchMap(({ jobId }) => this.jobService.pollStatus(jobId).pipe(
+        filter(job => job.status !== 'PENDENTE'),
+        take(1)
+      )),
       switchMap(job => {
         if (
           job.status !== 'CONCLUIDO' ||
