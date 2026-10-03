@@ -27,6 +27,7 @@ import {
 import {
   SolicitacaoService
 } from '../../shared/services/solicitacao';
+import { GerenteService } from '../../shared/services/gerente';
 
 import {
   formatarMoeda
@@ -45,6 +46,7 @@ import {
 export class Gerente implements OnInit {
   private readonly solicitacaoService =
     inject(SolicitacaoService);
+  private readonly gerenteService = inject(GerenteService);
 
   private readonly destroyRef = inject(DestroyRef);
 
@@ -54,6 +56,8 @@ export class Gerente implements OnInit {
   readonly solicitacoes = signal<Solicitacao[]>([]);
   readonly carregando = signal(false);
   readonly mensagemErro = signal('');
+  readonly processando = signal<string | null>(null);
+  readonly mensagemSucesso = signal('');
 
   readonly rotulosStatus: Record<StatusSolicitacao, string> = {
     PENDENTE: 'Pendente',
@@ -105,6 +109,23 @@ export class Gerente implements OnInit {
           );
         }
       });
+  }
+
+  aprovar(solicitacao: Solicitacao): void {
+    if (solicitacao.status !== 'PENDENTE' || this.processando()) return;
+    this.processando.set(solicitacao.cpf);
+    this.mensagemErro.set('');
+    this.mensagemSucesso.set('');
+    this.gerenteService.aprovarCliente(solicitacao.cpf).pipe(
+      takeUntilDestroyed(this.destroyRef),
+      finalize(() => this.processando.set(null))
+    ).subscribe({
+      next: () => {
+        this.mensagemSucesso.set('Cliente aprovado com sucesso.');
+        this.carregarSolicitacoes();
+      },
+      error: erro => this.mensagemErro.set(erro?.error?.message || erro?.message || 'Não foi possível aprovar o cliente.')
+    });
   }
 
   formatarCpf(cpf: string): string {

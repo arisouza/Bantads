@@ -58,6 +58,24 @@ describe('GerenteService', () => {
     expect(resultado).toEqual(cliente);
   });
 
+  it('deve ignorar PENDENTE e buscar o cliente somente após CONCLUIDO', () => {
+    jobService.pollStatus = () => of(...([
+      { jobId: 'saga-3', status: 'PENDENTE' },
+      { jobId: 'saga-3', status: 'PENDENTE' },
+      { jobId: 'saga-3', status: 'CONCLUIDO', resultType: 'resource', dominio: 'clientes', resourceId: '123' }
+    ] as JobStatusResponse[]));
+    const resultados: Cliente[] = [];
+    service.aprovarCliente('123').subscribe(cliente => resultados.push(cliente));
+
+    httpTesting.expectOne(`${environment.apiUrl}/solicitacoes/123/aprovacao`)
+      .flush({ jobId: 'saga-3', status: 'PENDENTE' });
+    const resource = httpTesting.expectOne(`${environment.apiUrl}/clientes/123`);
+    resource.flush({ cpf: '123', nome: 'Cliente aprovado', email: 'cliente@example.com' });
+
+    expect(resultados).toHaveLength(1);
+    httpTesting.expectNone(`${environment.apiUrl}/solicitacoes/123/aprovacao`);
+  });
+
   it.each([
     ['resultType', { resultType: 'inline' }],
     ['dominio', { dominio: 'gerentes' }],

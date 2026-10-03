@@ -111,9 +111,10 @@
                         <button
                           mat-flat-button
                           type="button"
-                          disabled
+                          [disabled]="processando() !== null"
+                          (click)="aprovar(solicitacao)"
                         >
-                          Aprovar
+                          {{ processando() === solicitacao.cpf ? 'Processando...' : 'Aprovar' }}
                         </button>
 
                         <button
