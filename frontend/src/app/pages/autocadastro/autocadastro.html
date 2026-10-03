@@ -70,8 +70,9 @@
           <input
             matInput
             formControlName="cpf"
+            (input)="formatarCpf()"
             inputmode="numeric"
-            maxlength="11"
+            maxlength="14"
             placeholder="Somente números"
           />
 
@@ -91,8 +92,9 @@
           <input
             matInput
             formControlName="telefone"
+            (input)="formatarTelefone()"
             inputmode="tel"
-            maxlength="11"
+            maxlength="15"
             placeholder="DDD + número"
             autocomplete="tel"
           />
@@ -211,8 +213,9 @@
           <input
             matInput
             formControlName="cep"
+            (input)="formatarCep()"
             inputmode="numeric"
-            maxlength="8"
+            maxlength="9"
             placeholder="Somente números"
             autocomplete="postal-code"
           />
@@ -291,7 +294,7 @@
         class="autocadastro-form__submit"
         mat-flat-button
         type="submit"
-        [disabled]="enviando"
+        [disabled]="enviando || formulario.invalid"
       >
         {{ enviando ? 'Enviando...' : 'Enviar solicitação' }}
       </button>
