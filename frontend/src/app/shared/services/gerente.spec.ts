@@ -4,6 +4,7 @@ import { TestBed } from '@angular/core/testing';
 import { of, throwError } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { Cliente } from '../models/cliente';
+import { Gerente, GerenteListagem } from '../models/gerente';
 import { JobStatusResponse } from '../models/job';
 import { GerenteService } from './gerente';
 import { JobService } from './job';
@@ -101,5 +102,90 @@ describe('GerenteService', () => {
       .flush({ jobId: 'saga-falha', status: 'PENDENTE' });
     expect(erro?.message).toBe('Falha da SAGA');
     httpTesting.expectNone(`${environment.apiUrl}/clientes/123`);
+  });
+
+  it('deve transformar o wrapper da listagem em uma lista de gerentes', () => {
+    let resultado: GerenteListagem[] | undefined;
+    service.listar().subscribe(gerentes => resultado = gerentes);
+
+    const request = httpTesting.expectOne(`${environment.apiUrl}/gerentes`);
+    expect(request.request.method).toBe('GET');
+    request.flush({ gerentes: [{
+      cpf: '98574307084', nome: 'Geniéve', email: 'ger1@example.com',
+      telefone: '41988880001', ativo: true, quantidadeClientes: 2
+    }] });
+
+    expect(resultado?.[0].quantidadeClientes).toBe(2);
+  });
+
+  it('deve enviar o formulário, aguardar o job e buscar o gerente criado', () => {
+    jobService.pollStatus = () => of({
+      jobId: 'saga-gerente', status: 'CONCLUIDO', resultType: 'resource',
+      dominio: 'gerentes', resourceId: '98574307084'
+    });
+    const payload = {
+      cpf: '98574307084', nome: 'Geniéve', email: 'ger1@example.com',
+      telefone: '41988880001', senha: 'tads'
+    };
+    let resultado: Gerente | undefined;
+    service.inserir(payload).subscribe(gerente => resultado = gerente);
+
+    const post = httpTesting.expectOne(`${environment.apiUrl}/gerentes`);
+    expect(post.request.method).toBe('POST');
+    expect(post.request.body).toEqual(payload);
+    post.flush({ jobId: 'saga-gerente', status: 'PENDENTE' });
+
+    const get = httpTesting.expectOne(`${environment.apiUrl}/gerentes/98574307084`);
+    expect(get.request.method).toBe('GET');
+    get.flush({ ...payload, ativo: true, quantidadeClientes: 0 });
+    expect(resultado?.cpf).toBe(payload.cpf);
+  });
+
+  it('deve buscar o gerente criado somente após CONCLUIDO', () => {
+    jobService.pollStatus = () => of(...([
+      { jobId: 'saga-gerente', status: 'PENDENTE' },
+      { jobId: 'saga-gerente', status: 'PENDENTE' },
+      { jobId: 'saga-gerente', status: 'CONCLUIDO', resultType: 'resource', dominio: 'gerentes', resourceId: '1' }
+    ] as JobStatusResponse[]));
+    service.inserir({ cpf: '1', nome: 'Nome', email: 'a@b.com', telefone: '41988880001', senha: 'tads' }).subscribe();
+    httpTesting.expectOne(`${environment.apiUrl}/gerentes`).flush({ jobId: 'saga-gerente', status: 'PENDENTE' });
+    const get = httpTesting.expectOne(`${environment.apiUrl}/gerentes/1`);
+    get.flush({ cpf: '1', nome: 'Nome', email: 'a@b.com', telefone: '41988880001', ativo: true, quantidadeClientes: 0 });
+  });
+
+  it('deve propagar FALHA da SAGA de inserção sem buscar o gerente', () => {
+    jobService.pollStatus = () => throwError(() => new Error('Falha na SAGA de gerente'));
+    let erro: Error | undefined;
+    service.inserir({ cpf: '1', nome: 'Nome', email: 'a@b.com', telefone: '41988880001', senha: 'tads' })
+      .subscribe({ error: recebido => erro = recebido });
+    httpTesting.expectOne(`${environment.apiUrl}/gerentes`).flush({ jobId: 'saga-falha', status: 'PENDENTE' });
+    expect(erro?.message).toBe('Falha na SAGA de gerente');
+    httpTesting.expectNone(`${environment.apiUrl}/gerentes/1`);
+  });
+
+  it('deve rejeitar resultado concluído incompatível', () => {
+    jobService.pollStatus = () => of({
+      jobId: 'saga-invalida', status: 'CONCLUIDO', resultType: 'inline',
+      dominio: 'gerentes', resourceId: '1'
+    });
+    let erro: Error | undefined;
+    service.inserir({ cpf: '1', nome: 'Nome', email: 'a@b.com', telefone: '41988880001', senha: 'tads' })
+      .subscribe({ error: recebido => erro = recebido });
+    httpTesting.expectOne(`${environment.apiUrl}/gerentes`).flush({ jobId: 'saga-invalida', status: 'PENDENTE' });
+    expect(erro?.message).toContain('Resposta incompatível');
+    httpTesting.expectNone(`${environment.apiUrl}/gerentes/1`);
+  });
+
+  it('deve enviar no PUT somente nome e telefone', () => {
+    const payload = { nome: 'Novo Nome', telefone: '41999999999' };
+    let resultado: Gerente | undefined;
+    service.atualizar('98574307084', payload).subscribe(gerente => resultado = gerente);
+    const request = httpTesting.expectOne(`${environment.apiUrl}/gerentes/98574307084`);
+    expect(request.request.method).toBe('PUT');
+    expect(request.request.body).toEqual(payload);
+    expect(request.request.body.cpf).toBeUndefined();
+    expect(request.request.body.email).toBeUndefined();
+    request.flush({ cpf: '98574307084', ...payload, email: 'ger@example.com', ativo: true, quantidadeClientes: 0 });
+    expect(resultado?.nome).toBe('Novo Nome');
   });
 });
