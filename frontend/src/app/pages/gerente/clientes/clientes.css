@@ -1,0 +1,153 @@
+:host {
+  display: block;
+  width: 100%;
+}
+
+.clientes-page {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  padding: 1.5rem;
+}
+
+.page-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1rem 0;
+}
+
+.eyebrow {
+  display: inline-block;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #4770ff;
+  margin-bottom: 0.5rem;
+}
+
+.page-header h1 {
+  margin: 0;
+  font-size: clamp(1.8rem, 2vw, 2.4rem);
+  color: #172033;
+}
+
+.page-header p {
+  margin: 0.35rem 0 0;
+  color: #5c6780;
+}
+
+.busca-card,
+.clientes-card {
+  background: #ffffff;
+  border: 1px solid #d7def2;
+  border-radius: 20px;
+  box-shadow: 0 12px 32px rgba(19, 36, 84, 0.08);
+  padding: 1.25rem;
+}
+
+.busca-card {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.busca-card mat-form-field {
+  flex: 1;
+}
+
+.acoes-busca {
+  display: flex;
+  gap: 0.5rem;
+}
+
+button[mat-flat-button],
+button[mat-stroked-button] {
+  border-radius: 10px;
+}
+
+.tabela-container {
+  width: 100%;
+  overflow-x: auto;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 700px;
+}
+
+th,
+td {
+  padding: 0.9rem 0.75rem;
+  text-align: left;
+  border-bottom: 1px solid #edf1fb;
+  vertical-align: middle;
+}
+
+th {
+  font-size: 0.75rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #5c6780;
+  font-weight: 700;
+}
+
+td {
+  color: #172033;
+  font-size: 0.96rem;
+}
+
+.sem-quebra {
+  white-space: nowrap;
+}
+
+.estado {
+  margin: 0;
+  padding: 2rem;
+  text-align: center;
+  color: #5c6780;
+}
+
+.estado.erro {
+  color: #b42318;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+@media (max-width: 768px) {
+  .page-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .busca-card {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .acoes-busca {
+    width: 100%;
+  }
+
+  .acoes-busca button {
+    flex: 1;
+  }
+
+  .clientes-card {
+    padding: 0.85rem;
+  }
+}

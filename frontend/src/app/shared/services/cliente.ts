@@ -23,6 +23,10 @@ export interface AutocadastroResponse {
   status?: string;
 }
 
+interface ListaClientesResponse {
+  clientes: Cliente[];
+}
+
 @Injectable({
   providedIn: 'root'
 })
@@ -40,5 +44,17 @@ export class ClienteService {
       `${this.API_URL}/clientes`,
       solicitacao
     );
+  }
+
+
+
+  listar(busca: string = ''): Observable<ListaClientesResponse> {
+    const termo = busca.trim();
+
+    const url = termo
+      ? `${this.API_URL}/clientes?busca=${encodeURIComponent(termo)}`
+      : `${this.API_URL}/clientes`;
+
+    return this.http.get<ListaClientesResponse>(url);
   }
 }

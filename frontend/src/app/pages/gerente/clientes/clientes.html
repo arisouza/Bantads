@@ -1,1 +1,152 @@
-<app-authenticated-layout [menuItems]="menuItems"><p>clientes works!</p></app-authenticated-layout>
+<app-authenticated-layout [menuItems]="menuItems">
+  <section class="clientes-page">
+
+    <header class="page-header">
+      <div>
+        <span class="eyebrow">Área do gerente</span>
+
+        <h1>Consulta de clientes</h1>
+
+        <p>
+          Consulte os clientes cadastrados na instituição.
+        </p>
+      </div>
+
+      <button
+        mat-stroked-button
+        type="button"
+        (click)="carregarClientes()"
+        [disabled]="carregando()"
+      >
+        Atualizar
+      </button>
+    </header>
+
+    <section class="busca-card">
+
+      <mat-form-field appearance="outline">
+        <mat-label>Buscar cliente</mat-label>
+
+        <input
+          matInput
+          [(ngModel)]="busca"
+          placeholder="Digite o nome ou CPF"
+          (keyup.enter)="carregarClientes()"
+        />
+      </mat-form-field>
+
+      <div class="acoes-busca">
+
+        <button
+          mat-flat-button
+          type="button"
+          (click)="carregarClientes()"
+          [disabled]="carregando()"
+        >
+          Buscar
+        </button>
+
+        <button
+          mat-stroked-button
+          type="button"
+          (click)="limparBusca()"
+          [disabled]="carregando()"
+        >
+          Limpar
+        </button>
+
+      </div>
+
+    </section>
+
+    <section
+      class="clientes-card"
+      aria-label="Lista de clientes"
+      [attr.aria-busy]="carregando()"
+    >
+
+      @if (carregando()) {
+
+        <p class="estado" role="status">
+          Carregando clientes...
+        </p>
+
+      } @else if (mensagemErro()) {
+
+        <p class="estado erro" role="alert">
+          {{ mensagemErro() }}
+        </p>
+
+      } @else if (clientes().length === 0) {
+
+        <p class="estado">
+          Nenhum cliente encontrado.
+        </p>
+
+      } @else {
+
+        <div
+          class="tabela-container"
+          tabindex="0"
+          role="region"
+          aria-label="Tabela de clientes"
+        >
+
+          <table>
+
+            <caption class="sr-only">
+              Lista de clientes cadastrados
+            </caption>
+
+            <thead>
+              <tr>
+                <th scope="col">CPF</th>
+                <th scope="col">Nome</th>
+                <th scope="col">Cidade</th>
+                <th scope="col">Estado</th>
+                <th scope="col">Saldo</th>
+              </tr>
+            </thead>
+
+            <tbody>
+
+              @for (cliente of clientes(); track cliente.cpf) {
+
+                <tr>
+
+                  <td class="sem-quebra">
+                    {{ formatarCpf(cliente.cpf) }}
+                  </td>
+
+                  <td>
+                    {{ cliente.nome }}
+                  </td>
+
+                  <td>
+                    {{ cliente.cidade || '—' }}
+                  </td>
+
+                  <td>
+                    {{ cliente.estado || '—' }}
+                  </td>
+
+                  <td class="sem-quebra">
+                    {{ formatarSaldo(cliente.saldo) }}
+                  </td>
+
+                </tr>
+
+              }
+
+            </tbody>
+
+          </table>
+
+        </div>
+
+      }
+
+    </section>
+
+  </section>
+</app-authenticated-layout>

@@ -15,3 +15,18 @@ export interface JobStatusResponse {
   resourceId?: string;
   erro?: string;
 }
+
+export interface RelatorioCliente {
+  cpf: string;
+  nome: string;
+  email: string;
+  salario: string | number | null;
+  numeroConta: string | null;
+  saldo: string | number;
+  cpfGerente: string | null;
+  nomeGerente: string | null;
+}
+
+export interface RelatorioClientesResponse {
+  clientes: RelatorioCliente[];
+}

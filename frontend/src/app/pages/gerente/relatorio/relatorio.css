@@ -1,0 +1,142 @@
+:host {
+  display: block;
+  width: 100%;
+}
+
+.relatorio-page {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  padding: 1.5rem;
+}
+
+.page-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1rem 0;
+}
+
+.eyebrow {
+  display: inline-block;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #4770ff;
+  margin-bottom: 0.5rem;
+}
+
+.page-header h1 {
+  margin: 0;
+  font-size: clamp(1.8rem, 2vw, 2.4rem);
+  color: #172033;
+}
+
+.page-header p {
+  margin: 0.35rem 0 0;
+  color: #5c6780;
+}
+
+button[mat-flat-button] {
+  border-radius: 10px;
+}
+
+.relatorio-card {
+  background: #ffffff;
+  border: 1px solid #d7def2;
+  border-radius: 20px;
+  box-shadow: 0 12px 32px rgba(19, 36, 84, 0.08);
+  padding: 1.25rem;
+}
+
+.mensagem {
+  border-radius: 12px;
+  padding: 0.9rem 1rem;
+  font-size: 0.95rem;
+}
+
+.mensagem.progresso {
+  background: #eef4ff;
+  color: #3156b3;
+}
+
+.mensagem.sucesso {
+  background: rgba(34, 197, 94, 0.12);
+  color: #0f8b4d;
+}
+
+.mensagem.erro {
+  background: rgba(220, 38, 38, 0.1);
+  color: #b42318;
+}
+
+.estado {
+  margin: 0;
+  padding: 2rem;
+  text-align: center;
+  color: #5c6780;
+}
+
+.tabela-container {
+  width: 100%;
+  overflow-x: auto;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 1000px;
+}
+
+th,
+td {
+  padding: 0.9rem 0.75rem;
+  text-align: left;
+  border-bottom: 1px solid #edf1fb;
+  vertical-align: middle;
+}
+
+th {
+  font-size: 0.75rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #5c6780;
+  font-weight: 700;
+}
+
+td {
+  color: #172033;
+  font-size: 0.96rem;
+}
+
+.sem-quebra {
+  white-space: nowrap;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+@media (max-width: 768px) {
+
+  .page-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .relatorio-card {
+    padding: 0.85rem;
+  }
+
+}

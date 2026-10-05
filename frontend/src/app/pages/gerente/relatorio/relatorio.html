@@ -1,1 +1,211 @@
-<app-authenticated-layout [menuItems]="menuItems"><p>relatorio works!</p></app-authenticated-layout>
+<app-authenticated-layout [menuItems]="menuItems">
+
+  <section class="relatorio-page">
+
+    <header class="page-header">
+
+      <div>
+
+        <span class="eyebrow">
+          Área do gerente
+        </span>
+
+        <h1>
+          Relatório de clientes
+        </h1>
+
+        <p>
+          Consulte os dados dos clientes, contas e gerentes responsáveis.
+        </p>
+
+      </div>
+
+      <button
+        mat-flat-button
+        type="button"
+        (click)="gerarRelatorio()"
+        [disabled]="carregando()"
+      >
+        {{ carregando() ? 'Gerando...' : 'Gerar relatório' }}
+      </button>
+
+    </header>
+
+
+    @if (status()) {
+
+      <section class="mensagem progresso" role="status">
+
+        <span>
+          {{ status() }}
+        </span>
+
+      </section>
+
+    }
+
+
+    @if (mensagemSucesso()) {
+
+      <section class="mensagem sucesso" role="status">
+
+        {{ mensagemSucesso() }}
+
+      </section>
+
+    }
+
+
+    @if (mensagemErro()) {
+
+      <section class="mensagem erro" role="alert">
+
+        {{ mensagemErro() }}
+
+      </section>
+
+    }
+
+
+    <section
+      class="relatorio-card"
+      aria-label="Relatório de clientes"
+    >
+
+      @if (!carregando() && clientes().length === 0) {
+
+        <p class="estado">
+
+          Clique em
+          <strong>Gerar relatório</strong>
+          para consultar os dados.
+
+        </p>
+
+      } @else if (carregando()) {
+
+        <p class="estado" role="status">
+
+          Aguarde enquanto o relatório é processado...
+
+        </p>
+
+      } @else {
+
+        <div
+          class="tabela-container"
+          tabindex="0"
+          role="region"
+          aria-label="Tabela do relatório de clientes"
+        >
+
+          <table>
+
+            <caption class="sr-only">
+              Relatório de clientes
+            </caption>
+
+            <thead>
+
+              <tr>
+
+                <th scope="col">
+                  CPF
+                </th>
+
+                <th scope="col">
+                  Nome
+                </th>
+
+                <th scope="col">
+                  E-mail
+                </th>
+
+                <th scope="col">
+                  Salário
+                </th>
+
+                <th scope="col">
+                  Conta
+                </th>
+
+                <th scope="col">
+                  Saldo
+                </th>
+
+                <th scope="col">
+                  Gerente
+                </th>
+
+              </tr>
+
+            </thead>
+
+            <tbody>
+
+              @for (
+                cliente of clientes();
+                track cliente.cpf
+              ) {
+
+                <tr>
+
+                  <td class="sem-quebra">
+
+                    {{ formatarCpf(cliente.cpf) }}
+
+                  </td>
+
+                  <td>
+
+                    {{ cliente.nome }}
+
+                  </td>
+
+                  <td>
+
+                    {{ cliente.email }}
+
+                  </td>
+
+                  <td class="sem-quebra">
+
+                    {{ formatarMoeda(cliente.salario) }}
+
+                  </td>
+
+                  <td class="sem-quebra">
+
+                    {{ cliente.numeroConta || '—' }}
+
+                  </td>
+
+                  <td class="sem-quebra">
+
+                    {{ formatarMoeda(cliente.saldo) }}
+
+                  </td>
+
+                  <td>
+
+                    {{ cliente.nomeGerente || '—' }}
+
+                  </td>
+
+                </tr>
+
+              }
+
+            </tbody>
+
+          </table>
+
+        </div>
+
+      }
+
+    </section>
+
+  </section>
+
+</app-authenticated-layout>
