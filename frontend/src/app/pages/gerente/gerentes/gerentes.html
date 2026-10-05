@@ -4,96 +4,106 @@
       <div>
         <span class="eyebrow">Área do gerente</span>
         <h1>Gerentes</h1>
-        <p>Gerencie os gestores ativos e inativos da instituição.</p>
+        <p>Gerencie os gestores ativos da instituição.</p>
       </div>
-
-      <button
-        mat-flat-button
-        type="button"
-      >
+      <button mat-flat-button type="button" (click)="abrirCriacao()" [disabled]="processando()">
         Novo gerente
       </button>
     </header>
 
-    <section
-      class="gerentes-card"
-      aria-label="Lista de gerentes"
-      [attr.aria-busy]="carregando()"
-    >
-      @if (carregando()) {
-        <p class="estado" role="status">
-          Carregando gerentes...
-        </p>
-      } @else if (mensagemErro()) {
-        <p class="estado erro" role="alert">
-          {{ mensagemErro() }}
-        </p>
-      } @else if (gerentes().length === 0) {
-        <p class="estado">
-          Nenhum gerente encontrado.
-        </p>
-      } @else {
-        <div
-          class="tabela-container"
-          tabindex="0"
-          role="region"
-          aria-label="Tabela de gerentes, com rolagem horizontal"
-        >
-          <table>
-            <caption class="sr-only">
-              Lista de gerentes cadastrados
-            </caption>
+    @if (mensagemSucesso()) {
+      <p class="feedback sucesso" role="status">{{ mensagemSucesso() }}</p>
+    }
 
+    @if (modoFormulario() !== 'nenhum') {
+      <section class="gerentes-card formulario-card" aria-label="Formulário de gerente">
+        <div class="formulario-cabecalho">
+          <div>
+            <span class="eyebrow">{{ modoFormulario() === 'criar' ? 'Novo cadastro' : 'Dados do gerente' }}</span>
+            <h2>{{ modoFormulario() === 'criar' ? 'Inserir gerente' : 'Editar gerente' }}</h2>
+          </div>
+          <button mat-stroked-button type="button" (click)="fecharFormulario()" [disabled]="processando()">Cancelar</button>
+        </div>
+
+        <form class="gerente-form" [formGroup]="formulario" (ngSubmit)="salvar()" novalidate>
+          <mat-form-field appearance="outline">
+            <mat-label>Nome completo</mat-label>
+            <input matInput formControlName="nome" autocomplete="name" />
+            @if (formulario.controls.nome.touched && formulario.controls.nome.invalid) { <mat-error>Informe um nome válido.</mat-error> }
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>CPF</mat-label>
+            <input matInput formControlName="cpf" (input)="formatarCpfInput()" inputmode="numeric" maxlength="14" />
+            @if (formulario.controls.cpf.touched && formulario.controls.cpf.invalid) { <mat-error>Informe os 11 números do CPF.</mat-error> }
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>E-mail</mat-label>
+            <input matInput formControlName="email" type="email" autocomplete="email" />
+            @if (formulario.controls.email.touched && formulario.controls.email.invalid) { <mat-error>Informe um e-mail válido.</mat-error> }
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Telefone</mat-label>
+            <input matInput formControlName="telefone" (input)="formatarTelefone()" inputmode="tel" maxlength="15" autocomplete="tel" />
+            @if (formulario.controls.telefone.touched && formulario.controls.telefone.invalid) { <mat-error>Informe um telefone com DDD.</mat-error> }
+          </mat-form-field>
+
+          @if (modoFormulario() === 'criar') {
+            <mat-form-field appearance="outline">
+              <mat-label>Senha</mat-label>
+              <input matInput formControlName="senha" type="password" autocomplete="new-password" />
+              @if (formulario.controls.senha.touched && formulario.controls.senha.invalid) { <mat-error>Informe a senha.</mat-error> }
+            </mat-form-field>
+          }
+
+          @if (mensagemErro()) { <p class="feedback erro" role="alert">{{ mensagemErro() }}</p> }
+
+          <div class="formulario-acoes">
+            <button mat-flat-button color="primary" type="submit" [disabled]="processando()">
+              {{ processando() ? 'Processando...' : (modoFormulario() === 'criar' ? 'Inserir gerente' : 'Salvar alterações') }}
+            </button>
+          </div>
+        </form>
+      </section>
+    }
+
+    <section class="gerentes-card" aria-label="Lista de gerentes" [attr.aria-busy]="carregando()">
+      @if (carregando()) {
+        <p class="estado" role="status">Carregando gerentes...</p>
+      } @else if (mensagemErro() && modoFormulario() === 'nenhum') {
+        <p class="estado erro" role="alert">{{ mensagemErro() }}</p>
+      } @else if (gerentes().length === 0) {
+        <p class="estado">Nenhum gerente encontrado.</p>
+      } @else {
+        <div class="tabela-container" tabindex="0" role="region" aria-label="Tabela de gerentes, com rolagem horizontal">
+          <table>
+            <caption class="sr-only">Lista de gerentes cadastrados</caption>
             <thead>
               <tr>
                 <th scope="col">CPF</th>
                 <th scope="col">Nome</th>
                 <th scope="col">E-mail</th>
+                <th scope="col">Telefone</th>
                 <th scope="col">Status</th>
                 <th scope="col">Clientes atendidos</th>
                 <th scope="col">Ações</th>
               </tr>
             </thead>
-
             <tbody>
               @for (gerente of gerentes(); track gerente.cpf) {
                 <tr>
-                  <td class="sem-quebra">
-                    {{ formatarCpf(gerente.cpf) }}
-                  </td>
-
+                  <td class="sem-quebra">{{ formatarCpf(gerente.cpf) }}</td>
                   <td>{{ gerente.nome }}</td>
-
                   <td>{{ gerente.email }}</td>
-
-                  <td>
-                    <span
-                      class="status"
-                      [class.ativo]="gerente.ativo"
-                      [class.inativo]="!gerente.ativo"
-                    >
-                      {{ gerente.ativo ? 'Ativo' : 'Inativo' }}
-                    </span>
-                  </td>
-
-                  <td>{{ gerente.totalClientes ?? 0 }}</td>
-
+                  <td class="sem-quebra">{{ gerente.telefone }}</td>
+                  <td><span class="status ativo">{{ gerente.ativo ? 'Ativo' : 'Inativo' }}</span></td>
+                  <td>{{ gerente.quantidadeClientes }}</td>
                   <td>
                     <div class="acoes">
-                      <button
-                        mat-stroked-button
-                        type="button"
-                      >
-                        Editar
-                      </button>
-
-                      <button
-                        mat-flat-button
-                        type="button"
-                        color="warn"
-                      >
-                        Desativar
-                      </button>
+                      <button mat-stroked-button type="button" (click)="abrirEdicao(gerente)" [disabled]="processando()">Editar</button>
+                      <button mat-flat-button type="button" color="warn" disabled>Desativar</button>
                     </div>
                   </td>
                 </tr>
