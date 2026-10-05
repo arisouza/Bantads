@@ -48,6 +48,51 @@
   padding: 1.25rem;
 }
 
+.formulario-card {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.formulario-cabecalho {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.formulario-cabecalho h2 {
+  margin: 0;
+  color: #172033;
+}
+
+.gerente-form {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.formulario-acoes,
+.gerente-form .feedback {
+  grid-column: 1 / -1;
+}
+
+.feedback {
+  margin: 0;
+  padding: 0.85rem 1rem;
+  border-radius: 10px;
+}
+
+.feedback.sucesso {
+  background: rgba(34, 197, 94, 0.12);
+  color: #0f8b4d;
+}
+
+.feedback.erro,
+.estado.erro {
+  color: #b42318;
+}
+
 .tabela-container {
   width: 100%;
   overflow-x: auto;
@@ -121,5 +166,14 @@ button[mat-stroked-button] {
 
   .gerentes-card {
     padding: 0.85rem;
+  }
+
+  .gerente-form {
+    grid-template-columns: 1fr;
+  }
+
+  .formulario-acoes,
+  .gerente-form .feedback {
+    grid-column: auto;
   }
 }
