@@ -30,6 +30,11 @@ public class ContaQueryController {
         this.contaQueryService = contaQueryService;
     }
 
+    @GetMapping
+    public ResponseEntity<java.util.Map<String, Object>> listar() {
+        return ResponseEntity.ok(java.util.Map.of("contas", contaQueryService.listarTodas()));
+    }
+
     @GetMapping("/{numero:[0-9]{4}}")
     public ResponseEntity<ContaResponse> buscar(@PathVariable String numero) {
         ContaResponse response = contaQueryService.buscarPorNumero(numero);

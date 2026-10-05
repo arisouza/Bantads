@@ -10,6 +10,7 @@ import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 
@@ -58,6 +59,7 @@ public class SagaCommandConsumer {
                         command,
                         execution
                 );
+                case "TRANSFERIR_CONTAS_GERENTE" -> processarTransferirContasGerente(command, execution);
                 case "DELETE_CONTA", "REMOVER_CONTA" -> processarRemoverConta(
                         command,
                         execution
@@ -197,6 +199,24 @@ public class SagaCommandConsumer {
         sagaReplyPublisher.publicar(reply);
     }
 
+    private void processarTransferirContasGerente(SagaCommandMessage command, SagaCommandExecution execution) throws JsonProcessingException {
+        Map<String, Object> payload = command.getPayload();
+        String cpfGerenteRemovido = getString(payload, "cpfGerenteRemovido");
+        List<String> cpfsGerentesAtivos = getStringList(payload, "cpfsGerentesAtivos");
+        int quantidade = contaCommandService.transferirContasDoGerente(cpfGerenteRemovido, cpfsGerentesAtivos);
+        Map<String, Object> responsePayload = new HashMap<>();
+        responsePayload.put("cpfGerenteRemovido", cpfGerenteRemovido);
+        responsePayload.put("quantidadeContas", quantidade);
+        sagaCommandExecutionService.concluir(execution, objectMapper.writeValueAsString(responsePayload));
+        SagaReplyMessage reply = new SagaReplyMessage();
+        reply.setSagaId(command.getSagaId());
+        reply.setTipo("CONTAS_GERENTE_TRANSFERIDAS");
+        reply.setPayload(responsePayload);
+        reply.setTimestamp(command.getTimestamp());
+        reply.setStatus("CONCLUIDO");
+        sagaReplyPublisher.publicar(reply);
+    }
+
     private void processarFalha(
             SagaCommandExecution execution,
             SagaCommandMessage command,
@@ -205,9 +225,8 @@ public class SagaCommandConsumer {
 
         String erro = exception.getMessage();
 
-        Map<String, Object> responsePayload = Map.of(
-                "tipo", command.getTipo()
-        );
+        Map<String, Object> responsePayload = new HashMap<>(command.getPayload());
+        responsePayload.put("comandoTipo", command.getTipo());
 
         try {
             String responseJson =

@@ -97,6 +97,31 @@ public class ContaCommandService {
     }
 
     @Transactional
+    public int transferirContasDoGerente(String cpfGerenteRemovido, List<String> cpfsGerentesAtivos) {
+        if (cpfsGerentesAtivos == null || cpfsGerentesAtivos.isEmpty()) {
+            throw new ValorInvalidoException("NÃ£o hÃ¡ gerentes ativos para receber as contas");
+        }
+        Map<String, Long> cargas = new LinkedHashMap<>();
+        for (String cpf : cpfsGerentesAtivos) {
+            if (cpf != null && !cpf.isBlank() && !cpf.equals(cpfGerenteRemovido)) {
+                cargas.put(cpf, contaReadRepository.countByCpfGerente(cpf));
+            }
+        }
+        if (cargas.isEmpty()) {
+            throw new ValorInvalidoException("NÃ£o hÃ¡ gerente alternativo para receber as contas");
+        }
+        List<ContaRead> contas = contaReadRepository.findByCpfGerente(cpfGerenteRemovido);
+        for (ContaRead conta : contas) {
+            String novoGerente = cargas.entrySet().stream()
+                    .min(Map.Entry.comparingByValue())
+                    .orElseThrow().getKey();
+            alterarGerente(conta.getNumeroConta(), novoGerente);
+            cargas.put(novoGerente, cargas.get(novoGerente) + 1);
+        }
+        return contas.size();
+    }
+
+    @Transactional
     public Conta removerConta(String numeroConta) {
         Conta conta = reconstruirExistente(numeroConta);
         apagarDadosDaConta(numeroConta);

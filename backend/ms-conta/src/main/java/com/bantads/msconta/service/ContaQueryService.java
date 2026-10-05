@@ -52,6 +52,12 @@ public class ContaQueryService {
         return toContaResponse(conta);
     }
 
+    public List<ContaResponse> listarTodas() {
+        return contaReadRepository.findAll().stream()
+                .map(this::toContaResponse)
+                .toList();
+    }
+
     public ContasGerenteResponse buscarPorGerente(String cpfGerente) {
         List<ContaRead> contas = contaReadRepository.findByCpfGerente(cpfGerente);
         List<ContaResponse> itens = new ArrayList<>();

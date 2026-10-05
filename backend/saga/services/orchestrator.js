@@ -86,7 +86,11 @@ const orchestrate = async (command) => {
                 break;
 
             case 'CONTA_FAILED':
-                sendToCliente(channel, sagaId, 'ROLLBACK_CLIENTE', data);
+                if (data?.comandoTipo === 'TRANSFERIR_CONTAS_GERENTE') {
+                    await updateJob(sagaId, 'FALHA', { erro: erro || 'Falha ao transferir as contas do gerente.' });
+                    break;
+                }
+                sendToCliente(channel, sagaId, 'ROLLBACK_CLIENTE', { cpf: data?.cpfCliente ?? data?.cpf });
                 await updateJob(sagaId, 'FALHA', { erro: erro || 'Falha ao criar conta.' });
                 break;
 
@@ -107,8 +111,12 @@ const orchestrate = async (command) => {
                 break;
 
             case 'GERENTE_FAILED':
-            case 'AUTH_GERENTE_FAILED':
                 await updateJob(sagaId, 'FALHA', { erro: erro || 'Falha ao criar gerente.' });
+                break;
+
+            case 'AUTH_GERENTE_FAILED':
+                sendToGerente(channel, sagaId, 'ROLLBACK_GERENTE', data);
+                await updateJob(sagaId, 'FALHA', { erro: erro || 'Falha ao criar acesso do gerente.' });
                 break;
 
             case 'GERENTE_ROLLBACK_DONE':
@@ -116,6 +124,14 @@ const orchestrate = async (command) => {
 
             case 'REMOVER_GERENTE_START':
                 await updateJob(sagaId, 'PENDENTE', { resultType: 'inline' });
+                {
+                    const gerentesAlternativos = (await getCpfsGerentesAtivos())
+                        .filter(cpf => cpf !== data?.cpf);
+                    if (gerentesAlternativos.length === 0) {
+                        await updateJob(sagaId, 'FALHA', { erro: 'NÃ£o Ã© possÃ­vel remover o Ãºltimo gerente ativo.' });
+                        break;
+                    }
+                }
                 sendToGerente(channel, sagaId, 'INACTIVATE_GERENTE', data);
                 break;
 
@@ -132,9 +148,22 @@ const orchestrate = async (command) => {
                 break;
             }
 
-            case 'AUTH_GERENTE_REVOKED':
+            case 'AUTH_GERENTE_REVOKED': {
+                const cpfsGerentesAtivos = await getCpfsGerentesAtivos();
+                if (cpfsGerentesAtivos.length === 0) {
+                    await updateJob(sagaId, 'FALHA', { erro: 'NÃ£o hÃ¡ gerente ativo para receber as contas.' });
+                    break;
+                }
+                sendToConta(channel, sagaId, 'TRANSFERIR_CONTAS_GERENTE', {
+                    cpfGerenteRemovido: data?.cpf,
+                    cpfsGerentesAtivos,
+                });
+                break;
+            }
+
+            case 'CONTAS_GERENTE_TRANSFERIDAS':
                 await updateJob(sagaId, 'CONCLUIDO', {
-                    resultado: { mensagem: 'Gerente removido com sucesso.' }
+                    resultado: { mensagem: 'Gerente removido e contas transferidas.', quantidadeContas: data?.quantidadeContas ?? 0 }
                 });
                 break;
 

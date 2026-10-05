@@ -54,28 +54,28 @@ public class GerenteSagaConsumer {
                         payload.put("email", gerente.email());
                         if (senha != null) payload.put("senha", senha);
 
-                        resposta.put("action", "GERENTE_CREATED");
-                        resposta.put("data", payload);
+                        resposta.put("tipo", "GERENTE_CREATED");
+                        resposta.put("payload", payload);
                     }
                     case "ROLLBACK_GERENTE" -> {
                         String cpf = String.valueOf(data.get("cpf"));
                         try { service.desativar(cpf); } catch (Exception ignored) {}
-                        resposta.put("action", "GERENTE_ROLLBACK_DONE");
-                        resposta.put("data", Map.of("cpf", cpf));
+                        resposta.put("tipo", "GERENTE_ROLLBACK_DONE");
+                        resposta.put("payload", Map.of("cpf", cpf));
                     }
                     case "INACTIVATE_GERENTE" -> {
                         String cpf = String.valueOf(data.get("cpf"));
                         service.desativar(cpf);
                         Map<String, Object> payload = new HashMap<>((Map<String, Object>) data);
-                        resposta.put("action", "GERENTE_INACTIVATED");
-                        resposta.put("data", payload);
+                        resposta.put("tipo", "GERENTE_INACTIVATED");
+                        resposta.put("payload", payload);
                     }
                     default -> { return; }
                 }
             } catch (Exception e) {
                 String errorAction = action.startsWith("INACTIVATE") ? "GERENTE_INACTIVATE_FAILED" : "GERENTE_FAILED";
-                resposta.put("action", errorAction);
-                resposta.put("data", data);
+                resposta.put("tipo", errorAction);
+                resposta.put("payload", data);
                 resposta.put("erro", e.getMessage());
             }
 
