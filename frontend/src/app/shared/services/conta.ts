@@ -26,7 +26,7 @@ export class ContaService {
 
   buscarPorCpf(cpf: string): Observable<Conta> {
     return this.http.get<Conta>(
-      `${this.API_URL}/contas/cliente/${encodeURIComponent(cpf)}`
+      `${this.API_URL}/clientes/${encodeURIComponent(cpf)}/conta`
     );
   }
 
