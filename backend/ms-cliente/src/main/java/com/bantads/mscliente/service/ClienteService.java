@@ -76,7 +76,12 @@ public class ClienteService {
         return dto(solicitacao);
     }
 
-    @Transactional public void rollbackCliente(String cpf) { clientes.deleteById(cpf); }
+    @Transactional
+    public void rollbackCliente(String cpf, String motivoNaoAprovada) {
+        clientes.deleteById(cpf);
+        solicitacoes.findById(cpf).ifPresent(s -> s.reabrir(motivoNaoAprovada));
+    }
+
     @Transactional
     public void reboot() {
         solicitacoes.deleteAll(); clientes.deleteAll();

@@ -42,3 +42,9 @@ ALTER TABLE cliente.clientes ADD COLUMN IF NOT EXISTS cidade TEXT;
 ALTER TABLE cliente.clientes ADD COLUMN IF NOT EXISTS uf VARCHAR(2);
 ALTER TABLE cliente.clientes ALTER COLUMN uf TYPE VARCHAR(2);
 
+
+CREATE TABLE IF NOT EXISTS cliente.comandos_processados (
+    saga_id TEXT NOT NULL,
+    tipo TEXT NOT NULL,
+    PRIMARY KEY (saga_id, tipo)
+);

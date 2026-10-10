@@ -46,5 +46,9 @@ public class GerenteService {
         }
     }
 
+    public void reativar(String cpf) { repository.reativar(cpf); }
+
+    public void remover(String cpf) { repository.remover(cpf); }
+
     public void reboot() { repository.reboot(); }
 }

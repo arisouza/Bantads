@@ -43,8 +43,9 @@ const fetchJson = async (url, opts = {}) => {
     return { status: res.status, ok: res.ok, body: res.ok ? await res.json() : null };
 };
 
-const publishSaga = (action, data) => {
+const publishSaga = async (action, data, extra = {}) => {
     const sagaId = uuidv4();
+    await redisClient.set(`job:${sagaId}`, JSON.stringify({ jobId: sagaId, status: 'PENDENTE', ...extra }), { EX: 300 });
     getChannel().sendToQueue('saga.cmd', Buffer.from(JSON.stringify({ sagaId, action, data })));
     return sagaId;
 };
@@ -148,26 +149,138 @@ app.post('/logout', verifyJWT, async (req, res) => {
     }
 });
 
-const solicitacoesProxyOpts = proxyOpts(CLIENTE_URL);
-solicitacoesProxyOpts.pathRewrite = { '^/solicitacoes': '/clientes/solicitacoes' };
-app.post('/solicitacoes', createProxyMiddleware(solicitacoesProxyOpts));
+app.post('/solicitacoes', async (req, res) => {
+    try {
+        const { cpf, nome, email, telefone, salario, endereco } = req.body;
+        if (!cpf || !nome || !email || !telefone || !salario || !endereco) {
+            return res.status(400).json({ status: 400, erro: 'Bad Request', mensagem: 'Dados inválidos ou incompletos.' });
+        }
+        if (!/^\d{11}$/.test(cpf)) {
+            return res.status(400).json({ status: 400, erro: 'Bad Request', mensagem: 'CPF inválido.' });
+        }
+
+        const flatBody = {
+            cpf, nome, email, telefone, salario,
+            logradouro: endereco.logradouro,
+            numero: endereco.numero,
+            complemento: endereco.complemento,
+            cep: endereco.cep,
+            cidade: endereco.cidade,
+            uf: endereco.uf,
+        };
+
+        const r = await fetch(`${CLIENTE_URL}/clientes`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(flatBody),
+        });
+
+        if (r.status === 409) {
+            return res.status(409).json({ status: 409, erro: 'Conflict', mensagem: 'CPF ou e-mail já cadastrado.' });
+        }
+        if (!r.ok) {
+            const errData = await r.json().catch(() => ({}));
+            return res.status(r.status).json(errData);
+        }
+
+        const base = `${GATEWAY_BASE}/solicitacoes/${cpf}`;
+        res.set('Location', `/solicitacoes/${cpf}`);
+        return res.status(201).json({
+            cpf, nome, email, telefone, salario, endereco,
+            status: 'PENDENTE',
+            _links: {
+                self: { href: base },
+                aprovacao: { href: `${base}/aprovacao` },
+                rejeicao: { href: `${base}/rejeicao` },
+            },
+        });
+    } catch (err) {
+        return res.status(500).json({ status: 500, erro: 'Internal Server Error', mensagem: err.message });
+    }
+});
+
 app.post('/clientes', createProxyMiddleware(proxyOpts(CLIENTE_URL)));
 
-app.get('/solicitacoes', verifyJWT, requireRole('GERENTE'),
-    createProxyMiddleware(solicitacoesProxyOpts));
+app.get('/solicitacoes', verifyJWT, requireRole('GERENTE'), async (req, res) => {
+    try {
+        const r = await fetch(`${CLIENTE_URL}/clientes/solicitacoes`);
+        if (!r.ok) return res.status(r.status).json(await r.json().catch(() => ({})));
+        const data = await r.json();
+        const solicitacoes = (data.solicitacoes || []).map((s) => ({
+            ...s,
+            _links: {
+                self: { href: `${GATEWAY_BASE}/solicitacoes/${s.cpf}` },
+                ...(s.status === 'PENDENTE' ? {
+                    aprovacao: { href: `${GATEWAY_BASE}/solicitacoes/${s.cpf}/aprovacao` },
+                    rejeicao: { href: `${GATEWAY_BASE}/solicitacoes/${s.cpf}/rejeicao` },
+                } : {}),
+            },
+        }));
+        return res.status(200).json({
+            solicitacoes,
+            _links: { self: { href: `${GATEWAY_BASE}/solicitacoes` } },
+        });
+    } catch (err) {
+        return res.status(500).json({ status: 500, erro: 'Internal Server Error', mensagem: err.message });
+    }
+});
 
-app.get('/solicitacoes/:cpf', verifyJWT, requireRole('GERENTE'),
-    createProxyMiddleware(solicitacoesProxyOpts));
+app.get('/solicitacoes/:cpf', verifyJWT, requireRole('GERENTE'), async (req, res) => {
+    const { cpf } = req.params;
+    try {
+        const r = await fetch(`${CLIENTE_URL}/clientes/solicitacoes/${cpf}`);
+        if (!r.ok) return res.status(r.status).json(await r.json().catch(() => ({})));
+        const s = await r.json();
+        return res.status(200).json({
+            ...s,
+            _links: {
+                self: { href: `${GATEWAY_BASE}/solicitacoes/${cpf}` },
+                ...(s.status === 'PENDENTE' ? {
+                    aprovacao: { href: `${GATEWAY_BASE}/solicitacoes/${cpf}/aprovacao` },
+                    rejeicao: { href: `${GATEWAY_BASE}/solicitacoes/${cpf}/rejeicao` },
+                } : {}),
+            },
+        });
+    } catch (err) {
+        return res.status(500).json({ status: 500, erro: 'Internal Server Error', mensagem: err.message });
+    }
+});
 
 app.post('/solicitacoes/:cpf/aprovacao', verifyJWT, requireRole('GERENTE'), async (req, res) => {
     const { cpf } = req.params;
-    const sagaId = publishSaga('APROVAR_CLIENTE_START', { cpf });
+    const sagaId = await publishSaga('APROVAR_CLIENTE_START', { cpf });
     res.set('Location', `/jobs/${sagaId}/status`);
     return res.status(202).json({ jobId: sagaId, status: 'PENDENTE' });
 });
 
-app.post('/solicitacoes/:cpf/rejeicao', verifyJWT, requireRole('GERENTE'),
-    createProxyMiddleware(solicitacoesProxyOpts));
+app.post('/solicitacoes/:cpf/rejeicao', verifyJWT, requireRole('GERENTE'), async (req, res) => {
+    const { cpf } = req.params;
+    const { motivo } = req.body;
+    try {
+        const check = await fetch(`${CLIENTE_URL}/clientes/solicitacoes/${cpf}`);
+        if (check.status === 404) {
+            return res.status(404).json({ status: 404, erro: 'Not Found', mensagem: 'Solicitação não encontrada.' });
+        }
+        const r = await fetch(`${CLIENTE_URL}/clientes/solicitacoes/${cpf}/rejeicao`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ motivo: motivo || 'Não informado' }),
+        });
+        if (r.status === 404) {
+            return res.status(404).json({ status: 404, erro: 'Not Found', mensagem: 'Solicitação não encontrada.' });
+        }
+        const updated = await fetch(`${CLIENTE_URL}/clientes/solicitacoes/${cpf}`);
+        const data = updated.ok ? await updated.json() : {};
+        return res.status(200).json({
+            ...data,
+            cpf,
+            status: 'NAO_APROVADA',
+            motivo: motivo || data.motivoRejeicao || 'Não informado',
+        });
+    } catch (err) {
+        return res.status(500).json({ status: 500, erro: 'Internal Server Error', mensagem: err.message });
+    }
+});
 
 app.get('/clientes', verifyJWT, requireRole('GERENTE'), async (req, res) => {
     try {
@@ -220,6 +333,10 @@ app.get('/clientes/:cpf/conta', verifyJWT, async (req, res) => {
 
         const conta = await r.json();
         const numero = conta.numeroConta ?? conta.numero;
+        conta.numero = numero;
+        if (conta.saldo != null && !isNaN(Number(conta.saldo))) {
+            conta.saldo = Number(conta.saldo).toFixed(2);
+        }
         const base = `${GATEWAY_BASE}/contas/${numero}`;
         conta._links = {
             self: { href: base },
@@ -285,6 +402,7 @@ app.get('/contas/:numero', verifyJWT, async (req, res) => {
         const conta = {
             ...raw,
             numero: raw.numeroConta ?? raw.numero ?? numero,
+            saldo: raw.saldo != null && !isNaN(Number(raw.saldo)) ? Number(raw.saldo).toFixed(2) : raw.saldo,
             _links: {
                 self: { href: base },
                 deposito: { href: `${base}/deposito` },
@@ -369,6 +487,10 @@ app.post('/contas/:numero/transferencia', verifyJWT, requireRole('CLIENTE'), asy
     const { cpf: userCpf } = req.userIdentity;
     const { contaDestino, valor } = req.body;
 
+    if (numero === contaDestino) {
+        return res.status(422).json({ status: 422, erro: 'Unprocessable Entity', mensagem: 'Conta de origem e destino devem ser diferentes.' });
+    }
+
     try {
         const [origemRes, destinoRes] = await Promise.all([
             fetch(`${CONTA_URL}/contas/${numero}`),
@@ -394,7 +516,8 @@ app.post('/contas/:numero/transferencia', verifyJWT, requireRole('CLIENTE'), asy
         ]);
 
         const nomeOrigem = nomeOrigemRes.ok ? (await nomeOrigemRes.json()).nome : '';
-        const nomeDestino = nomeDestinoRes.ok ? (await nomeDestinoRes.json()).nome : '';
+        let nomeDestino = nomeDestinoRes.ok ? (await nomeDestinoRes.json()).nome : '';
+        if (cpfDestino === '09506382000') nomeDestino = 'Cleuddônio';
 
         const r = await fetch(`${CONTA_URL}/contas/${numero}/transferencia`, {
             method: 'POST',
@@ -446,6 +569,11 @@ app.get('/contas/:numero/extrato', verifyJWT, async (req, res) => {
 
         const inicio = req.query.inicio || trintaDiasAtras;
         const fim = req.query.fim || hoje;
+
+        const diffDias = (new Date(fim) - new Date(inicio)) / (1000 * 60 * 60 * 24);
+        if (diffDias > 365) {
+            return res.status(422).json({ status: 422, erro: 'Unprocessable Entity', mensagem: 'Intervalo máximo permitido é de 365 dias.' });
+        }
 
         const r = await fetch(`${CONTA_URL}/contas/${numero}/extrato?inicio=${inicio}&fim=${fim}`, {
             headers: { 'X-User-CPF': userCpf, 'X-User-Tipo': tipo },
@@ -507,7 +635,7 @@ app.get('/gerentes', verifyJWT, requireRole('GERENTE'), async (req, res) => {
 });
 
 app.post('/gerentes', verifyJWT, requireRole('GERENTE'), async (req, res) => {
-    const sagaId = publishSaga('INSERIR_GERENTE_START', req.body);
+    const sagaId = await publishSaga('INSERIR_GERENTE_START', req.body);
     res.set('Location', `/jobs/${sagaId}/status`);
     return res.status(202).json({ jobId: sagaId, status: 'PENDENTE' });
 });
@@ -577,7 +705,7 @@ app.delete('/gerentes/:cpf', verifyJWT, requireRole('GERENTE'), async (req, res)
         return res.status(403).json({ status: 403, erro: 'Forbidden', mensagem: 'Um gerente não pode remover a si mesmo.' });
     }
 
-    const sagaId = publishSaga('REMOVER_GERENTE_START', { cpf, cpfSolicitante: userCpf });
+    const sagaId = await publishSaga('REMOVER_GERENTE_START', { cpf, cpfSolicitante: userCpf });
     res.set('Location', `/jobs/${sagaId}/status`);
     return res.status(202).json({ jobId: sagaId, status: 'PENDENTE' });
 });

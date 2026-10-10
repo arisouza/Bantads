@@ -1,184 +1,122 @@
-const { updateJob, redisClient } = require('../config/redis');
-const { getChannel } = require('../config/rabbitmq');
+const { redisClient, updateJob } = require('../config/redis');
+const flows = require('./flows');
+const segredos = require('./segredos');
 
-const GERENTE_URL = process.env.GERENTE_URL || 'http://ms-gerente:3003';
+const TIMEOUT_PASSO_MS = 30000;
+const ESTADO_TTL = 3600;
+const COMPENSACAO = /^(ROLLBACK|REACTIVATE|REASSOCIAR)/;
 
-const sendToCliente = (channel, sagaId, action, data) => {
-    channel.sendToQueue('cliente.cmd', Buffer.from(JSON.stringify({ sagaId, action, data })));
+const timers = new Map();
+
+const chaveSaga = (id) => `saga:${id}`;
+
+const carregar = async (id) => {
+    const raw = await redisClient.get(chaveSaga(id));
+    return raw ? JSON.parse(raw) : null;
 };
 
-const sendToAuth = (channel, sagaId, action, data) => {
-    channel.sendToQueue('auth.cmd', Buffer.from(JSON.stringify({ sagaId, action, data })));
+const salvar = (saga) => redisClient.set(chaveSaga(saga.id), JSON.stringify(saga), { EX: ESTADO_TTL });
+
+const limparTimer = (id) => {
+    clearTimeout(timers.get(id));
+    timers.delete(id);
 };
 
-const sendToGerente = (channel, sagaId, action, data) => {
-    channel.sendToQueue('gerente.cmd', Buffer.from(JSON.stringify({ sagaId, action, data })));
+const armarTimer = (saga) => {
+    const { id, passo } = saga;
+    limparTimer(id);
+    timers.set(id, setTimeout(
+        () => falhar(id, passo, `Timeout de 30s no passo ${flows[saga.tipo].passos[passo].nome}.`),
+        TIMEOUT_PASSO_MS
+    ));
 };
 
-const sendToConta = (channel, sagaId, tipo, payload) => {
-    channel.sendToQueue('ms.conta.cmd', Buffer.from(JSON.stringify({
-        sagaId,
-        tipo,
-        timestamp: new Date().toISOString(),
-        payload,
-    })));
+const finalizar = async (saga, status, extra) => {
+    limparTimer(saga.id);
+    segredos.descartar(saga.id);
+    saga.status = status;
+    await salvar(saga);
+    await updateJob(saga.id, status, extra);
+
+    const chaves = flows[saga.tipo].cache(saga.ctx);
+    if (chaves.length) await redisClient.del(chaves);
 };
 
-const sendToEmail = (channel, data) => {
-    channel.sendToQueue('email.cmd', Buffer.from(JSON.stringify(data)));
-};
+const concluir = (saga) => finalizar(saga, 'CONCLUIDO', flows[saga.tipo].resultado(saga.ctx));
 
-const getCpfsGerentesAtivos = async () => {
-    try {
-        const res = await fetch(`${GERENTE_URL}/gerentes`);
-        if (!res.ok) return [];
-        const { gerentes } = await res.json();
-        return gerentes.map(g => g.cpf);
-    } catch {
-        return [];
+const falhar = async (id, passo, erro) => {
+    const primeiroSinal = await redisClient.set(`${chaveSaga(id)}:falha:${passo}`, '1', { NX: true, EX: ESTADO_TTL });
+    if (!primeiroSinal) return;
+
+    const saga = await carregar(id);
+    if (!saga || saga.status !== 'EM_ANDAMENTO' || saga.passo !== passo) return;
+
+    const flow = flows[saga.tipo];
+    for (const indice of [...saga.feitos].reverse()) {
+        await flow.passos[indice].desfazer?.(saga.ctx, id, erro);
     }
+
+    await finalizar(saga, 'FALHA', { erro });
+    await flow.aoFalhar?.(saga.ctx, erro);
 };
 
-const orchestrate = async (command) => {
-    const channel = getChannel();
-    const { sagaId, action, data, erro } = command;
+const avancar = async (saga) => {
+    const { passos } = flows[saga.tipo];
 
-    try {
-        switch (action) {
-            case 'APROVAR_CLIENTE_START':
-                await updateJob(sagaId, 'PENDENTE', { resultType: 'resource', dominio: 'clientes' });
-                sendToCliente(channel, sagaId, 'CREATE_CLIENTE', data);
-                break;
+    while (saga.status === 'EM_ANDAMENTO') {
+        saga.passo += 1;
+        const passo = passos[saga.passo];
+        if (!passo) return concluir(saga);
+        if (passo.pular?.(saga.ctx)) continue;
 
-            case 'CLIENTE_CREATED': {
-                const payload = data ?? {};
-                sendToAuth(channel, sagaId, 'CREATE_AUTH', payload);
-                break;
-            }
+        await salvar(saga);
 
-            case 'AUTH_CREATED': {
-                const payload = data ?? {};
-                const cpfsGerentesAtivos = await getCpfsGerentesAtivos();
-                sendToConta(channel, sagaId, 'CREATE_CONTA', {
-                    cpfCliente: payload.cpf ?? payload.cpfCliente,
-                    cpfsGerentesAtivos,
-                });
-                sendToEmail(channel, {
-                    destinatario: payload.email,
-                    tipo: 'SENHA_INICIAL',
-                    assunto: 'Sua conta BANTADS foi criada!',
-                    dados: { senha: payload.senha, cpf: payload.cpf ?? payload.cpfCliente },
-                });
-                break;
-            }
-
-            case 'CONTA_CREATED':
-                await updateJob(sagaId, 'CONCLUIDO', { resourceId: data?.cpfCliente ?? data?.cpf });
-                break;
-
-            case 'CLIENTE_FAILED':
-                await updateJob(sagaId, 'FALHA', { erro: erro || 'Falha ao criar cliente.' });
-                break;
-
-            case 'AUTH_FAILED':
-                sendToCliente(channel, sagaId, 'ROLLBACK_CLIENTE', data);
-                await updateJob(sagaId, 'FALHA', { erro: erro || 'Falha ao criar acesso.' });
-                break;
-
-            case 'CONTA_FAILED':
-                if (data?.comandoTipo === 'TRANSFERIR_CONTAS_GERENTE') {
-                    await updateJob(sagaId, 'FALHA', { erro: erro || 'Falha ao transferir as contas do gerente.' });
-                    break;
-                }
-                sendToCliente(channel, sagaId, 'ROLLBACK_CLIENTE', { cpf: data?.cpfCliente ?? data?.cpf });
-                await updateJob(sagaId, 'FALHA', { erro: erro || 'Falha ao criar conta.' });
-                break;
-
-            case 'CLIENTE_ROLLBACK_DONE':
-                break;
-
-            case 'INSERIR_GERENTE_START':
-                await updateJob(sagaId, 'PENDENTE', { resultType: 'resource', dominio: 'gerentes' });
-                sendToGerente(channel, sagaId, 'CREATE_GERENTE', data);
-                break;
-
-            case 'GERENTE_CREATED':
-                sendToAuth(channel, sagaId, 'CREATE_AUTH_GERENTE', data);
-                break;
-
-            case 'AUTH_GERENTE_CREATED':
-                await updateJob(sagaId, 'CONCLUIDO', { resourceId: data?.cpf });
-                break;
-
-            case 'GERENTE_FAILED':
-                await updateJob(sagaId, 'FALHA', { erro: erro || 'Falha ao criar gerente.' });
-                break;
-
-            case 'AUTH_GERENTE_FAILED':
-                sendToGerente(channel, sagaId, 'ROLLBACK_GERENTE', data);
-                await updateJob(sagaId, 'FALHA', { erro: erro || 'Falha ao criar acesso do gerente.' });
-                break;
-
-            case 'GERENTE_ROLLBACK_DONE':
-                break;
-
-            case 'REMOVER_GERENTE_START':
-                await updateJob(sagaId, 'PENDENTE', { resultType: 'inline' });
-                {
-                    const gerentesAlternativos = (await getCpfsGerentesAtivos())
-                        .filter(cpf => cpf !== data?.cpf);
-                    if (gerentesAlternativos.length === 0) {
-                        await updateJob(sagaId, 'FALHA', { erro: 'NÃ£o Ã© possÃ­vel remover o Ãºltimo gerente ativo.' });
-                        break;
-                    }
-                }
-                sendToGerente(channel, sagaId, 'INACTIVATE_GERENTE', data);
-                break;
-
-            case 'GERENTE_INACTIVATED': {
-                const cpf = data?.cpf;
-                if (cpf) {
-                    const jti = await redisClient.get(`sessao:cpf:${cpf}`);
-                    if (jti) {
-                        await redisClient.del(`sessao:${jti}`);
-                        await redisClient.del(`sessao:cpf:${cpf}`);
-                    }
-                }
-                sendToAuth(channel, sagaId, 'REVOKE_AUTH_GERENTE', data);
-                break;
-            }
-
-            case 'AUTH_GERENTE_REVOKED': {
-                const cpfsGerentesAtivos = await getCpfsGerentesAtivos();
-                if (cpfsGerentesAtivos.length === 0) {
-                    await updateJob(sagaId, 'FALHA', { erro: 'NÃ£o hÃ¡ gerente ativo para receber as contas.' });
-                    break;
-                }
-                sendToConta(channel, sagaId, 'TRANSFERIR_CONTAS_GERENTE', {
-                    cpfGerenteRemovido: data?.cpf,
-                    cpfsGerentesAtivos,
-                });
-                break;
-            }
-
-            case 'CONTAS_GERENTE_TRANSFERIDAS':
-                await updateJob(sagaId, 'CONCLUIDO', {
-                    resultado: { mensagem: 'Gerente removido e contas transferidas.', quantidadeContas: data?.quantidadeContas ?? 0 }
-                });
-                break;
-
-            case 'GERENTE_INACTIVATE_FAILED':
-            case 'TRANSFER_CONTAS_FAILED':
-                await updateJob(sagaId, 'FALHA', { erro: erro || 'Falha na remoção do gerente.' });
-                break;
-
-            default:
-                console.warn(`[SAGA] Ação desconhecida: ${action} (sagaId: ${sagaId})`);
+        try {
+            await passo.executar(saga.ctx, saga.id);
+        } catch (err) {
+            return falhar(saga.id, saga.passo, err.message);
         }
-    } catch (err) {
-        console.error(`[SAGA] Falha crítica na SAGA ${sagaId}:`, err);
-        await updateJob(sagaId, 'FALHA', { erro: 'Erro interno no processamento.' });
+
+        if (passo.sucesso) {
+            return armarTimer(saga);
+        }
+
+        saga.feitos.push(saga.passo);
     }
 };
 
-module.exports = { orchestrate };
+const iniciar = async ({ sagaId, action, data }) => {
+    if (!flows[action]) return console.warn(`[SAGA] Ação desconhecida: ${action} (sagaId: ${sagaId})`);
+
+    const { senha, ...ctx } = data ?? {};
+    segredos.guardar(sagaId, senha);
+
+    await updateJob(sagaId, 'PENDENTE', flows[action].job);
+    await avancar({ id: sagaId, tipo: action, ctx, passo: -1, feitos: [], status: 'EM_ANDAMENTO' });
+};
+
+const responder = async ({ sagaId, tipo, payload, erro }) => {
+    const saga = await carregar(sagaId);
+    if (!saga || saga.status !== 'EM_ANDAMENTO') return;
+
+    const passo = flows[saga.tipo].passos[saga.passo];
+    if (!passo || (tipo !== passo.sucesso && tipo !== passo.falha)) return;
+
+    if (tipo === passo.falha) return falhar(sagaId, saga.passo, erro || `Falha no passo ${passo.nome}.`);
+
+    limparTimer(sagaId);
+    passo.aplicar?.(saga.ctx, payload ?? {}, sagaId);
+    saga.feitos.push(saga.passo);
+    await avancar(saga);
+};
+
+const falhaTecnica = async ({ sagaId, action, tipo }) => {
+    if (COMPENSACAO.test(action ?? tipo ?? '')) return;
+
+    const saga = await carregar(sagaId);
+    if (saga?.status === 'EM_ANDAMENTO') {
+        await falhar(sagaId, saga.passo, 'Falha técnica: comando enviado à DLQ após as retentativas.');
+    }
+};
+
+module.exports = { iniciar, responder, falhaTecnica };

@@ -76,6 +76,17 @@ public class AuthService {
         usuarios.save(u);
     }
 
+    public void reativarUsuario(String cpf) {
+        usuarios.findByCpf(cpf).ifPresent(u -> {
+            u.setAtivo(true);
+            usuarios.save(u);
+        });
+    }
+
+    public void removerUsuario(String cpf) {
+        usuarios.findByCpf(cpf).ifPresent(usuarios::delete);
+    }
+
     public void reboot() {
         usuarios.deleteAll();
         for (var row : SEED) {

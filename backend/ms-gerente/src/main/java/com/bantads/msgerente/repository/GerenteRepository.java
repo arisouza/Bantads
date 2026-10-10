@@ -57,6 +57,14 @@ public class GerenteRepository {
         return jdbc.update("UPDATE gerente.gerentes SET ativo = FALSE WHERE cpf = ?", cpf);
     }
 
+    public int reativar(String cpf) {
+        return jdbc.update("UPDATE gerente.gerentes SET ativo = TRUE WHERE cpf = ?", cpf);
+    }
+
+    public int remover(String cpf) {
+        return jdbc.update("DELETE FROM gerente.gerentes WHERE cpf = ?", cpf);
+    }
+
     public void reboot() {
         jdbc.update("DELETE FROM gerente.gerentes");
         jdbc.update("INSERT INTO gerente.gerentes (cpf, nome, email, telefone, ativo) VALUES (?, ?, ?, ?, TRUE)",

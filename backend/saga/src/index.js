@@ -1,36 +1,29 @@
-const { connectRabbitMQ } = require('../config/rabbitmq');
+const { connectRabbitMQ, FILAS_DLQ } = require('../config/rabbitmq');
 const { connectRedis } = require('../config/redis');
-const { orchestrate } = require('../services/orchestrator');
+const { iniciar, responder, falhaTecnica } = require('../services/orchestrator');
+
+const consumir = (channel, fila, tratar) => channel.consume(fila, async (msg) => {
+    if (!msg) return;
+
+    try {
+        await tratar(JSON.parse(msg.content.toString()));
+    } catch (error) {
+        console.error(`[SAGA] Erro ao processar mensagem de ${fila}:`, error);
+    }
+
+    channel.ack(msg);
+});
 
 const init = async () => {
     try {
         await connectRedis();
         const channel = await connectRabbitMQ();
 
+        consumir(channel, 'saga.cmd', iniciar);
+        consumir(channel, 'orquestrador.reply', responder);
+        FILAS_DLQ.forEach((fila) => consumir(channel, fila, falhaTecnica));
+
         console.log('Orquestrador SAGA inicializado e consumindo filas...');
-
-        channel.consume('saga.cmd', async (msg) => {
-            if (msg) {
-                const payload = JSON.parse(msg.content.toString());
-                await orchestrate(payload);
-                channel.ack(msg);
-            }
-        });
-
-        channel.consume('orquestrador.reply', async (msg) => {
-            if (msg) {
-                const payload = JSON.parse(msg.content.toString());
-
-                await orchestrate({
-                    sagaId: payload.sagaId,
-                    action: payload.tipo,
-                    data: payload.payload,
-                    erro: payload.erro
-                });
-
-                channel.ack(msg);
-            }
-        });
     } catch (error) {
         console.error('Falha ao inicializar o Orquestrador SAGA:', error);
         process.exit(1);

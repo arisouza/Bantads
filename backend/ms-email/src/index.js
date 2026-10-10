@@ -72,11 +72,13 @@ const start = async () => {
         const conn = await amqp.connect(RABBITMQ_URL);
         const channel = await conn.createChannel();
 
-        await channel.assertQueue('email.cmd', { durable: true });
+        for (const fila of ['ms.email.cmd', 'email.cmd']) {
+            await channel.assertQueue(fila, { durable: true });
+            channel.consume(fila, (msg) => processEmail(msg, channel), { noAck: false });
+        }
         channel.prefetch(1);
 
-        console.log('MS Email aguardando mensagens em email.cmd...');
-        channel.consume('email.cmd', (msg) => processEmail(msg, channel), { noAck: false });
+        console.log('MS Email aguardando mensagens em ms.email.cmd e email.cmd...');
     } catch (err) {
         console.error('Falha ao conectar no RabbitMQ:', err.message);
         setTimeout(start, 5000);
