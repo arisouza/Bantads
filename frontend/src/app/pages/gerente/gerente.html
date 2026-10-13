@@ -22,6 +22,11 @@
       aria-label="Solicitações de autocadastro"
       [attr.aria-busy]="carregando()"
     >
+
+      @if (mensagemSucesso()) {
+        <p class="estado" role="status">{{ mensagemSucesso() }}</p>
+      }
+
       @if (carregando()) {
         <p class="estado" role="status">
           Carregando solicitações...
@@ -117,13 +122,14 @@
                           {{ processando() === solicitacao.cpf ? 'Processando...' : 'Aprovar' }}
                         </button>
 
-                        <button
-                          mat-stroked-button
-                          type="button"
-                          disabled
-                        >
-                          Recusar
-                        </button>
+                          <button
+                            mat-stroked-button
+                            type="button"
+                            [disabled]="processando() !== null || recusandoCpf() !== null"
+                            (click)="iniciarRecusa(solicitacao)">
+                            Recusar
+                          </button>
+
                       </div>
                     } @else {
                       <span class="finalizada">Finalizada</span>
@@ -133,6 +139,39 @@
               }
             </tbody>
           </table>
+
+          @if (recusandoCpf() !== null) {
+            <section class="formulario-recusa" aria-label="Recusar solicitação">
+              <h2>Recusar solicitação</h2>
+
+              <label for="motivoRecusa">Motivo da recusa</label>
+              <textarea
+                id="motivoRecusa"
+                rows="4"
+                maxlength="500"
+                placeholder="Informe o motivo da recusa"
+                [value]="motivoRecusa()"
+                (input)="motivoRecusa.set($any($event.target).value)">
+              </textarea>
+
+              <div class="acoes">
+                <button
+                  mat-flat-button
+                  type="button"
+                  [disabled]="motivoRecusa().trim().length === 0"
+                  (click)="confirmarRecusa()">
+                  Confirmar recusa
+                </button>
+
+                <button
+                  mat-stroked-button
+                  type="button"
+                  (click)="cancelarRecusa()">
+                  Cancelar
+                </button>
+              </div>
+            </section>
+          }
         </div>
       }
     </section>

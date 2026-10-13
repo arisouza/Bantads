@@ -44,6 +44,7 @@ import {
   styleUrl: './gerente.css'
 })
 export class Gerente implements OnInit {
+
   private readonly solicitacaoService =
     inject(SolicitacaoService);
   private readonly gerenteService = inject(GerenteService);
@@ -64,6 +65,9 @@ export class Gerente implements OnInit {
     APROVADO: 'Aprovado',
     NAO_APROVADO: 'Não aprovado'
   };
+  
+  readonly recusandoCpf = signal<string | null>(null);
+  readonly motivoRecusa = signal('');
 
   ngOnInit(): void {
     this.carregarSolicitacoes();
@@ -127,6 +131,52 @@ export class Gerente implements OnInit {
       error: erro => this.mensagemErro.set(erro?.error?.message || erro?.message || 'Não foi possível aprovar o cliente.')
     });
   }
+
+    
+  iniciarRecusa(solicitacao: Solicitacao): void { 
+  if (solicitacao.status !== 'PENDENTE' || this.processando()) return;
+
+  this.mensagemErro.set('');
+  this.mensagemSucesso.set('');
+  this.motivoRecusa.set('');
+  this.recusandoCpf.set(solicitacao.cpf);
+  }
+
+  cancelarRecusa(): void {
+  this.recusandoCpf.set(null);
+  this.motivoRecusa.set('');
+  }
+  
+  confirmarRecusa(): void {
+    const cpf = this.recusandoCpf();
+    const motivo = this.motivoRecusa().trim();
+
+    if (!cpf || !motivo || this.processando()) return;
+
+    this.processando.set(cpf);
+    this.mensagemErro.set('');
+    this.mensagemSucesso.set('');
+
+    this.gerenteService.recusarCliente(cpf, motivo).pipe(
+      takeUntilDestroyed(this.destroyRef),
+      finalize(() => this.processando.set(null))
+    ).subscribe({
+      next: () => {
+        this.recusandoCpf.set(null);
+        this.motivoRecusa.set('');
+        this.mensagemSucesso.set('Solicitação recusada com sucesso.');
+        this.carregarSolicitacoes();
+      },
+      error: erro => {
+        this.mensagemErro.set(
+          erro?.error?.mensagem ||
+          erro?.error?.message ||
+          'Não foi possível recusar a solicitação. Tente novamente.'
+        );
+      }
+    });
+  }
+
 
   formatarCpf(cpf: string): string {
     return cpf.replace(

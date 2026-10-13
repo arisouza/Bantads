@@ -136,4 +136,11 @@ export class GerenteService {
       })
     );
   }
+
+  recusarCliente(cpf: string, motivo: string): Observable<unknown> {
+    return this.http.post(
+      `${this.API_URL}/solicitacoes/${encodeURIComponent(cpf)}/rejeicao`,
+      { motivo }
+    );
+  }
 }
