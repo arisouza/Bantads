@@ -93,6 +93,31 @@
   color: #b42318;
 }
 
+.modal-mensagem {
+  margin: 0 0 1rem;
+  color: var(--color-text);
+  line-height: 1.5;
+}
+
+.modal-acoes {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  margin-top: 1.5rem;
+}
+
+.modal-botao {
+  border-radius: 10px;
+}
+
+.modal-botao--secundario {
+  padding: 0.65rem 1rem;
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
+  background: transparent;
+  color: var(--color-text);
+}
+
 .tabela-container {
   width: 100%;
   overflow-x: auto;

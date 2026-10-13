@@ -6,13 +6,20 @@
         <h1>Gerentes</h1>
         <p>Gerencie os gestores ativos da instituição.</p>
       </div>
-      <button mat-flat-button type="button" (click)="abrirCriacao()" [disabled]="processando()">
+      <button mat-flat-button type="button" (click)="abrirCriacao()" [disabled]="processando() || modalRemocaoAberto()">
         Novo gerente
       </button>
     </header>
 
     @if (mensagemSucesso()) {
       <p class="feedback sucesso" role="status">{{ mensagemSucesso() }}</p>
+    }
+
+    @if (
+      (mensagemErro() && modoFormulario() === 'nenhum') ||
+      (mensagemErroLista() && gerentes().length > 0)
+    ) {
+      <p class="feedback erro" role="alert">{{ mensagemErro() || mensagemErroLista() }}</p>
     }
 
     @if (modoFormulario() !== 'nenhum') {
@@ -22,7 +29,7 @@
             <span class="eyebrow">{{ modoFormulario() === 'criar' ? 'Novo cadastro' : 'Dados do gerente' }}</span>
             <h2>{{ modoFormulario() === 'criar' ? 'Inserir gerente' : 'Editar gerente' }}</h2>
           </div>
-          <button mat-stroked-button type="button" (click)="fecharFormulario()" [disabled]="processando()">Cancelar</button>
+          <button mat-stroked-button type="button" (click)="fecharFormulario()" [disabled]="processando() || modalRemocaoAberto()">Cancelar</button>
         </div>
 
         <form class="gerente-form" [formGroup]="formulario" (ngSubmit)="salvar()" novalidate>
@@ -61,7 +68,7 @@
           @if (mensagemErro()) { <p class="feedback erro" role="alert">{{ mensagemErro() }}</p> }
 
           <div class="formulario-acoes">
-            <button mat-flat-button color="primary" type="submit" [disabled]="processando()">
+            <button mat-flat-button color="primary" type="submit" [disabled]="processando() || modalRemocaoAberto()">
               {{ processando() ? 'Processando...' : (modoFormulario() === 'criar' ? 'Inserir gerente' : 'Salvar alterações') }}
             </button>
           </div>
@@ -72,8 +79,8 @@
     <section class="gerentes-card" aria-label="Lista de gerentes" [attr.aria-busy]="carregando()">
       @if (carregando()) {
         <p class="estado" role="status">Carregando gerentes...</p>
-      } @else if (mensagemErro() && modoFormulario() === 'nenhum') {
-        <p class="estado erro" role="alert">{{ mensagemErro() }}</p>
+      } @else if (mensagemErroLista() && gerentes().length === 0) {
+        <p class="estado erro" role="alert">{{ mensagemErroLista() }}</p>
       } @else if (gerentes().length === 0) {
         <p class="estado">Nenhum gerente encontrado.</p>
       } @else {
@@ -102,8 +109,16 @@
                   <td>{{ gerente.quantidadeClientes }}</td>
                   <td>
                     <div class="acoes">
-                      <button mat-stroked-button type="button" (click)="abrirEdicao(gerente)" [disabled]="processando()">Editar</button>
-                      <button mat-flat-button type="button" color="warn" disabled>Desativar</button>
+                      <button mat-stroked-button type="button" (click)="abrirEdicao(gerente)" [disabled]="processando() || modalRemocaoAberto()">Editar</button>
+                      <button
+                        mat-flat-button
+                        type="button"
+                        color="warn"
+                        (click)="abrirRemocao(gerente)"
+                        [disabled]="processando() || !gerente.ativo"
+                      >
+                        Desativar
+                      </button>
                     </div>
                   </td>
                 </tr>
@@ -114,4 +129,40 @@
       }
     </section>
   </section>
+
+  <app-modal
+    [aberto]="modalRemocaoAberto()"
+    titulo="Confirmar desativação"
+    (fechar)="fecharRemocao()"
+  >
+    @if (gerenteSelecionado(); as gerente) {
+      <p class="modal-mensagem">
+        Deseja desativar o gerente <strong>{{ gerente.nome }}</strong>
+        ({{ formatarCpf(gerente.cpf) }})?
+      </p>
+      <p class="modal-mensagem">
+        O acesso será desativado e as contas sob sua responsabilidade serão transferidas para outro gerente ativo.
+      </p>
+      <div class="modal-acoes">
+        <button
+          class="modal-botao modal-botao--secundario"
+          type="button"
+          (click)="fecharRemocao()"
+          [disabled]="processando()"
+        >
+          Cancelar
+        </button>
+        <button
+          class="modal-botao"
+          mat-flat-button
+          color="warn"
+          type="button"
+          (click)="confirmarRemocao()"
+          [disabled]="processando()"
+        >
+          {{ processando() ? 'Desativando...' : 'Confirmar desativação' }}
+        </button>
+      </div>
+    }
+  </app-modal>
 </app-authenticated-layout>

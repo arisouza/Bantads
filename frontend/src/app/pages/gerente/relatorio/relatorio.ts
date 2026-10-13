@@ -19,7 +19,8 @@ import {
 } from '../../../shared/services/job';
 
 import {
-  RelatorioCliente
+  RelatorioCliente,
+  RelatorioClientesResponse
 } from '../../../shared/models/job';
 
 @Component({
@@ -96,7 +97,7 @@ export class Relatorio implements OnInit {
             'Relatório concluído. Carregando dados...'
           );
 
-          return this.jobService.getResult(status.jobId);
+          return this.jobService.getResult<RelatorioClientesResponse>(status.jobId);
         }),
 
         finalize(() => {

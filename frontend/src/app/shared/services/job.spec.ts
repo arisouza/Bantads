@@ -2,6 +2,7 @@ import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 import { environment } from '../../../environments/environment';
+import { RelatorioClientesResponse } from '../models/job';
 import { JobService } from './job';
 
 describe('JobService', () => {
@@ -26,6 +27,17 @@ describe('JobService', () => {
     expect(request.request.method).toBe('GET');
     request.flush({ jobId: 'job/1', status: 'CONCLUIDO' });
     expect(resultado).toEqual({ jobId: 'job/1', status: 'CONCLUIDO' });
+  });
+
+  it('deve consultar resultados com tipagem definida pelo consumidor', () => {
+    let resultado: RelatorioClientesResponse | undefined;
+    service.getResult<RelatorioClientesResponse>('job/2').subscribe(valor => resultado = valor);
+
+    const request = httpTesting.expectOne(`${environment.apiUrl}/jobs/job%2F2/result`);
+    expect(request.request.method).toBe('GET');
+    request.flush({ clientes: [] });
+
+    expect(resultado).toEqual({ clientes: [] });
   });
 
   it('deve concluir imediatamente quando o primeiro status for CONCLUIDO', () => {

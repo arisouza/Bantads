@@ -12,7 +12,10 @@ import {
   GerenteListagem,
   GerentesResponse
 } from '../models/gerente';
-import { JobAcceptedResponse } from '../models/job';
+import {
+  JobAcceptedResponse,
+  RemoverGerenteResponse
+} from '../models/job';
 import { JobService } from './job';
 
 @Injectable({
@@ -68,6 +71,41 @@ export class GerenteService {
     return this.http.put<Gerente>(
       `${this.API_URL}/gerentes/${encodeURIComponent(cpf)}`,
       payload
+    );
+  }
+
+  remover(cpf: string): Observable<RemoverGerenteResponse> {
+    const cpfNormalizado = cpf.replace(/\D/g, '');
+
+    return this.http.delete<JobAcceptedResponse>(
+      `${this.API_URL}/gerentes/${encodeURIComponent(cpfNormalizado)}`
+    ).pipe(
+      switchMap(({ jobId }) => this.jobService.pollStatus(jobId)),
+      filter(job => job.status !== 'PENDENTE'),
+      take(1),
+      switchMap(job => {
+        if (job.status !== 'CONCLUIDO' || job.resultType !== 'inline') {
+          return throwError(() => new Error(
+            'Resposta incompatível ao concluir a remoção do gerente.'
+          ));
+        }
+
+        return this.jobService.getResult<RemoverGerenteResponse>(job.jobId);
+      }),
+      switchMap(resultado => {
+        if (
+          !resultado ||
+          !resultado.resultado ||
+          typeof resultado.resultado.mensagem !== 'string' ||
+          typeof resultado.resultado.quantidadeContas !== 'number'
+        ) {
+          return throwError(() => new Error(
+            'Resposta incompatível ao obter o resultado da remoção do gerente.'
+          ));
+        }
+
+        return [resultado];
+      })
     );
   }
 
