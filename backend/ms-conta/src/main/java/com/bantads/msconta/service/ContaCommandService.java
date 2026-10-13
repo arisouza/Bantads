@@ -3,6 +3,7 @@ package com.bantads.msconta.service;
 import com.bantads.msconta.domain.entity.Conta;
 import com.bantads.msconta.domain.entity.ContaRead;
 import com.bantads.msconta.domain.event.TipoEventoEnum;
+import com.bantads.msconta.dto.TransferenciaContasResultado;
 import com.bantads.msconta.exception.ConflitoVersaoException;
 import com.bantads.msconta.exception.ContaJaExistenteException;
 import com.bantads.msconta.exception.ContaNaoEncontradaException;
@@ -97,10 +98,14 @@ public class ContaCommandService {
     }
 
     @Transactional
-    public int transferirContasDoGerente(String cpfGerenteRemovido, List<String> cpfsGerentesAtivos) {
+    public TransferenciaContasResultado transferirContasDoGerente(
+            String cpfGerenteRemovido,
+            List<String> cpfsGerentesAtivos
+    ) {
         if (cpfsGerentesAtivos == null || cpfsGerentesAtivos.isEmpty()) {
-            throw new ValorInvalidoException("NÃ£o hÃ¡ gerentes ativos para receber as contas");
+            throw new ValorInvalidoException("Não há gerentes ativos para receber as contas");
         }
+
         Map<String, Long> cargas = new LinkedHashMap<>();
         for (String cpf : cpfsGerentesAtivos) {
             if (cpf != null && !cpf.isBlank() && !cpf.equals(cpfGerenteRemovido)) {
@@ -108,17 +113,29 @@ public class ContaCommandService {
             }
         }
         if (cargas.isEmpty()) {
-            throw new ValorInvalidoException("NÃ£o hÃ¡ gerente alternativo para receber as contas");
+            throw new ValorInvalidoException("Não há gerente alternativo para receber as contas");
         }
+
         List<ContaRead> contas = contaReadRepository.findByCpfGerente(cpfGerenteRemovido);
+        TransferenciaContasResultado resultado = new TransferenciaContasResultado();
+        resultado.setCpfGerenteRemovido(cpfGerenteRemovido);
+
         for (ContaRead conta : contas) {
             String novoGerente = cargas.entrySet().stream()
                     .min(Map.Entry.comparingByValue())
-                    .orElseThrow().getKey();
+                    .orElseThrow()
+                    .getKey();
+
             alterarGerente(conta.getNumeroConta(), novoGerente);
             cargas.put(novoGerente, cargas.get(novoGerente) + 1);
+
+            resultado.getCpfsClientes().add(conta.getCpfCliente());
+            resultado.getNumerosContas().add(conta.getNumeroConta());
+            resultado.getContaParaGerente().put(conta.getNumeroConta(), novoGerente);
         }
-        return contas.size();
+
+        resultado.setQuantidadeContas(contas.size());
+        return resultado;
     }
 
     @Transactional

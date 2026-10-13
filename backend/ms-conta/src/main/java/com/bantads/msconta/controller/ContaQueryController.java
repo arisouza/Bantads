@@ -101,6 +101,7 @@ public class ContaQueryController {
         response.add(linkTo(methodOn(ContaQueryController.class).buscar(numero)).withSelfRel());
         response.add(linkTo(methodOn(ContaCommandController.class).depositar(numero, null, null)).withRel("deposito"));
         response.add(linkTo(methodOn(ContaCommandController.class).sacar(numero, null, null)).withRel("saque"));
+        response.add(linkTo(methodOn(ContaCommandController.class).transferir(numero, null, null)).withRel("transferencia"));
         response.add(linkTo(methodOn(ContaQueryController.class).extrato(numero, null, null)).withRel("extrato"));
     }
 }

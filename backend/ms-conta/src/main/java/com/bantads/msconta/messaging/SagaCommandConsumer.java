@@ -199,21 +199,38 @@ public class SagaCommandConsumer {
         sagaReplyPublisher.publicar(reply);
     }
 
-    private void processarTransferirContasGerente(SagaCommandMessage command, SagaCommandExecution execution) throws JsonProcessingException {
+    private void processarTransferirContasGerente(
+            SagaCommandMessage command,
+            SagaCommandExecution execution
+    ) throws JsonProcessingException {
         Map<String, Object> payload = command.getPayload();
         String cpfGerenteRemovido = getString(payload, "cpfGerenteRemovido");
         List<String> cpfsGerentesAtivos = getStringList(payload, "cpfsGerentesAtivos");
-        int quantidade = contaCommandService.transferirContasDoGerente(cpfGerenteRemovido, cpfsGerentesAtivos);
+
+        var resultado = contaCommandService.transferirContasDoGerente(
+                cpfGerenteRemovido,
+                cpfsGerentesAtivos
+        );
+
         Map<String, Object> responsePayload = new HashMap<>();
-        responsePayload.put("cpfGerenteRemovido", cpfGerenteRemovido);
-        responsePayload.put("quantidadeContas", quantidade);
-        sagaCommandExecutionService.concluir(execution, objectMapper.writeValueAsString(responsePayload));
+        responsePayload.put("cpfGerenteRemovido", resultado.getCpfGerenteRemovido());
+        responsePayload.put("quantidadeContas", resultado.getQuantidadeContas());
+        responsePayload.put("cpfsClientes", resultado.getCpfsClientes());
+        responsePayload.put("numerosContas", resultado.getNumerosContas());
+        responsePayload.put("contaParaGerente", resultado.getContaParaGerente());
+
+        sagaCommandExecutionService.concluir(
+                execution,
+                objectMapper.writeValueAsString(responsePayload)
+        );
+
         SagaReplyMessage reply = new SagaReplyMessage();
         reply.setSagaId(command.getSagaId());
         reply.setTipo("CONTAS_GERENTE_TRANSFERIDAS");
         reply.setPayload(responsePayload);
         reply.setTimestamp(command.getTimestamp());
         reply.setStatus("CONCLUIDO");
+        reply.setErro(null);
         sagaReplyPublisher.publicar(reply);
     }
 
