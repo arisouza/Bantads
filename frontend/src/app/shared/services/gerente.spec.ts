@@ -12,10 +12,16 @@ import { JobService } from './job';
 describe('GerenteService', () => {
   let service: GerenteService;
   let httpTesting: HttpTestingController;
-  let jobService: { pollStatus: (jobId: string) => ReturnType<JobService['pollStatus']> };
+  let jobService: {
+    pollStatus: JobService['pollStatus'];
+    getResult: JobService['getResult'];
+  };
 
   beforeEach(() => {
-    jobService = { pollStatus: () => of() };
+    jobService = {
+      pollStatus: () => of(),
+      getResult: vi.fn(() => of()) as JobService['getResult']
+    };
     TestBed.configureTestingModule({
       providers: [
         GerenteService,
@@ -187,5 +193,67 @@ describe('GerenteService', () => {
     expect(request.request.body.email).toBeUndefined();
     request.flush({ cpf: '98574307084', ...payload, email: 'ger@example.com', ativo: true, quantidadeClientes: 0 });
     expect(resultado?.nome).toBe('Novo Nome');
+  });
+
+  it('deve remover o gerente, aguardar o job e buscar o resultado inline', () => {
+    jobService.pollStatus = () => of({
+      jobId: 'saga-remocao', status: 'CONCLUIDO', resultType: 'inline'
+    });
+    const resultado = {
+      resultado: {
+        mensagem: 'Gerente removido e contas transferidas.',
+        quantidadeContas: 2
+      }
+    };
+    jobService.getResult = vi.fn(() => of(resultado)) as JobService['getResult'];
+
+    let resposta: typeof resultado | undefined;
+    service.remover('985.743.070-84').subscribe(valor => resposta = valor);
+
+    const request = httpTesting.expectOne(`${environment.apiUrl}/gerentes/98574307084`);
+    expect(request.request.method).toBe('DELETE');
+    request.flush({ jobId: 'saga-remocao', status: 'PENDENTE' });
+
+    expect(jobService.getResult).toHaveBeenCalledWith('saga-remocao');
+    expect(resposta).toEqual(resultado);
+  });
+
+  it('deve rejeitar a conclusão de remoção sem resultType inline', () => {
+    jobService.pollStatus = () => of({
+      jobId: 'saga-remocao', status: 'CONCLUIDO', resultType: 'resource'
+    });
+    let erro: Error | undefined;
+
+    service.remover('98574307084').subscribe({ error: recebido => erro = recebido });
+    httpTesting.expectOne(`${environment.apiUrl}/gerentes/98574307084`)
+      .flush({ jobId: 'saga-remocao', status: 'PENDENTE' });
+
+    expect(erro?.message).toContain('Resposta incompatível');
+    expect(jobService.getResult).not.toHaveBeenCalled();
+  });
+
+  it('deve propagar a falha da SAGA de remoção', () => {
+    jobService.pollStatus = () => throwError(() => new Error('Não é possível remover o último gerente ativo.'));
+    let erro: Error | undefined;
+
+    service.remover('98574307084').subscribe({ error: recebido => erro = recebido });
+    httpTesting.expectOne(`${environment.apiUrl}/gerentes/98574307084`)
+      .flush({ jobId: 'saga-falha', status: 'PENDENTE' });
+
+    expect(erro?.message).toBe('Não é possível remover o último gerente ativo.');
+    expect(jobService.getResult).not.toHaveBeenCalled();
+  });
+
+  it('deve propagar HTTP 403 ao tentar remover um gerente', () => {
+    let erro: { status?: number; error?: { mensagem?: string } } | undefined;
+
+    service.remover('98574307084').subscribe({ error: recebido => erro = recebido });
+    httpTesting.expectOne(`${environment.apiUrl}/gerentes/98574307084`).flush(
+      { mensagem: 'Um gerente não pode remover a si mesmo.' },
+      { status: 403, statusText: 'Forbidden' }
+    );
+
+    expect(erro?.status).toBe(403);
+    expect(erro?.error?.mensagem).toContain('não pode remover');
   });
 });

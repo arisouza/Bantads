@@ -8,6 +8,7 @@ import { MatInputModule } from '@angular/material/input';
 
 import { AuthenticatedLayoutComponent } from '../../../shared/components/authenticated-layout/authenticated-layout';
 import { GERENTE_MENU_ITEMS } from '../../../shared/config/menu-items';
+import { ModalComponent } from '../../../shared/components/modal/modal';
 import { Gerente, GerenteListagem } from '../../../shared/models/gerente';
 import { GerenteService } from '../../../shared/services/gerente';
 
@@ -35,7 +36,7 @@ const telefoneValidator = (control: AbstractControl): ValidationErrors | null =>
 
 @Component({
   selector: 'app-gerentes',
-  imports: [MatButtonModule, MatFormFieldModule, MatInputModule, ReactiveFormsModule, AuthenticatedLayoutComponent],
+  imports: [MatButtonModule, MatFormFieldModule, MatInputModule, ReactiveFormsModule, AuthenticatedLayoutComponent, ModalComponent],
   templateUrl: './gerentes.html',
   styleUrl: './gerentes.css'
 })
@@ -49,9 +50,12 @@ export class Gerentes implements OnInit {
   readonly carregando = signal(false);
   readonly processando = signal(false);
   readonly mensagemErro = signal('');
+  readonly mensagemErroLista = signal('');
   readonly mensagemSucesso = signal('');
   readonly modoFormulario = signal<ModoFormulario>('nenhum');
   readonly cpfEmEdicao = signal('');
+  readonly gerenteSelecionado = signal<GerenteListagem | null>(null);
+  readonly modalRemocaoAberto = signal(false);
 
   readonly formulario = this.formBuilder.nonNullable.group({
     nome: ['', [Validators.required, Validators.minLength(3), nomeValidator]],
@@ -64,23 +68,63 @@ export class Gerentes implements OnInit {
   ngOnInit(): void { this.carregarGerentes(); }
 
   carregarGerentes(): void {
-    if (this.carregando()) return;
+    if (this.carregando() || this.modalRemocaoAberto()) return;
     this.carregando.set(true);
     this.mensagemErro.set('');
+    this.mensagemErroLista.set('');
     this.gerenteService.listar().pipe(
       takeUntilDestroyed(this.destroyRef),
       finalize(() => this.carregando.set(false))
     ).subscribe({
       next: gerentes => this.gerentes.set(gerentes),
       error: erro => {
-        this.gerentes.set([]);
-        this.mensagemErro.set(erro?.error?.mensagem || erro?.error?.message || 'Não foi possível carregar os gerentes. Tente novamente.');
+        this.mensagemErroLista.set(erro?.error?.mensagem || erro?.error?.message || 'Não foi possível carregar os gerentes. Tente novamente.');
+      }
+    });
+  }
+
+  abrirRemocao(gerente: GerenteListagem): void {
+    if (this.acaoBloqueada() || !gerente.ativo) return;
+    this.mensagemErro.set('');
+    this.mensagemSucesso.set('');
+    this.gerenteSelecionado.set(gerente);
+    this.modalRemocaoAberto.set(true);
+  }
+
+  fecharRemocao(): void {
+    if (this.processando()) return;
+    this.modalRemocaoAberto.set(false);
+    this.gerenteSelecionado.set(null);
+  }
+
+  confirmarRemocao(): void {
+    const gerente = this.gerenteSelecionado();
+    if (this.processando() || !this.modalRemocaoAberto() || !gerente) return;
+
+    this.mensagemErro.set('');
+    this.mensagemSucesso.set('');
+    this.processando.set(true);
+
+    this.gerenteService.remover(gerente.cpf).pipe(
+      takeUntilDestroyed(this.destroyRef),
+      finalize(() => this.processando.set(false))
+    ).subscribe({
+      next: resultado => {
+        this.modalRemocaoAberto.set(false);
+        this.gerenteSelecionado.set(null);
+        this.mensagemSucesso.set(resultado.resultado.mensagem);
+        this.carregarGerentes();
+      },
+      error: erro => {
+        this.modalRemocaoAberto.set(false);
+        this.gerenteSelecionado.set(null);
+        this.mensagemErro.set(erro?.error?.mensagem || erro?.error?.message || erro?.message || 'Não foi possível remover o gerente.');
       }
     });
   }
 
   abrirCriacao(): void {
-    if (this.processando()) return;
+    if (this.acaoBloqueada()) return;
     this.mensagemErro.set('');
     this.mensagemSucesso.set('');
     this.cpfEmEdicao.set('');
@@ -92,7 +136,7 @@ export class Gerentes implements OnInit {
   }
 
   abrirEdicao(gerente: GerenteListagem): void {
-    if (this.processando()) return;
+    if (this.acaoBloqueada()) return;
     this.mensagemErro.set('');
     this.mensagemSucesso.set('');
     this.cpfEmEdicao.set(gerente.cpf);
@@ -118,7 +162,7 @@ export class Gerentes implements OnInit {
   }
 
   salvar(): void {
-    if (this.processando()) return;
+    if (this.acaoBloqueada()) return;
     this.mensagemErro.set('');
     this.mensagemSucesso.set('');
     if (this.formulario.invalid) {
@@ -163,6 +207,10 @@ export class Gerentes implements OnInit {
     return digitos.length > 10
       ? digitos.replace(/(\d{2})(\d{5})(\d{4})/, '($1) $2-$3')
       : digitos.replace(/(\d{2})(\d{4})(\d{4})/, '($1) $2-$3');
+  }
+
+  private acaoBloqueada(): boolean {
+    return this.processando() || this.modalRemocaoAberto();
   }
 
 }

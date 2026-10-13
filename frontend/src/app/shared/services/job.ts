@@ -4,7 +4,7 @@ import { Observable, throwError, timer } from 'rxjs';
 import { concatMap, filter, take, takeWhile, timeout } from 'rxjs/operators';
 
 import { environment } from '../../../environments/environment';
-import { JobAcceptedResponse, JobStatusResponse, RelatorioClientesResponse } from '../models/job';
+import { JobAcceptedResponse, JobStatusResponse } from '../models/job';
 
 @Injectable({
   providedIn: 'root'
@@ -23,9 +23,9 @@ export class JobService {
     );
   }
 
-   getResult(jobId: string): Observable<RelatorioClientesResponse> {
+  getResult<T>(jobId: string): Observable<T> {
 
-    return this.http.get<RelatorioClientesResponse>(
+    return this.http.get<T>(
       `${this.API_URL}/jobs/${encodeURIComponent(jobId)}/result`
     );
   }
@@ -52,7 +52,7 @@ export class JobService {
       timeout({ each: this.POLLING_INTERVAL_MS * 5 }),
       concatMap(status => {
         if (status.status === 'FALHA') {
-          return throwError(() => new Error(status.erro || 'O relatório falhou.'));
+          return throwError(() => new Error(status.erro || 'O job falhou.'));
         }
 
         return [status];

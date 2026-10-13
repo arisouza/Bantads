@@ -7,6 +7,15 @@ export interface JobAcceptedResponse {
   status: 'PENDENTE';
 }
 
+export interface RemoverGerenteResultado {
+  mensagem: string;
+  quantidadeContas: number;
+}
+
+export interface RemoverGerenteResponse {
+  resultado: RemoverGerenteResultado;
+}
+
 export interface JobStatusResponse {
   jobId: string;
   status: JobStatus;
