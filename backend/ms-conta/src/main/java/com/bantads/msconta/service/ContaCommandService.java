@@ -139,6 +139,24 @@ public class ContaCommandService {
     }
 
     @Transactional
+    public void reassociarContas(String cpfGerenteDestino, List<String> numerosConta) {
+        if (cpfGerenteDestino == null || cpfGerenteDestino.isBlank()) {
+            throw new ValorInvalidoException("CPF do gerente de destino Ã© obrigatÃ³rio");
+        }
+        if (numerosConta == null) {
+            return;
+        }
+        for (String numeroConta : numerosConta) {
+            if (numeroConta != null && !numeroConta.isBlank()) {
+                Conta conta = reconstruirExistente(numeroConta);
+                if (!cpfGerenteDestino.equals(conta.getCpfGerente())) {
+                    alterarGerente(numeroConta, cpfGerenteDestino);
+                }
+            }
+        }
+    }
+
+    @Transactional
     public Conta removerConta(String numeroConta) {
         Conta conta = reconstruirExistente(numeroConta);
         apagarDadosDaConta(numeroConta);

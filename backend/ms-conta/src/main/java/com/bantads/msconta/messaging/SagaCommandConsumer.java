@@ -60,6 +60,7 @@ public class SagaCommandConsumer {
                         execution
                 );
                 case "TRANSFERIR_CONTAS_GERENTE" -> processarTransferirContasGerente(command, execution);
+                case "REASSOCIAR_CONTAS" -> processarReassociarContas(command, execution);
                 case "DELETE_CONTA", "REMOVER_CONTA" -> processarRemoverConta(
                         command,
                         execution
@@ -231,6 +232,23 @@ public class SagaCommandConsumer {
         reply.setTimestamp(command.getTimestamp());
         reply.setStatus("CONCLUIDO");
         reply.setErro(null);
+        sagaReplyPublisher.publicar(reply);
+    }
+
+    private void processarReassociarContas(SagaCommandMessage command, SagaCommandExecution execution) throws JsonProcessingException {
+        Map<String, Object> payload = command.getPayload();
+        String cpfGerenteDestino = getString(payload, "cpfGerenteDestino");
+        List<String> numerosConta = getStringList(payload, "numerosConta");
+        contaCommandService.reassociarContas(cpfGerenteDestino, numerosConta);
+
+        Map<String, Object> responsePayload = Map.of("cpfGerenteDestino", cpfGerenteDestino, "quantidadeContas", numerosConta.size());
+        sagaCommandExecutionService.concluir(execution, objectMapper.writeValueAsString(responsePayload));
+        SagaReplyMessage reply = new SagaReplyMessage();
+        reply.setSagaId(command.getSagaId());
+        reply.setTipo("CONTAS_REASSOCIADAS");
+        reply.setPayload(responsePayload);
+        reply.setTimestamp(command.getTimestamp());
+        reply.setStatus("CONCLUIDO");
         sagaReplyPublisher.publicar(reply);
     }
 
