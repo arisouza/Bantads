@@ -32,7 +32,11 @@ public class ContaQueryController {
 
     @GetMapping
     public ResponseEntity<java.util.Map<String, Object>> listar() {
-        return ResponseEntity.ok(java.util.Map.of("contas", contaQueryService.listarTodas()));
+        List<ContaResponse> contas = contaQueryService.listarTodas();
+        for (ContaResponse conta : contas) {
+            adicionarLinks(conta);
+        }
+        return ResponseEntity.ok(java.util.Map.of("contas", contas));
     }
 
     @GetMapping("/{numero:[0-9]{4}}")
