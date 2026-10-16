@@ -42,24 +42,6 @@ public class ClienteService {
 
     public List<SolicitacaoResponse> listarSolicitacoes() { return solicitacoes.findByStatusOrderByCriadoEmAsc(StatusSolicitacao.PENDENTE).stream().map(this::dto).toList(); }
     public SolicitacaoResponse solicitacaoPorCpf(String cpf) { return dto(solicitacaoEntidade(cpf)); }
-    /* Implementação JDBC anterior, mantida apenas no histórico do diff.
-    public void rejeitar(String cpf, String motivo) {
-        if (repository.rejeitar(cpf, motivo) == 0) throw new ResponseStatusException(HttpStatus.CONFLICT, "Solicitação não está pendente");
-    }
-    @Transactional
-    public SolicitacaoResponse criarClienteDaSolicitacao(String cpf) {
-        SolicitacaoResponse solicitacao = solicitacaoPorCpf(cpf);
-        if (!"PENDENTE".equals(solicitacao.status())) throw new ResponseStatusException(HttpStatus.CONFLICT, "Solicitação não está pendente");
-        if (repository.clienteExiste(solicitacao.cpf(), solicitacao.email())) throw new ResponseStatusException(HttpStatus.CONFLICT, "Cliente já existe");
-        repository.inserirCliente(solicitacao);
-        repository.aprovar(cpf);
-        return solicitacao;
-    }
-    @Transactional
-    public void rollbackCliente(String cpf) { repository.removerCliente(cpf); }
-    public void reboot() { repository.reboot(); }
-    */
-
     @Transactional
     public void rejeitar(String cpf, String motivo) {
         try { solicitacaoEntidade(cpf).rejeitar(motivo); }
@@ -69,7 +51,7 @@ public class ClienteService {
     @Transactional
     public SolicitacaoResponse criarClienteDaSolicitacao(String cpf) {
         SolicitacaoCadastro solicitacao = solicitacaoEntidade(cpf);
-        if (clientes.existsByCpfOrEmail(solicitacao.getCpf(), solicitacao.getEmail())) throw new ResponseStatusException(HttpStatus.CONFLICT, "Cliente ja existe");
+        if (clientes.existsByCpfOrEmail(solicitacao.getCpf(), solicitacao.getEmail())) throw new ResponseStatusException(HttpStatus.CONFLICT, "Cliente já existe");
         try { solicitacao.aprovar(); }
         catch (IllegalStateException e) { throw new ResponseStatusException(HttpStatus.CONFLICT, e.getMessage()); }
         clientes.save(new Cliente(solicitacao.getCpf(), solicitacao.getNome(), solicitacao.getEmail(), solicitacao.getTelefone(), solicitacao.getSalario(), solicitacao.getEndereco()));
@@ -84,8 +66,15 @@ public class ClienteService {
 
     @Transactional
     public void reboot() {
-        solicitacoes.deleteAll(); clientes.deleteAll();
-        clientes.saveAll(List.of(new Cliente("12912861012", "Catharyna", "cli1@bantads.com.br", null, null, null), new Cliente("09506382000", "Cleudenio", "cli2@bantads.com.br", null, null, null), new Cliente("85733854057", "Catianna", "cli3@bantads.com.br", null, null, null), new Cliente("58872160006", "Cutardo", "cli4@bantads.com.br", null, null, null), new Cliente("76179646090", "Candrya", "cli5@bantads.com.br", null, null, null)));
+        solicitacoes.deleteAll();
+        clientes.deleteAll();
+        clientes.saveAll(List.of(
+            new Cliente("12912861012", "Catharyna", "cli1@bantads.com.br", "41999990001", new java.math.BigDecimal("10000.00"), null),
+            new Cliente("09506382000", "Cleuddônio", "cli2@bantads.com.br", "41999990002", new java.math.BigDecimal("20000.00"), null),
+            new Cliente("85733854057", "Catianna", "cli3@bantads.com.br", "41999990003", new java.math.BigDecimal("3000.00"), null),
+            new Cliente("58872160006", "Cutardo", "cli4@bantads.com.br", "41999990004", new java.math.BigDecimal("500.00"), null),
+            new Cliente("76179646090", "Coândrya", "cli5@bantads.com.br", "41999990005", new java.math.BigDecimal("1500.00"), null)
+        ));
     }
 
     private SolicitacaoCadastro solicitacaoEntidade(String cpf) { return solicitacoes.findById(cpf).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND)); }

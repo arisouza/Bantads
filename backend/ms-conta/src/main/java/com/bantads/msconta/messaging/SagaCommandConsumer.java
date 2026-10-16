@@ -241,7 +241,8 @@ public class SagaCommandConsumer {
         List<String> numerosConta = getStringList(payload, "numerosConta");
         contaCommandService.reassociarContas(cpfGerenteDestino, numerosConta);
 
-        Map<String, Object> responsePayload = Map.of("cpfGerenteDestino", cpfGerenteDestino, "quantidadeContas", numerosConta.size());
+        int totalContas = numerosConta != null ? numerosConta.size() : 0;
+        Map<String, Object> responsePayload = Map.of("cpfGerenteDestino", cpfGerenteDestino, "quantidadeContas", totalContas);
         sagaCommandExecutionService.concluir(execution, objectMapper.writeValueAsString(responsePayload));
         SagaReplyMessage reply = new SagaReplyMessage();
         reply.setSagaId(command.getSagaId());

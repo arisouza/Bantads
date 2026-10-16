@@ -141,7 +141,7 @@ public class ContaCommandService {
     @Transactional
     public void reassociarContas(String cpfGerenteDestino, List<String> numerosConta) {
         if (cpfGerenteDestino == null || cpfGerenteDestino.isBlank()) {
-            throw new ValorInvalidoException("CPF do gerente de destino Ã© obrigatÃ³rio");
+            throw new ValorInvalidoException("CPF do gerente de destino é obrigatório");
         }
         if (numerosConta == null) {
             return;

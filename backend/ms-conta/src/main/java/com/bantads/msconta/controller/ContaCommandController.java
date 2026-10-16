@@ -49,6 +49,7 @@ public class ContaCommandController {
         response.add(linkTo(methodOn(ContaQueryController.class).buscar(conta.getNumeroConta())).withSelfRel());
         response.add(linkTo(methodOn(ContaCommandController.class).depositar(conta.getNumeroConta(), null, null)).withRel("deposito"));
         response.add(linkTo(methodOn(ContaCommandController.class).sacar(conta.getNumeroConta(), null, null)).withRel("saque"));
+        response.add(linkTo(methodOn(ContaCommandController.class).transferir(conta.getNumeroConta(), null, null)).withRel("transferencia"));
         response.add(linkTo(methodOn(ContaQueryController.class).extrato(conta.getNumeroConta(), null, null)).withRel("extrato"));
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
