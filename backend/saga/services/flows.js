@@ -56,13 +56,13 @@ const aprovarCliente = {
         },
         {
             nome: 'email',
+            sucesso: 'EMAIL_ENVIADO',
+            falha: 'EMAIL_FAILED',
             executar: async (ctx, id) => {
-                msg.email(ctx.email, 'SENHA_INICIAL', 'Sua conta BANTADS foi criada!', {
+                msg.email(id, ctx.email, 'SENHA_INICIAL', 'Sua conta BANTADS foi criada!', {
                     senha: segredos.obter(id),
                     cpf: ctx.cpf
                 });
-                await new Promise((resolve) => setTimeout(resolve, 250));
-                return true;
             }
         }
     ]

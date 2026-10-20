@@ -11,6 +11,6 @@ module.exports = {
     auth: comandoSimples('ms.auth.cmd'),
     conta: (sagaId, tipo, payload) =>
         publicar('ms.conta.cmd', { sagaId, tipo, timestamp: new Date().toISOString(), payload }),
-    email: (destinatario, tipo, assunto, dados) =>
-        publicar('ms.email.cmd', { destinatario, tipo, assunto, dados })
+    email: (sagaId, destinatario, tipo, assunto, dados) =>
+        publicar('ms.email.cmd', { sagaId, destinatario, tipo, assunto, dados })
 };

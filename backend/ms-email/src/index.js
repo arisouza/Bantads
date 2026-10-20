@@ -36,7 +36,7 @@ const processEmail = async (msg, channel) => {
 
     try {
         const content = JSON.parse(msg.content.toString());
-        const { destinatario, tipo, assunto, dados } = content;
+        const { sagaId, destinatario, tipo, assunto, dados } = content;
 
         console.log(`[✉️] Email para: ${destinatario} | Tipo: ${tipo}`);
 
@@ -60,9 +60,14 @@ const processEmail = async (msg, channel) => {
             }
         }
 
+        if (sagaId) channel.sendToQueue('orquestrador.reply', Buffer.from(JSON.stringify({ sagaId, tipo: 'EMAIL_ENVIADO', payload: {} })), { persistent: true });
         channel.ack(msg);
     } catch (err) {
         console.error('Erro ao processar mensagem de e-mail:', err);
+        try {
+            const content = JSON.parse(msg.content.toString());
+            if (content.sagaId) channel.sendToQueue('orquestrador.reply', Buffer.from(JSON.stringify({ sagaId: content.sagaId, tipo: 'EMAIL_FAILED', erro: err.message, payload: {} })), { persistent: true });
+        } catch (_) {}
         channel.nack(msg, false, false);
     }
 };
