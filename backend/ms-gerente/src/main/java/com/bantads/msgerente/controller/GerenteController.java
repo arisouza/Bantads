@@ -3,6 +3,7 @@ package com.bantads.msgerente.controller;
 import com.bantads.msgerente.dto.GerenteRequest;
 import com.bantads.msgerente.dto.GerenteResponse;
 import com.bantads.msgerente.service.GerenteService;
+import jakarta.validation.Valid;
 import java.util.Map;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -22,7 +23,7 @@ public class GerenteController {
     public Map<String, Object> listar() { return Map.of("gerentes", service.listar()); }
 
     @PostMapping
-    public ResponseEntity<GerenteResponse> inserir(@RequestBody GerenteRequest req) {
+    public ResponseEntity<GerenteResponse> inserir(@Valid @RequestBody GerenteRequest req) {
         return ResponseEntity.status(HttpStatus.CREATED).body(service.inserir(req));
     }
 

@@ -1,3 +1,12 @@
 package com.bantads.msgerente.dto;
 
-public record GerenteRequest(String cpf, String nome, String email, String telefone) {}
+import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Pattern;
+
+public record GerenteRequest(
+        @NotBlank @Pattern(regexp = "\\d{11}", message = "deve conter 11 dÃ­gitos") String cpf,
+        @NotBlank String nome,
+        @NotBlank @Email String email,
+        @Pattern(regexp = "^$|\\d{10,11}", message = "deve conter 10 ou 11 dÃ­gitos") String telefone
+) {}
