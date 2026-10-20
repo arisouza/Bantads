@@ -1,6 +1,6 @@
 const { connectRabbitMQ, FILAS_DLQ } = require('../config/rabbitmq');
 const { connectRedis } = require('../config/redis');
-const { iniciar, responder, falhaTecnica } = require('../services/orchestrator');
+const { iniciar, responder, falhaTecnica, recuperarPendentes } = require('../services/orchestrator');
 
 const consumir = (channel, fila, tratar) => channel.consume(fila, async (msg) => {
     if (!msg) return;
@@ -18,6 +18,7 @@ const init = async () => {
     try {
         await connectRedis();
         const channel = await connectRabbitMQ();
+        await recuperarPendentes();
 
         consumir(channel, 'saga.cmd', iniciar);
         consumir(channel, 'orquestrador.reply', responder);

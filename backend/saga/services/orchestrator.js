@@ -119,4 +119,17 @@ const falhaTecnica = async ({ sagaId, action, tipo }) => {
     }
 };
 
-module.exports = { iniciar, responder, falhaTecnica };
+const recuperarPendentes = async () => {
+    for await (const key of redisClient.scanIterator({ MATCH: 'saga:*', COUNT: 100 })) {
+        if (key.includes(':falha:') || key.endsWith(':senha')) continue;
+        const raw = await redisClient.get(key);
+        if (!raw) continue;
+        const saga = JSON.parse(raw);
+        if (saga?.status !== 'EM_ANDAMENTO' || !flows[saga.tipo]) continue;
+        const passo = flows[saga.tipo].passos[saga.passo];
+        if (passo?.sucesso) armarTimer(saga);
+        else await avancar(saga);
+    }
+};
+
+module.exports = { iniciar, responder, falhaTecnica, recuperarPendentes };

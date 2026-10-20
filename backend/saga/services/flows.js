@@ -60,7 +60,7 @@ const aprovarCliente = {
             falha: 'EMAIL_FAILED',
             executar: async (ctx, id) => {
                 msg.email(id, ctx.email, 'SENHA_INICIAL', 'Sua conta BANTADS foi criada!', {
-                    senha: segredos.obter(id),
+                    senha: await segredos.obter(id),
                     cpf: ctx.cpf
                 });
             }
@@ -86,8 +86,8 @@ const inserirGerente = {
             nome: 'auth',
             sucesso: 'AUTH_GERENTE_CREATED',
             falha: 'AUTH_GERENTE_FAILED',
-            executar: (ctx, id) => msg.auth(id, 'CREATE_AUTH_GERENTE', {
-                cpf: ctx.cpf, email: ctx.email, senha: segredos.obter(id)
+            executar: async (ctx, id) => msg.auth(id, 'CREATE_AUTH_GERENTE', {
+                cpf: ctx.cpf, email: ctx.email, senha: await segredos.obter(id)
             }),
             desfazer: (ctx, id) => msg.auth(id, 'ROLLBACK_AUTH', { cpf: ctx.cpf })
         },
