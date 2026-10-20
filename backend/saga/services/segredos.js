@@ -1,7 +1,8 @@
-const senhas = new Map();
+const { redisClient } = require('../config/redis');
+const chave = (sagaId) => `saga:${sagaId}:senha`;
 
 module.exports = {
-    guardar: (sagaId, senha) => senha && senhas.set(sagaId, senha),
-    obter: (sagaId) => senhas.get(sagaId),
-    descartar: (sagaId) => senhas.delete(sagaId)
+    guardar: async (sagaId, senha) => senha && redisClient.set(chave(sagaId), senha, { EX: 3600 }),
+    obter: (sagaId) => redisClient.get(chave(sagaId)),
+    descartar: (sagaId) => redisClient.del(chave(sagaId))
 };

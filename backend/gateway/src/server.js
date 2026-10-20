@@ -271,6 +271,14 @@ app.post('/solicitacoes/:cpf/rejeicao', verifyJWT, requireRole('GERENTE'), async
         }
         const updated = await fetch(`${CLIENTE_URL}/clientes/solicitacoes/${cpf}`);
         const data = updated.ok ? await updated.json() : {};
+        if (data.email) {
+            getChannel().sendToQueue('ms.email.cmd', Buffer.from(JSON.stringify({
+                destinatario: data.email,
+                tipo: 'REJEICAO',
+                assunto: 'Sua solicitaÃ§Ã£o BANTADS foi rejeitada',
+                dados: { nome: data.nome, motivo: motivo || data.motivoRejeicao || 'NÃ£o informado' }
+            })), { persistent: true });
+        }
         return res.status(200).json({
             ...data,
             cpf,

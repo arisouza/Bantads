@@ -33,7 +33,7 @@ const armarTimer = (saga) => {
 
 const finalizar = async (saga, status, extra) => {
     limparTimer(saga.id);
-    segredos.descartar(saga.id);
+    await segredos.descartar(saga.id);
     saga.status = status;
     await salvar(saga);
     await updateJob(saga.id, status, extra);
@@ -89,7 +89,7 @@ const iniciar = async ({ sagaId, action, data }) => {
     if (!flows[action]) return console.warn(`[SAGA] Ação desconhecida: ${action} (sagaId: ${sagaId})`);
 
     const { senha, ...ctx } = data ?? {};
-    segredos.guardar(sagaId, senha);
+    await segredos.guardar(sagaId, senha);
 
     await updateJob(sagaId, 'PENDENTE', flows[action].job);
     await avancar({ id: sagaId, tipo: action, ctx, passo: -1, feitos: [], status: 'EM_ANDAMENTO' });
@@ -105,7 +105,7 @@ const responder = async ({ sagaId, tipo, payload, erro }) => {
     if (tipo === passo.falha) return falhar(sagaId, saga.passo, erro || `Falha no passo ${passo.nome}.`);
 
     limparTimer(sagaId);
-    passo.aplicar?.(saga.ctx, payload ?? {}, sagaId);
+    await passo.aplicar?.(saga.ctx, payload ?? {}, sagaId);
     saga.feitos.push(saga.passo);
     await avancar(saga);
 };
