@@ -6,6 +6,7 @@ export type StatusSolicitacao =
 export interface Solicitacao {
   cpf: string;
   nome: string;
+  email?: string;
   salario: string;
   status: StatusSolicitacao;
   motivo: string | null;

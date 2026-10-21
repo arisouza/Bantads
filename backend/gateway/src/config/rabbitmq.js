@@ -10,7 +10,7 @@ const connectRabbitMQ = async (retries = 10, delay = 3000) => {
             const conn = await amqp.connect(RABBITMQ_URL);
             channel = await conn.createChannel();
 
-            const queues = ['saga.cmd'];
+            const queues = ['saga.cmd', 'ms.email.cmd'];
             for (const q of queues) {
                 await channel.assertQueue(q, { durable: true });
             }
