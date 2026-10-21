@@ -11,7 +11,7 @@
         mat-stroked-button
         type="button"
         (click)="carregarSolicitacoes()"
-        [disabled]="carregando()"
+        [disabled]="carregando() || processando() !== null"
       >
         Atualizar
       </button>
@@ -151,6 +151,7 @@
                 maxlength="500"
                 placeholder="Informe o motivo da recusa"
                 [value]="motivoRecusa()"
+                [disabled]="processando() !== null"
                 (input)="motivoRecusa.set($any($event.target).value)">
               </textarea>
 
@@ -158,7 +159,7 @@
                 <button
                   mat-flat-button
                   type="button"
-                  [disabled]="motivoRecusa().trim().length === 0"
+                  [disabled]="motivoRecusa().trim().length === 0 || processando() !== null"
                   (click)="confirmarRecusa()">
                   Confirmar recusa
                 </button>
@@ -166,6 +167,7 @@
                 <button
                   mat-stroked-button
                   type="button"
+                  [disabled]="processando() !== null"
                   (click)="cancelarRecusa()">
                   Cancelar
                 </button>

@@ -108,6 +108,11 @@ export class Gerente implements OnInit {
             return;
           }
 
+          if (erro.status === 500) {
+            this.mensagemErro.set('O servidor não conseguiu carregar as solicitações. Tente novamente.');
+            return;
+          }
+
           this.mensagemErro.set(
             'Não foi possível carregar as solicitações. Tente novamente.'
           );
@@ -161,14 +166,26 @@ export class Gerente implements OnInit {
       takeUntilDestroyed(this.destroyRef),
       finalize(() => this.processando.set(null))
     ).subscribe({
-      next: () => {
+      next: resposta => {
+        this.solicitacoes.update(lista => lista.map(item =>
+          item.cpf === cpf
+            ? { ...item, ...resposta, status: 'NAO_APROVADO', motivo: resposta.motivo?.trim() || motivo }
+            : item
+        ));
         this.recusandoCpf.set(null);
         this.motivoRecusa.set('');
         this.mensagemSucesso.set('Solicitação recusada com sucesso.');
-        this.carregarSolicitacoes();
       },
       error: erro => {
+        const mensagens: Record<number, string> = {
+          400: 'Informe um motivo válido para recusar a solicitação.',
+          403: 'Você não possui permissão para recusar solicitações.',
+          404: 'A solicitação não foi encontrada.',
+          409: 'A solicitação já foi processada.',
+          500: 'O servidor não conseguiu recusar a solicitação. Tente novamente.'
+        };
         this.mensagemErro.set(
+          mensagens[erro?.status] ||
           erro?.error?.mensagem ||
           erro?.error?.message ||
           'Não foi possível recusar a solicitação. Tente novamente.'

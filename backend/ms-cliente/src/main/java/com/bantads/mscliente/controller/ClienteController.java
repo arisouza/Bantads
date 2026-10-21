@@ -39,9 +39,8 @@ public class ClienteController {
     public SolicitacaoResponse solicitacao(@PathVariable String cpf) { return service.solicitacaoPorCpf(cpf); }
 
     @PostMapping("/solicitacoes/{cpf}/rejeicao")
-    public ResponseEntity<Void> rejeitar(@PathVariable String cpf, @Valid @RequestBody RejeicaoRequest request) {
-        service.rejeitar(cpf, request.motivo());
-        return ResponseEntity.noContent().build();
+    public ResponseEntity<SolicitacaoResponse> rejeitar(@PathVariable String cpf, @Valid @RequestBody RejeicaoRequest request) {
+        return ResponseEntity.ok(service.rejeitar(cpf, request.motivo()));
     }
 
     @PostMapping("/reboot")

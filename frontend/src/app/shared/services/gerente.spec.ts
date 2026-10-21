@@ -6,6 +6,7 @@ import { environment } from '../../../environments/environment';
 import { Cliente } from '../models/cliente';
 import { Gerente, GerenteListagem } from '../models/gerente';
 import { JobStatusResponse } from '../models/job';
+import { Solicitacao } from '../models/solicitacao';
 import { GerenteService } from './gerente';
 import { JobService } from './job';
 
@@ -255,5 +256,40 @@ describe('GerenteService', () => {
 
     expect(erro?.status).toBe(403);
     expect(erro?.error?.mensagem).toContain('não pode remover');
+  });
+
+  it('deve rejeitar uma solicitação com motivo e não iniciar job', () => {
+    const solicitacao: Solicitacao = {
+      cpf: '12345678901', nome: 'Cliente', salario: '1500.00',
+      status: 'NAO_APROVADO', motivo: 'Renda incompatível',
+      dataHoraAnalise: '2026-10-20T10:00:00Z'
+    };
+    let resultado: Solicitacao | undefined;
+
+    service.recusarCliente(solicitacao.cpf, '  Renda incompatível  ')
+      .subscribe(resposta => resultado = resposta);
+
+    const request = httpTesting.expectOne(`${environment.apiUrl}/solicitacoes/12345678901/rejeicao`);
+    expect(request.request.method).toBe('POST');
+    expect(request.request.body).toEqual({ motivo: '  Renda incompatível  ' });
+    request.flush(solicitacao);
+
+    expect(resultado).toEqual(solicitacao);
+  });
+
+  it('deve propagar erros HTTP da rejeição', () => {
+    let erro: { status?: number; error?: { mensagem?: string } } | undefined;
+
+    service.recusarCliente('123', 'Motivo válido')
+      .subscribe({ error: recebido => erro = recebido });
+
+    const request = httpTesting.expectOne(`${environment.apiUrl}/solicitacoes/123/rejeicao`);
+    request.flush(
+      { status: 409, mensagem: 'Solicitação não está pendente' },
+      { status: 409, statusText: 'Conflict' }
+    );
+
+    expect(erro?.status).toBe(409);
+    expect(erro?.error?.mensagem).toContain('não está pendente');
   });
 });

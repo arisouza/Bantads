@@ -11,6 +11,7 @@ import com.bantads.mscliente.dto.SolicitacaoResponse;
 import com.bantads.mscliente.repository.ClienteRepository;
 import com.bantads.mscliente.repository.SolicitacaoRepository;
 import java.util.List;
+import java.time.OffsetDateTime;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -40,12 +41,28 @@ public class ClienteService {
         solicitacoes.save(new SolicitacaoCadastro(solicitacao.cpf(), solicitacao.nome(), solicitacao.email(), solicitacao.telefone(), solicitacao.salario(), endereco(solicitacao)));
     }
 
-    public List<SolicitacaoResponse> listarSolicitacoes() { return solicitacoes.findByStatusOrderByCriadoEmAsc(StatusSolicitacao.PENDENTE).stream().map(this::dto).toList(); }
+    public List<SolicitacaoResponse> listarSolicitacoes() { return solicitacoes.findAllByOrderByCriadoEmAsc().stream().map(this::dto).toList(); }
     public SolicitacaoResponse solicitacaoPorCpf(String cpf) { return dto(solicitacaoEntidade(cpf)); }
     @Transactional
-    public void rejeitar(String cpf, String motivo) {
-        try { solicitacaoEntidade(cpf).rejeitar(motivo); }
-        catch (IllegalStateException e) { throw new ResponseStatusException(HttpStatus.CONFLICT, e.getMessage()); }
+    public SolicitacaoResponse rejeitar(String cpf, String motivo) {
+        if (motivo == null || motivo.trim().isEmpty() || motivo.trim().length() > 500) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Motivo da rejeição é obrigatório e deve ter até 500 caracteres");
+        }
+        String motivoNormalizado = motivo.trim();
+        int atualizadas = solicitacoes.rejeitarSePendente(
+            cpf,
+            motivoNormalizado,
+            OffsetDateTime.now(),
+            StatusSolicitacao.PENDENTE,
+            StatusSolicitacao.REJEITADA
+        );
+        if (atualizadas == 0) {
+            if (solicitacoes.findById(cpf).isEmpty()) {
+                throw new ResponseStatusException(HttpStatus.NOT_FOUND);
+            }
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Solicitação não está pendente");
+        }
+        return dto(solicitacaoEntidade(cpf));
     }
 
     @Transactional
@@ -81,5 +98,5 @@ public class ClienteService {
     private Endereco endereco(SolicitacaoRequest r) { return new Endereco(r.logradouro(), r.numero(), r.complemento(), r.cep(), r.cidade(), r.uf()); }
     private EnderecoResponse dto(Endereco e) { return e == null ? null : new EnderecoResponse(e.getLogradouro(), e.getNumero(), e.getComplemento(), e.getCep(), e.getCidade(), e.getUf()); }
     private ClienteResponse dto(Cliente c) { return new ClienteResponse(c.getCpf(), c.getNome(), c.getEmail(), c.getTelefone(), c.getSalario(), dto(c.getEndereco())); }
-    private SolicitacaoResponse dto(SolicitacaoCadastro s) { return new SolicitacaoResponse(s.getCpf(), s.getNome(), s.getEmail(), s.getTelefone(), s.getSalario(), dto(s.getEndereco()), s.getStatus().name(), s.getMotivoRejeicao(), s.getCriadoEm()); }
+    private SolicitacaoResponse dto(SolicitacaoCadastro s) { return new SolicitacaoResponse(s.getCpf(), s.getNome(), s.getEmail(), s.getTelefone(), s.getSalario(), dto(s.getEndereco()), s.getStatus().name(), s.getMotivoRejeicao(), s.getCriadoEm(), s.getAtualizadoEm()); }
 }

@@ -37,6 +37,17 @@ const proxyOpts = (target) => ({
 
 const collator = new Intl.Collator('pt-BR', { sensitivity: 'base' });
 const sortByNome = (arr) => arr.sort((a, b) => collator.compare(a.nome, b.nome));
+const statusPublico = (status) => ({
+    PENDENTE: 'PENDENTE',
+    APROVADA: 'APROVADO',
+    REJEITADA: 'NAO_APROVADO',
+}[status] || status);
+const dtoSolicitacao = (s) => ({
+    ...s,
+    status: statusPublico(s.status),
+    motivo: s.motivoRejeicao ?? null,
+    dataHoraAnalise: s.status === 'PENDENTE' ? null : (s.atualizadoEm ?? null),
+});
 
 const fetchJson = async (url, opts = {}) => {
     const res = await fetch(url, opts);
@@ -206,16 +217,19 @@ app.get('/solicitacoes', verifyJWT, requireRole('GERENTE'), async (req, res) => 
         const r = await fetch(`${CLIENTE_URL}/clientes/solicitacoes`);
         if (!r.ok) return res.status(r.status).json(await r.json().catch(() => ({})));
         const data = await r.json();
-        const solicitacoes = (data.solicitacoes || []).map((s) => ({
+        const solicitacoes = (data.solicitacoes || []).map((raw) => {
+            const s = dtoSolicitacao(raw);
+            return ({
             ...s,
             _links: {
                 self: { href: `${GATEWAY_BASE}/solicitacoes/${s.cpf}` },
-                ...(s.status === 'PENDENTE' ? {
+                ...(raw.status === 'PENDENTE' ? {
                     aprovacao: { href: `${GATEWAY_BASE}/solicitacoes/${s.cpf}/aprovacao` },
                     rejeicao: { href: `${GATEWAY_BASE}/solicitacoes/${s.cpf}/rejeicao` },
                 } : {}),
             },
-        }));
+        });
+        });
         return res.status(200).json({
             solicitacoes,
             _links: { self: { href: `${GATEWAY_BASE}/solicitacoes` } },
@@ -231,8 +245,9 @@ app.get('/solicitacoes/:cpf', verifyJWT, requireRole('GERENTE'), async (req, res
         const r = await fetch(`${CLIENTE_URL}/clientes/solicitacoes/${cpf}`);
         if (!r.ok) return res.status(r.status).json(await r.json().catch(() => ({})));
         const s = await r.json();
+        const solicitacao = dtoSolicitacao(s);
         return res.status(200).json({
-            ...s,
+            ...solicitacao,
             _links: {
                 self: { href: `${GATEWAY_BASE}/solicitacoes/${cpf}` },
                 ...(s.status === 'PENDENTE' ? {
@@ -256,34 +271,42 @@ app.post('/solicitacoes/:cpf/aprovacao', verifyJWT, requireRole('GERENTE'), asyn
 app.post('/solicitacoes/:cpf/rejeicao', verifyJWT, requireRole('GERENTE'), async (req, res) => {
     const { cpf } = req.params;
     const { motivo } = req.body;
+    const motivoNormalizado = typeof motivo === 'string' ? motivo.trim() : '';
+    if (!motivoNormalizado || motivoNormalizado.length > 500) {
+        return res.status(400).json({ status: 400, erro: 'Bad Request', mensagem: 'Motivo da rejeição é obrigatório e deve ter até 500 caracteres.' });
+    }
     try {
-        const check = await fetch(`${CLIENTE_URL}/clientes/solicitacoes/${cpf}`);
-        if (check.status === 404) {
-            return res.status(404).json({ status: 404, erro: 'Not Found', mensagem: 'Solicitação não encontrada.' });
-        }
         const r = await fetch(`${CLIENTE_URL}/clientes/solicitacoes/${cpf}/rejeicao`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ motivo: motivo || 'Não informado' }),
+            body: JSON.stringify({ motivo: motivoNormalizado }),
         });
-        if (r.status === 404) {
-            return res.status(404).json({ status: 404, erro: 'Not Found', mensagem: 'Solicitação não encontrada.' });
+        if (!r.ok) {
+            const body = await r.json().catch(() => ({
+                status: r.status,
+                erro: r.statusText || 'Erro ao rejeitar solicitação',
+                mensagem: 'Não foi possível rejeitar a solicitação.'
+            }));
+            return res.status(r.status).json(body);
         }
-        const updated = await fetch(`${CLIENTE_URL}/clientes/solicitacoes/${cpf}`);
-        const data = updated.ok ? await updated.json() : {};
+        const data = dtoSolicitacao(await r.json());
         if (data.email) {
-            getChannel().sendToQueue('ms.email.cmd', Buffer.from(JSON.stringify({
-                destinatario: data.email,
-                tipo: 'REJEICAO',
-                assunto: 'Sua solicitaÃ§Ã£o BANTADS foi rejeitada',
-                dados: { nome: data.nome, motivo: motivo || data.motivoRejeicao || 'NÃ£o informado' }
-            })), { persistent: true });
+            try {
+                getChannel().sendToQueue('ms.email.cmd', Buffer.from(JSON.stringify({
+                    destinatario: data.email,
+                    tipo: 'REJEICAO',
+                    assunto: 'Sua solicitação BANTADS foi rejeitada',
+                    dados: { nome: data.nome, motivo: data.motivo }
+                })), { persistent: true });
+            } catch (emailError) {
+                console.error('Falha ao publicar e-mail de rejeição:', emailError.message);
+            }
         }
         return res.status(200).json({
             ...data,
             cpf,
-            status: 'NAO_APROVADA',
-            motivo: motivo || data.motivoRejeicao || 'Não informado',
+            status: 'NAO_APROVADO',
+            motivo: data.motivo,
         });
     } catch (err) {
         return res.status(500).json({ status: 500, erro: 'Internal Server Error', mensagem: err.message });

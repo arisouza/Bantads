@@ -137,8 +137,8 @@ export class GerenteService {
     );
   }
 
-  recusarCliente(cpf: string, motivo: string): Observable<unknown> {
-    return this.http.post(
+  recusarCliente(cpf: string, motivo: string): Observable<import('../models/solicitacao').Solicitacao> {
+    return this.http.post<import('../models/solicitacao').Solicitacao>(
       `${this.API_URL}/solicitacoes/${encodeURIComponent(cpf)}/rejeicao`,
       { motivo }
     );
