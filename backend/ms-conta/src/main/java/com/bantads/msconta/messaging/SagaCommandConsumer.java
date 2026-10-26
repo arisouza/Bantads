@@ -173,7 +173,11 @@ public class SagaCommandConsumer {
         Map<String, Object> payload = command.getPayload();
         Conta conta;
 
-        if (payload.get("numeroConta") != null && !payload.get("numeroConta").toString().isBlank()) {
+        if ("DELETE_CONTA".equals(command.getTipo())) {
+            String numeroConta = getString(payload, "numeroConta");
+            String cpfCliente = getString(payload, "cpfCliente");
+            conta = contaCommandService.removerConta(numeroConta, cpfCliente);
+        } else if (payload.get("numeroConta") != null && !payload.get("numeroConta").toString().isBlank()) {
             conta = contaCommandService.removerConta(payload.get("numeroConta").toString());
         } else {
             String cpfCliente = getString(payload, "cpfCliente");

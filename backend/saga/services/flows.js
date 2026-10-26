@@ -25,6 +25,11 @@ const aprovarCliente = {
             falha: 'CLIENTE_FAILED',
             executar: (ctx, id) => msg.cliente(id, 'CREATE_CLIENTE', { cpf: ctx.cpf }),
             aplicar: (ctx, payload) => Object.assign(ctx, { nome: payload.nome, email: payload.email }),
+            compensacao: {
+                comando: 'ROLLBACK_CLIENTE',
+                sucesso: ['CLIENTE_ROLLBACK_DONE'],
+                falha: ['CLIENTE_FAILED']
+            },
             desfazer: (ctx, id, erro) =>
                 msg.cliente(id, 'ROLLBACK_CLIENTE', { cpf: ctx.cpf, motivo: motivoEmailDuplicado(erro) })
         },
@@ -42,6 +47,11 @@ const aprovarCliente = {
             falha: 'AUTH_FAILED',
             executar: (ctx, id) => msg.auth(id, 'CREATE_AUTH', { cpf: ctx.cpf, email: ctx.email }),
             aplicar: (ctx, payload, id) => segredos.guardar(id, payload.senha),
+            compensacao: {
+                comando: 'ROLLBACK_AUTH',
+                sucesso: ['AUTH_ROLLBACK_DONE'],
+                falha: ['AUTH_GERENTE_REVOKE_FAILED']
+            },
             desfazer: (ctx, id) => msg.auth(id, 'ROLLBACK_AUTH', { cpf: ctx.cpf })
         },
         {
@@ -52,7 +62,16 @@ const aprovarCliente = {
                 cpfCliente: ctx.cpf,
                 cpfsGerentesAtivos: ctx.cpfsGerentesAtivos
             }),
-            aplicar: (ctx, payload) => Object.assign(ctx, { numeroConta: payload.numeroConta })
+            aplicar: (ctx, payload) => Object.assign(ctx, { numeroConta: payload.numeroConta }),
+            desfazer: (ctx, id) => msg.conta(id, 'DELETE_CONTA', {
+                numeroConta: ctx.numeroConta,
+                cpfCliente: ctx.cpf
+            }),
+            compensacao: {
+                comando: 'DELETE_CONTA',
+                sucesso: ['CONTA_REMOVIDA'],
+                falha: ['CONTA_FAILED']
+            }
         },
         {
             nome: 'email',
@@ -80,6 +99,11 @@ const inserirGerente = {
             executar: (ctx, id) => msg.gerente(id, 'CREATE_GERENTE', {
                 cpf: ctx.cpf, nome: ctx.nome, email: ctx.email, telefone: ctx.telefone
             }),
+            compensacao: {
+                comando: 'ROLLBACK_GERENTE',
+                sucesso: ['GERENTE_ROLLBACK_DONE'],
+                falha: ['GERENTE_FAILED']
+            },
             desfazer: (ctx, id) => msg.gerente(id, 'ROLLBACK_GERENTE', { cpf: ctx.cpf })
         },
         {
@@ -89,6 +113,11 @@ const inserirGerente = {
             executar: async (ctx, id) => msg.auth(id, 'CREATE_AUTH_GERENTE', {
                 cpf: ctx.cpf, email: ctx.email, senha: await segredos.obter(id)
             }),
+            compensacao: {
+                comando: 'ROLLBACK_AUTH',
+                sucesso: ['AUTH_ROLLBACK_DONE'],
+                falha: ['AUTH_GERENTE_REVOKE_FAILED']
+            },
             desfazer: (ctx, id) => msg.auth(id, 'ROLLBACK_AUTH', { cpf: ctx.cpf })
         },
         {
@@ -106,6 +135,11 @@ const inserirGerente = {
             executar: (ctx, id) => msg.conta(id, 'ALTERAR_GERENTE', {
                 numeroConta: ctx.numeroConta, cpfGerenteNovo: ctx.cpf
             }),
+            compensacao: {
+                comando: 'REASSOCIAR_CONTAS',
+                sucesso: ['CONTAS_REASSOCIADAS'],
+                falha: ['CONTA_FAILED']
+            },
             desfazer: (ctx, id) => msg.conta(id, 'REASSOCIAR_CONTAS', {
                 cpfGerenteDestino: ctx.cpfGerenteOriginal, numerosConta: [ctx.numeroConta]
             })
@@ -158,6 +192,11 @@ const removerGerente = {
             sucesso: 'GERENTE_INACTIVATED',
             falha: 'GERENTE_INACTIVATE_FAILED',
             executar: (ctx, id) => msg.gerente(id, 'INACTIVATE_GERENTE', { cpf: ctx.cpf }),
+            compensacao: {
+                comando: 'REACTIVATE_GERENTE',
+                sucesso: ['GERENTE_REACTIVATED'],
+                falha: ['GERENTE_FAILED']
+            },
             desfazer: (ctx, id) => msg.gerente(id, 'REACTIVATE_GERENTE', { cpf: ctx.cpf })
         },
         {
@@ -165,6 +204,11 @@ const removerGerente = {
             sucesso: 'AUTH_GERENTE_REVOKED',
             falha: 'AUTH_GERENTE_REVOKE_FAILED',
             executar: (ctx, id) => msg.auth(id, 'REVOKE_AUTH_GERENTE', { cpf: ctx.cpf }),
+            compensacao: {
+                comando: 'REACTIVATE_AUTH_GERENTE',
+                sucesso: ['AUTH_GERENTE_REACTIVATED'],
+                falha: ['AUTH_GERENTE_REVOKE_FAILED']
+            },
             desfazer: (ctx, id) => msg.auth(id, 'REACTIVATE_AUTH_GERENTE', { cpf: ctx.cpf })
         },
         {
@@ -182,6 +226,11 @@ const removerGerente = {
             executar: (ctx, id) => msg.conta(id, 'TRANSFERIR_CONTAS_GERENTE', {
                 cpfGerenteRemovido: ctx.cpf, cpfsGerentesAtivos: ctx.cpfsGerentesAtivos
             }),
+            compensacao: {
+                comando: 'REASSOCIAR_CONTAS',
+                sucesso: ['CONTAS_REASSOCIADAS'],
+                falha: ['CONTA_FAILED']
+            },
             desfazer: (ctx, id) => msg.conta(id, 'REASSOCIAR_CONTAS', {
                 cpfGerenteDestino: ctx.cpf, numerosConta: ctx.contas.map((conta) => conta.numeroConta)
             })

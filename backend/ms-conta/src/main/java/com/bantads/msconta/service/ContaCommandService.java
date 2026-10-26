@@ -164,6 +164,18 @@ public class ContaCommandService {
     }
 
     @Transactional
+    public Conta removerConta(String numeroConta, String cpfCliente) {
+        Conta conta = reconstruirExistente(numeroConta);
+
+        if (cpfCliente == null || !cpfCliente.equals(conta.getCpfCliente())) {
+            throw new ContaNaoPertenceException();
+        }
+
+        apagarDadosDaConta(numeroConta);
+        return conta;
+    }
+
+    @Transactional
     public Conta removerContaPorCpf(String cpfCliente) {
         ContaRead contaRead = contaReadRepository.findByCpfCliente(cpfCliente)
                 .orElseThrow(() -> new ContaNaoEncontradaException(cpfCliente));
