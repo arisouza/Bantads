@@ -245,3 +245,35 @@ test('mantem os contratos reais de compensacao de R9', () => {
         delete require.cache[segredosPath];
     }
 });
+
+test('falha e compensa quando aplicar a resposta lanca erro', async () => {
+    const harness = makeHarness();
+    try {
+        const flow = require.cache[flowsPath].exports.TESTE;
+        flow.passos[0].aplicar = async () => { throw new Error('falha de persistencia'); };
+
+        await harness.orchestrator.iniciar({ sagaId: 'saga-1', action: 'TESTE', data: { cpf: '111' } });
+        await resposta(harness.orchestrator, 'CLIENTE_CREATED');
+
+        const saga = JSON.parse(harness.values.get('saga:saga-1'));
+        assert.equal(saga.status, 'FALHA');
+        assert.equal(saga.erro, 'Falha ao aplicar resposta de cliente: falha de persistencia');
+        assert.equal(JSON.parse(harness.values.get('job:saga-1')).status, 'FALHA');
+    } finally {
+        harness.restore();
+    }
+});
+
+test('ignora estado Redis corrompido ao recuperar sagas pendentes', async () => {
+    const harness = makeHarness();
+    const originalError = console.error;
+    console.error = () => {};
+    try {
+        harness.values.set('saga:corrompida', '{json invalido');
+        await harness.orchestrator.recuperarPendentes();
+        assert.equal(harness.published.length, 0);
+    } finally {
+        console.error = originalError;
+        harness.restore();
+    }
+});

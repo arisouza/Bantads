@@ -13,7 +13,15 @@ const chaveResultadoCompensacao = (id, indice) => `${chaveSaga(id)}:compensacao:
 
 const carregar = async (id) => {
     const raw = await redisClient.get(chaveSaga(id));
-    return raw ? JSON.parse(raw) : null;
+    if (!raw) return null;
+    try {
+        return JSON.parse(raw);
+    } catch (err) {
+        // Um valor corrompido não pode derrubar o consumidor inteiro durante
+        // uma recuperação. Mantemos o registro para diagnóstico e o ignoramos.
+        console.error(`[SAGA] Estado inválido para ${id}: ${err.message}`);
+        return null;
+    }
 };
 
 const salvar = (saga) => redisClient.set(chaveSaga(saga.id), JSON.stringify(saga), { EX: ESTADO_TTL });
@@ -40,7 +48,7 @@ const finalizar = async (saga, status, extra) => {
     await salvar(saga);
     await updateJob(saga.id, status, extra);
 
-    const chaves = flows[saga.tipo].cache(saga.ctx);
+    const chaves = flows[saga.tipo].cache?.(saga.ctx) ?? [];
     if (chaves.length) await redisClient.del(chaves);
 };
 
@@ -224,7 +232,13 @@ const responder = async ({ sagaId, tipo, payload, erro }) => {
     if (tipo === passo.falha) return falhar(sagaId, saga.passo, erro || `Falha no passo ${passo.nome}.`);
 
     limparTimer(sagaId);
-    await passo.aplicar?.(saga.ctx, payload ?? {}, sagaId);
+    try {
+        await passo.aplicar?.(saga.ctx, payload ?? {}, sagaId);
+    } catch (err) {
+        // A resposta já foi recebida, mas persistir/aplicar seus dados falhou.
+        // Tratar isto como falha do passo permite compensar o que já ocorreu.
+        return falhar(sagaId, saga.passo, `Falha ao aplicar resposta de ${passo.nome}: ${err.message}`);
+    }
     saga.feitos.push(saga.passo);
     await avancar(saga);
 };
@@ -251,7 +265,13 @@ const recuperarPendentes = async () => {
         if (key.includes(':falha:') || key.endsWith(':senha')) continue;
         const raw = await redisClient.get(key);
         if (!raw) continue;
-        const saga = JSON.parse(raw);
+        let saga;
+        try {
+            saga = JSON.parse(raw);
+        } catch (err) {
+            console.error(`[SAGA] Estado inválido ignorado durante recuperação (${key}): ${err.message}`);
+            continue;
+        }
         if (!flows[saga?.tipo]) continue;
         if (saga.status === 'COMPENSANDO') {
             const indice = saga.compensacaoIndice;
