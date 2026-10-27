@@ -30,29 +30,29 @@ public class ApiExceptionHandler {
         for (FieldError erro : ex.getBindingResult().getFieldErrors()) {
             campos.putIfAbsent(erro.getField(), erro.getDefaultMessage());
         }
-        return resposta(HttpStatus.BAD_REQUEST, "Dados de entrada invÃ¡lidos", request, campos);
+        return resposta(HttpStatus.BAD_REQUEST, "Dados de entrada inválidos", request, campos);
     }
 
     @ExceptionHandler(ConstraintViolationException.class)
     public ResponseEntity<ApiError> parametroInvalido(ConstraintViolationException ex, HttpServletRequest request) {
         Map<String, String> campos = new LinkedHashMap<>();
         ex.getConstraintViolations().forEach(erro -> campos.put(erro.getPropertyPath().toString(), erro.getMessage()));
-        return resposta(HttpStatus.BAD_REQUEST, "ParÃ¢metros invÃ¡lidos", request, campos);
+        return resposta(HttpStatus.BAD_REQUEST, "Parâmetros inválidos", request, campos);
     }
 
     @ExceptionHandler(HttpMessageNotReadableException.class)
     public ResponseEntity<ApiError> jsonInvalido(HttpServletRequest request) {
-        return resposta(HttpStatus.BAD_REQUEST, "JSON invÃ¡lido ou malformado", request, Map.of());
+        return resposta(HttpStatus.BAD_REQUEST, "JSON inválido ou malformado", request, Map.of());
     }
 
     @ExceptionHandler(DataIntegrityViolationException.class)
     public ResponseEntity<ApiError> conflitoDeDados(HttpServletRequest request) {
-        return resposta(HttpStatus.CONFLICT, "CPF ou e-mail jÃ¡ cadastrado", request, Map.of());
+        return resposta(HttpStatus.CONFLICT, "CPF ou e-mail já cadastrado", request, Map.of());
     }
 
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ApiError> erroInesperado(Exception ex, HttpServletRequest request) {
-        return resposta(HttpStatus.INTERNAL_SERVER_ERROR, "Erro interno do serviÃ§o", request, Map.of());
+        return resposta(HttpStatus.INTERNAL_SERVER_ERROR, "Erro interno do serviço", request, Map.of());
     }
 
     private ResponseEntity<ApiError> resposta(HttpStatus status, String mensagem, HttpServletRequest request, Map<String, String> campos) {

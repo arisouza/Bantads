@@ -33,7 +33,9 @@ public class ClienteController {
     }
 
     @GetMapping("/solicitacoes")
-    public Map<String, Object> listarSolicitacoes() { return Map.of("solicitacoes", service.listarSolicitacoes()); }
+    public Map<String, Object> listarSolicitacoes(@RequestParam(required = false) String status) {
+        return Map.of("solicitacoes", service.listarSolicitacoes(status));
+    }
 
     @GetMapping("/solicitacoes/{cpf}")
     public SolicitacaoResponse solicitacao(@PathVariable String cpf) { return service.solicitacaoPorCpf(cpf); }

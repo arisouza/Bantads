@@ -17,6 +17,7 @@ import com.bantads.msconta.repository.query.MovimentacaoReadRepository;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.Duration;
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
@@ -121,7 +122,7 @@ public class ContaQueryService {
         response.setNumeroConta(conta.getNumeroConta());
         response.setCpfCliente(conta.getCpfCliente());
         response.setDataCriacao(conta.getDataCriacao());
-        response.setSaldo(conta.getSaldo().toPlainString());
+        response.setSaldo(formatarMoeda(conta.getSaldo()));
         response.setCpfGerente(conta.getCpfGerente());
         return response;
     }
@@ -163,7 +164,7 @@ public class ContaQueryService {
         response.setNumeroConta(numeroConta);
         response.setInicio(inicio);
         response.setFim(fim);
-        response.setSaldoAbertura(saldoAbertura.toPlainString());
+        response.setSaldoAbertura(formatarMoeda(saldoAbertura));
         response.setMovimentacoes(itens);
         return response;
     }
@@ -177,7 +178,7 @@ public class ContaQueryService {
         response.setNumeroConta(conta.getNumeroConta());
         response.setCpfCliente(conta.getCpfCliente());
         response.setDataCriacao(conta.getDataCriacao());
-        response.setSaldo(conta.getSaldo().toPlainString());
+        response.setSaldo(formatarMoeda(conta.getSaldo()));
         response.setCpfGerente(conta.getCpfGerente());
         return response;
     }
@@ -192,8 +193,15 @@ public class ContaQueryService {
         response.setNomeOrigem(movimentacao.getNomeOrigem());
         response.setCpfDestino(movimentacao.getCpfDestino());
         response.setNomeDestino(movimentacao.getNomeDestino());
-        response.setValor(movimentacao.getValor().toPlainString());
+        response.setValor(formatarMoeda(movimentacao.getValor()));
         return response;
+    }
+
+    private String formatarMoeda(BigDecimal valor) {
+        if (valor == null) {
+            return "0.00";
+        }
+        return valor.setScale(2, RoundingMode.HALF_UP).toPlainString();
     }
 
     private BigDecimal aplicarSinal(BigDecimal saldo, String tipo, BigDecimal valor) {
