@@ -13,25 +13,25 @@ import { MatButtonModule } from '@angular/material/button';
 
 import {
   AuthenticatedLayoutComponent
-} from '../../shared/components/authenticated-layout/authenticated-layout';
+} from '../../../shared/components/authenticated-layout/authenticated-layout';
 
 import {
   GERENTE_MENU_ITEMS
-} from '../../shared/config/menu-items';
+} from '../../../shared/config/menu-items';
 
 import {
   Solicitacao,
   StatusSolicitacao
-} from '../../shared/models/solicitacao';
+} from '../../../shared/models/solicitacao';
 
 import {
   SolicitacaoService
-} from '../../shared/services/solicitacao';
-import { GerenteService } from '../../shared/services/gerente';
+} from '../../../shared/services/solicitacao';
+import { GerenteService } from '../../../shared/services/gerente';
 
 import {
   formatarMoeda
-} from '../../shared/utils/formatar-moeda';
+} from '../../../shared/utils/formatar-moeda';
 
 @Component({
   selector: 'app-gerente',

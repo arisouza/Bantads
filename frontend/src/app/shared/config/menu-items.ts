@@ -12,5 +12,6 @@ export const GERENTE_MENU_ITEMS: SidebarItem[] = [
   { label: 'Início', route: '/gerente', icon: 'home' },
   { label: 'Clientes', route: '/gerente/clientes', icon: 'people' },
   { label: 'Gerentes', route: '/gerente/gerentes', icon: 'manage_accounts' },
-  { label: 'Relatórios', route: '/gerente/relatorios', icon: 'assessment' }
+  { label: 'Relatórios', route: '/gerente/relatorios', icon: 'assessment' },
+  { label: 'Solicitações', route: '/gerente/solicitacoes', icon: 'how_to_reg'}
 ];

@@ -1,10 +1,10 @@
 import { provideRouter } from '@angular/router';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { of, NEVER } from 'rxjs';
-import { Gerente } from './gerente';
-import { Solicitacao } from '../../shared/models/solicitacao';
-import { SolicitacaoService } from '../../shared/services/solicitacao';
-import { GerenteService } from '../../shared/services/gerente';
+import { Gerente } from '../gerente';
+import { Solicitacao } from '../../../shared/models/solicitacao';
+import { SolicitacaoService } from '../../../shared/services/solicitacao';
+import { GerenteService } from '../../../shared/services/gerente';
 
 describe('Gerente', () => {
   let component: Gerente;

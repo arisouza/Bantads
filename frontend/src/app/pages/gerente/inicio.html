@@ -1,0 +1,68 @@
+
+<app-authenticated-layout [menuItems]="menuItems">
+  <div class="cliente-page">
+    <section class="cliente-header">
+      <p class="cliente-eyebrow">Painel administrativo</p>
+      <h1>Olá, Gerente!</h1>
+      <p class="cliente-subtitle">
+        Gerencie clientes, solicitações e informações da instituição.
+      </p>
+    </section>
+
+    <section class="operacoes" aria-labelledby="operacoes-title">
+      <div class="operacoes__header">
+        <div>
+          <p class="cliente-eyebrow">Acesso rápido</p>
+          <h2 id="operacoes-title">Gerenciamento</h2>
+        </div>
+        <p>Escolha uma área para continuar.</p>
+      </div>
+
+      <div class="operacoes__grid">
+        <a class="operacao-card" routerLink="/gerente/clientes">
+          <span class="operacao-card__icon operacao-card__icon--transferencia">
+            <mat-icon>groups</mat-icon>
+          </span>
+          <span class="operacao-card__body">
+            <strong>Clientes</strong>
+            <span>Consultar e pesquisar clientes</span>
+          </span>
+          <mat-icon class="operacao-card__arrow">arrow_forward</mat-icon>
+        </a>
+
+        <a class="operacao-card" routerLink="/gerente/gerentes">
+          <span class="operacao-card__icon operacao-card__icon--extrato">
+            <mat-icon>manage_accounts</mat-icon>
+          </span>
+          <span class="operacao-card__body">
+            <strong>Gerentes</strong>
+            <span>Cadastrar e administrar gerentes</span>
+          </span>
+          <mat-icon class="operacao-card__arrow">arrow_forward</mat-icon>
+        </a>
+
+        <a class="operacao-card" routerLink="/gerente/solicitacoes">
+          <span class="operacao-card__icon operacao-card__icon--deposito">
+            <mat-icon>how_to_reg</mat-icon>
+          </span>
+          <span class="operacao-card__body">
+            <strong>Solicitações</strong>
+            <span>Analisar pedidos de autocadastro</span>
+          </span>
+          <mat-icon class="operacao-card__arrow">arrow_forward</mat-icon>
+        </a>
+
+        <a class="operacao-card" routerLink="/gerente/relatorios">
+          <span class="operacao-card__icon operacao-card__icon--saque">
+            <mat-icon>bar_chart</mat-icon>
+          </span>
+          <span class="operacao-card__body">
+            <strong>Relatórios</strong>
+            <span>Consultar relatórios de clientes</span>
+          </span>
+          <mat-icon class="operacao-card__arrow">arrow_forward</mat-icon>
+        </a>
+      </div>
+    </section>
+  </div>
+</app-authenticated-layout>
