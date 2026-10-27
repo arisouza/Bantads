@@ -10,8 +10,9 @@ import com.bantads.mscliente.dto.SolicitacaoRequest;
 import com.bantads.mscliente.dto.SolicitacaoResponse;
 import com.bantads.mscliente.repository.ClienteRepository;
 import com.bantads.mscliente.repository.SolicitacaoRepository;
-import java.util.List;
+import java.math.BigDecimal;
 import java.time.OffsetDateTime;
+import java.util.List;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -41,8 +42,25 @@ public class ClienteService {
         solicitacoes.save(new SolicitacaoCadastro(solicitacao.cpf(), solicitacao.nome(), solicitacao.email(), solicitacao.telefone(), solicitacao.salario(), endereco(solicitacao)));
     }
 
-    public List<SolicitacaoResponse> listarSolicitacoes() { return solicitacoes.findAllByOrderByCriadoEmAsc().stream().map(this::dto).toList(); }
+    public List<SolicitacaoResponse> listarSolicitacoes() {
+        return listarSolicitacoes(null);
+    }
+
+    public List<SolicitacaoResponse> listarSolicitacoes(String statusFiltro) {
+        if (statusFiltro == null || statusFiltro.isBlank()) {
+            return solicitacoes.findAllByOrderByCriadoEmAsc().stream().map(this::dto).toList();
+        }
+        StatusSolicitacao status = switch (statusFiltro.trim().toUpperCase()) {
+            case "PENDENTE" -> StatusSolicitacao.PENDENTE;
+            case "APROVADA", "APROVADO" -> StatusSolicitacao.APROVADA;
+            case "REJEITADA", "NAO_APROVADA", "NAO_APROVADO" -> StatusSolicitacao.REJEITADA;
+            default -> throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Filtro de status inválido");
+        };
+        return solicitacoes.findByStatusOrderByCriadoEmAsc(status).stream().map(this::dto).toList();
+    }
+
     public SolicitacaoResponse solicitacaoPorCpf(String cpf) { return dto(solicitacaoEntidade(cpf)); }
+
     @Transactional
     public SolicitacaoResponse rejeitar(String cpf, String motivo) {
         if (motivo == null || motivo.trim().isEmpty() || motivo.trim().length() > 500) {
@@ -86,11 +104,16 @@ public class ClienteService {
         solicitacoes.deleteAll();
         clientes.deleteAll();
         clientes.saveAll(List.of(
-            new Cliente("12912861012", "Catharyna", "cli1@bantads.com.br", "41999990001", new java.math.BigDecimal("10000.00"), null),
-            new Cliente("09506382000", "Cleuddônio", "cli2@bantads.com.br", "41999990002", new java.math.BigDecimal("20000.00"), null),
-            new Cliente("85733854057", "Catianna", "cli3@bantads.com.br", "41999990003", new java.math.BigDecimal("3000.00"), null),
-            new Cliente("58872160006", "Cutardo", "cli4@bantads.com.br", "41999990004", new java.math.BigDecimal("500.00"), null),
-            new Cliente("76179646090", "Coândrya", "cli5@bantads.com.br", "41999990005", new java.math.BigDecimal("1500.00"), null)
+            new Cliente("12912861012", "Catharyna", "cli1@bantads.com.br", "41999990001", new BigDecimal("10000.00"),
+                new Endereco("Rua XV de Novembro", "100", "Apto 101", "80020310", "Curitiba", "PR")),
+            new Cliente("09506382000", "Cleuddônio", "cli2@bantads.com.br", "41999990002", new BigDecimal("20000.00"),
+                new Endereco("Avenida Batel", "200", "Sala 202", "80420090", "Curitiba", "PR")),
+            new Cliente("85733854057", "Catianna", "cli3@bantads.com.br", "41999990003", new BigDecimal("3000.00"),
+                new Endereco("Rua Marechal Deodoro", "300", null, "80010010", "Curitiba", "PR")),
+            new Cliente("58872160006", "Cutardo", "cli4@bantads.com.br", "41999990004", new BigDecimal("500.00"),
+                new Endereco("Avenida Sete de Setembro", "400", "Bloco B", "80250210", "Curitiba", "PR")),
+            new Cliente("76179646090", "Coândrya", "cli5@bantads.com.br", "41999990005", new BigDecimal("1500.00"),
+                new Endereco("Rua Comendador Araújo", "500", null, "80420000", "Curitiba", "PR"))
         ));
     }
 

@@ -8,6 +8,7 @@ import java.util.Map;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.server.ResponseStatusException;
 
 @RestController
 @RequestMapping("/gerentes")
@@ -29,6 +30,9 @@ public class GerenteController {
 
     @PutMapping("/{cpf}")
     public GerenteResponse atualizar(@PathVariable String cpf, @RequestBody Map<String, String> body) {
+        if (body.containsKey("email") || (body.containsKey("cpf") && !cpf.equals(body.get("cpf")))) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "E-mail e CPF são imutáveis");
+        }
         return service.atualizar(cpf, body.get("nome"), body.get("telefone"));
     }
 

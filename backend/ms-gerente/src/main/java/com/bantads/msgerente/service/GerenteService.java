@@ -34,7 +34,10 @@ public class GerenteService {
     }
 
     public GerenteResponse atualizar(String cpf, String nome, String telefone) {
-        if (repository.atualizar(cpf, nome, telefone) == 0) {
+        if (nome == null || nome.isBlank()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Nome do gerente é obrigatório");
+        }
+        if (repository.atualizar(cpf, nome.trim(), telefone) == 0) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Gerente não encontrado");
         }
         return repository.porCpf(cpf).orElseThrow();
