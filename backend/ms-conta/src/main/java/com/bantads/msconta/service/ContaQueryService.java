@@ -29,6 +29,7 @@ import java.util.List;
 public class ContaQueryService {
 
     private static final int INTERVALO_MAXIMO_DIAS = 365;
+    private static final int INTERVALO_PADRAO_DIAS = 30;
 
     private final ContaReadRepository contaReadRepository;
     private final MovimentacaoReadRepository movimentacaoReadRepository;
@@ -132,8 +133,10 @@ public class ContaQueryService {
             throw new ContaNaoEncontradaException(numeroConta);
         }
 
-        OffsetDateTime inicio = parseInicio(inicioRaw);
-        OffsetDateTime fim = parseFim(fimRaw);
+        OffsetDateTime[] periodoDatas = resolverPeriodoExtrato(inicioRaw, fimRaw);
+        OffsetDateTime inicio = periodoDatas[0];
+        OffsetDateTime fim = periodoDatas[1];
+
         if (fim.isBefore(inicio)) {
             throw new ValorInvalidoException("A data final deve ser posterior à data inicial");
         }
@@ -155,8 +158,10 @@ public class ContaQueryService {
                         fim
                 );
 
+        BigDecimal saldoFechamento = saldoAbertura;
         List<MovimentacaoResponse> itens = new ArrayList<>();
         for (MovimentacaoRead movimentacao : periodo) {
+            saldoFechamento = aplicarSinal(saldoFechamento, movimentacao.getTipo(), movimentacao.getValor());
             itens.add(toMovimentacaoResponse(movimentacao));
         }
 
@@ -165,8 +170,33 @@ public class ContaQueryService {
         response.setInicio(inicio);
         response.setFim(fim);
         response.setSaldoAbertura(formatarMoeda(saldoAbertura));
+        response.setSaldoFechamento(formatarMoeda(saldoFechamento));
         response.setMovimentacoes(itens);
         return response;
+    }
+
+    private OffsetDateTime[] resolverPeriodoExtrato(String inicioRaw, String fimRaw) {
+        boolean inicioInformado = inicioRaw != null && !inicioRaw.isBlank();
+        boolean fimInformado = fimRaw != null && !fimRaw.isBlank();
+
+        if (!inicioInformado && !fimInformado) {
+            OffsetDateTime fim = LocalDate.now(ZoneOffset.UTC)
+                    .plusDays(1)
+                    .atStartOfDay()
+                    .atOffset(ZoneOffset.UTC)
+                    .minusNanos(1);
+            OffsetDateTime inicio = LocalDate.now(ZoneOffset.UTC)
+                    .minusDays(INTERVALO_PADRAO_DIAS - 1L)
+                    .atStartOfDay()
+                    .atOffset(ZoneOffset.UTC);
+            return new OffsetDateTime[]{inicio, fim};
+        }
+
+        if (!inicioInformado || !fimInformado) {
+            throw new ValorInvalidoException("Informe as duas datas do extrato ou nenhuma para usar os últimos 30 dias");
+        }
+
+        return new OffsetDateTime[]{parseInicio(inicioRaw), parseFim(fimRaw)};
     }
 
     public long contarContas() {
