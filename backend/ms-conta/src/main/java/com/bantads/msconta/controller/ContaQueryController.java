@@ -91,8 +91,8 @@ public class ContaQueryController {
     @GetMapping("/{numero:[0-9]{4}}/extrato")
     public ResponseEntity<ExtratoResponse> extrato(
             @PathVariable String numero,
-            @RequestParam String inicio,
-            @RequestParam String fim
+            @RequestParam(required = false) String inicio,
+            @RequestParam(required = false) String fim
     ) {
         ExtratoResponse response = contaQueryService.buscarExtrato(numero, inicio, fim);
         response.add(linkTo(methodOn(ContaQueryController.class).extrato(numero, inicio, fim)).withSelfRel());

@@ -94,10 +94,56 @@ class ContaQueryServiceTest {
 
         ExtratoResponse extrato = service.buscarExtrato("1291", "2020-02-01", "2020-02-28");
         assertEquals("800.00", extrato.getSaldoAbertura());
+        assertEquals("800.00", extrato.getSaldoFechamento());
 
         assertThrows(
                 ValorInvalidoException.class,
                 () -> service.buscarExtrato("1291", "2020-01-01", "2022-01-01")
+        );
+    }
+
+    @Test
+    void deveUsarUltimos30DiasQuandoDatasNaoInformadasECalcularSaldoFechamento() {
+        when(contaReadRepository.existsById("1291")).thenReturn(true);
+        when(movimentacaoReadRepository.findByNumeroContaAndTimestampLessThanOrderByTimestampAsc(eq("1291"), any()))
+                .thenReturn(List.of());
+
+        MovimentacaoRead deposito = new MovimentacaoRead();
+        deposito.setId(UUID.randomUUID());
+        deposito.setNumeroConta("1291");
+        deposito.setTipo(TipoEventoEnum.DEPOSITO.getValor());
+        deposito.setValor(new BigDecimal("150.5000"));
+        deposito.setTimestamp(OffsetDateTime.now());
+
+        MovimentacaoRead saque = new MovimentacaoRead();
+        saque.setId(UUID.randomUUID());
+        saque.setNumeroConta("1291");
+        saque.setTipo(TipoEventoEnum.SAQUE.getValor());
+        saque.setValor(new BigDecimal("50.2500"));
+        saque.setTimestamp(OffsetDateTime.now());
+
+        when(movimentacaoReadRepository.findByNumeroContaAndTimestampGreaterThanEqualAndTimestampLessThanEqualOrderByTimestampAsc(
+                eq("1291"), any(), any())).thenReturn(List.of(deposito, saque));
+
+        ExtratoResponse extrato = service.buscarExtrato("1291", null, null);
+
+        assertEquals("0.00", extrato.getSaldoAbertura());
+        assertEquals("100.25", extrato.getSaldoFechamento());
+        assertEquals(2, extrato.getMovimentacoes().size());
+        assertFalse(extrato.getFim().isBefore(extrato.getInicio()));
+    }
+
+    @Test
+    void deveRecusarExtratoComApenasUmaDataInformada() {
+        when(contaReadRepository.existsById("1291")).thenReturn(true);
+
+        assertThrows(
+                ValorInvalidoException.class,
+                () -> service.buscarExtrato("1291", "2020-01-01", null)
+        );
+        assertThrows(
+                ValorInvalidoException.class,
+                () -> service.buscarExtrato("1291", null, "2020-01-31")
         );
     }
 }

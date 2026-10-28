@@ -12,6 +12,7 @@ public class ExtratoResponse extends RepresentationModel<ExtratoResponse> {
     private OffsetDateTime inicio;
     private OffsetDateTime fim;
     private String saldoAbertura;
+    private String saldoFechamento;
     private List<MovimentacaoResponse> movimentacoes = new ArrayList<>();
 
     public ExtratoResponse() {
@@ -47,6 +48,14 @@ public class ExtratoResponse extends RepresentationModel<ExtratoResponse> {
 
     public void setSaldoAbertura(String saldoAbertura) {
         this.saldoAbertura = saldoAbertura;
+    }
+
+    public String getSaldoFechamento() {
+        return saldoFechamento;
+    }
+
+    public void setSaldoFechamento(String saldoFechamento) {
+        this.saldoFechamento = saldoFechamento;
     }
 
     public List<MovimentacaoResponse> getMovimentacoes() {
