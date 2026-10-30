@@ -36,7 +36,7 @@ public class GerenteController {
     @PutMapping("/{cpf}")
     public GerenteResponse atualizar(@PathVariable String cpf, @RequestBody Map<String, String> body) {
         if (body.containsKey("email") || (body.containsKey("cpf") && !cpf.equals(body.get("cpf")))) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "E-mail e CPF sÃ£o imutÃ¡veis");
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "E-mail e CPF são imutáveis");
         }
         return service.atualizar(cpf, body.get("nome"), body.get("telefone"));
     }

@@ -112,7 +112,7 @@ app.post('/login', async (req, res) => {
         });
 
         if (authRes.status === 401) {
-            return res.status(401).json({ auth: false, message: 'Login invÃ¡lido!' });
+            return res.status(401).json({ auth: false, message: 'Login inválido!' });
         }
         if (!authRes.ok) throw new Error('Erro no MS Auth');
 
@@ -164,10 +164,10 @@ app.post('/solicitacoes', async (req, res) => {
     try {
         const { cpf, nome, email, telefone, salario, endereco } = req.body;
         if (!cpf || !nome || !email || !telefone || !salario || !endereco) {
-            return res.status(400).json({ status: 400, erro: 'Bad Request', mensagem: 'Dados invÃ¡lidos ou incompletos.' });
+            return res.status(400).json({ status: 400, erro: 'Bad Request', mensagem: 'Dados inválidos ou incompletos.' });
         }
         if (!/^\d{11}$/.test(cpf)) {
-            return res.status(400).json({ status: 400, erro: 'Bad Request', mensagem: 'CPF invÃ¡lido.' });
+            return res.status(400).json({ status: 400, erro: 'Bad Request', mensagem: 'CPF inválido.' });
         }
 
         const flatBody = {
@@ -187,7 +187,7 @@ app.post('/solicitacoes', async (req, res) => {
         });
 
         if (r.status === 409) {
-            return res.status(409).json({ status: 409, erro: 'Conflict', mensagem: 'CPF ou e-mail jÃ¡ cadastrado.' });
+            return res.status(409).json({ status: 409, erro: 'Conflict', mensagem: 'CPF ou e-mail já cadastrado.' });
         }
         if (!r.ok) {
             const errData = await r.json().catch(() => ({}));
@@ -273,7 +273,7 @@ app.post('/solicitacoes/:cpf/rejeicao', verifyJWT, requireRole('GERENTE'), async
     const { motivo } = req.body;
     const motivoNormalizado = typeof motivo === 'string' ? motivo.trim() : '';
     if (!motivoNormalizado || motivoNormalizado.length > 500) {
-        return res.status(400).json({ status: 400, erro: 'Bad Request', mensagem: 'Motivo da rejeiÃ§Ã£o Ã© obrigatÃ³rio e deve ter atÃ© 500 caracteres.' });
+        return res.status(400).json({ status: 400, erro: 'Bad Request', mensagem: 'Motivo da rejeição é obrigatório e deve ter até 500 caracteres.' });
     }
     try {
         const r = await fetch(`${CLIENTE_URL}/clientes/solicitacoes/${cpf}/rejeicao`, {
@@ -284,8 +284,8 @@ app.post('/solicitacoes/:cpf/rejeicao', verifyJWT, requireRole('GERENTE'), async
         if (!r.ok) {
             const body = await r.json().catch(() => ({
                 status: r.status,
-                erro: r.statusText || 'Erro ao rejeitar solicitaÃ§Ã£o',
-                mensagem: 'NÃ£o foi possÃ­vel rejeitar a solicitaÃ§Ã£o.'
+                erro: r.statusText || 'Erro ao rejeitar solicitação',
+                mensagem: 'Não foi possível rejeitar a solicitação.'
             }));
             return res.status(r.status).json(body);
         }
@@ -295,11 +295,11 @@ app.post('/solicitacoes/:cpf/rejeicao', verifyJWT, requireRole('GERENTE'), async
                 getChannel().sendToQueue('ms.email.cmd', Buffer.from(JSON.stringify({
                     destinatario: data.email,
                     tipo: 'REJEICAO',
-                    assunto: 'Sua solicitaÃ§Ã£o BANTADS foi rejeitada',
+                    assunto: 'Sua solicitação BANTADS foi rejeitada',
                     dados: { nome: data.nome, motivo: data.motivo }
                 })), { persistent: true });
             } catch (emailError) {
-                console.error('Falha ao publicar e-mail de rejeiÃ§Ã£o:', emailError.message);
+                console.error('Falha ao publicar e-mail de rejeição:', emailError.message);
             }
         }
         return res.status(200).json({
@@ -354,12 +354,12 @@ app.get('/clientes/:cpf/conta', verifyJWT, async (req, res) => {
     const { cpf: userCpf, tipo } = req.userIdentity;
 
     if (tipo === 'CLIENTE' && cpf !== userCpf) {
-        return res.status(403).json({ status: 403, erro: 'Forbidden', mensagem: 'Acesso nÃ£o permitido.' });
+        return res.status(403).json({ status: 403, erro: 'Forbidden', mensagem: 'Acesso não permitido.' });
     }
 
     try {
         const r = await fetch(`${CONTA_URL}/contas/cliente/${cpf}`);
-        if (r.status === 404) return res.status(404).json({ status: 404, erro: 'Not Found', mensagem: 'Conta nÃ£o encontrada' });
+        if (r.status === 404) return res.status(404).json({ status: 404, erro: 'Not Found', mensagem: 'Conta não encontrada' });
         if (!r.ok) return res.status(502).json({ status: 502, erro: 'Bad Gateway', mensagem: 'Erro no MS Conta' });
 
         const conta = await r.json();
@@ -388,7 +388,7 @@ app.get('/clientes/:cpf', verifyJWT, async (req, res) => {
     const { cpf: userCpf, tipo } = req.userIdentity;
 
     if (tipo === 'CLIENTE' && cpf !== userCpf) {
-        return res.status(403).json({ status: 403, erro: 'Forbidden', mensagem: 'Acesso nÃ£o permitido.' });
+        return res.status(403).json({ status: 403, erro: 'Forbidden', mensagem: 'Acesso não permitido.' });
     }
 
     const cacheKey = `cache:cliente:${cpf}`;
@@ -397,7 +397,7 @@ app.get('/clientes/:cpf', verifyJWT, async (req, res) => {
         if (cached) return res.status(200).json(JSON.parse(cached));
 
         const r = await fetch(`${CLIENTE_URL}/clientes/${cpf}`);
-        if (r.status === 404) return res.status(404).json({ status: 404, erro: 'Not Found', mensagem: 'Cliente nÃ£o encontrado' });
+        if (r.status === 404) return res.status(404).json({ status: 404, erro: 'Not Found', mensagem: 'Cliente não encontrado' });
         if (!r.ok) return res.status(502).json({ status: 502, erro: 'Bad Gateway', mensagem: 'Erro no MS Cliente' });
 
         const cliente = await r.json();
@@ -419,14 +419,14 @@ app.get('/contas/:numero', verifyJWT, async (req, res) => {
 
     try {
         const r = await fetch(`${CONTA_URL}/contas/${numero}`);
-        if (r.status === 404) return res.status(404).json({ status: 404, erro: 'Not Found', mensagem: 'Conta nÃ£o encontrada' });
+        if (r.status === 404) return res.status(404).json({ status: 404, erro: 'Not Found', mensagem: 'Conta não encontrada' });
         if (!r.ok) return res.status(502).json({ status: 502, erro: 'Bad Gateway', mensagem: 'Erro no MS Conta' });
 
         const raw = await r.json();
         const cpfCliente = raw.cpfCliente;
 
         if (tipo === 'CLIENTE' && cpfCliente !== userCpf) {
-            return res.status(403).json({ status: 403, erro: 'Forbidden', mensagem: 'Acesso nÃ£o permitido.' });
+            return res.status(403).json({ status: 403, erro: 'Forbidden', mensagem: 'Acesso não permitido.' });
         }
 
         const base = `${GATEWAY_BASE}/contas/${numero}`;
@@ -455,11 +455,11 @@ app.post('/contas/:numero/deposito', verifyJWT, requireRole('CLIENTE'), async (r
 
     try {
         const contaRes = await fetch(`${CONTA_URL}/contas/${numero}`);
-        if (!contaRes.ok) return res.status(404).json({ status: 404, erro: 'Not Found', mensagem: 'Conta nÃ£o encontrada' });
+        if (!contaRes.ok) return res.status(404).json({ status: 404, erro: 'Not Found', mensagem: 'Conta não encontrada' });
         const conta = await contaRes.json();
 
         if (conta.cpfCliente !== userCpf) {
-            return res.status(403).json({ status: 403, erro: 'Forbidden', mensagem: 'Acesso nÃ£o permitido.' });
+            return res.status(403).json({ status: 403, erro: 'Forbidden', mensagem: 'Acesso não permitido.' });
         }
 
         const r = await fetch(`${CONTA_URL}/contas/${numero}/deposito`, {
@@ -487,11 +487,11 @@ app.post('/contas/:numero/saque', verifyJWT, requireRole('CLIENTE'), async (req,
 
     try {
         const contaRes = await fetch(`${CONTA_URL}/contas/${numero}`);
-        if (!contaRes.ok) return res.status(404).json({ status: 404, erro: 'Not Found', mensagem: 'Conta nÃ£o encontrada' });
+        if (!contaRes.ok) return res.status(404).json({ status: 404, erro: 'Not Found', mensagem: 'Conta não encontrada' });
         const conta = await contaRes.json();
 
         if (conta.cpfCliente !== userCpf) {
-            return res.status(403).json({ status: 403, erro: 'Forbidden', mensagem: 'Acesso nÃ£o permitido.' });
+            return res.status(403).json({ status: 403, erro: 'Forbidden', mensagem: 'Acesso não permitido.' });
         }
 
         const r = await fetch(`${CONTA_URL}/contas/${numero}/saque`, {
@@ -528,14 +528,14 @@ app.post('/contas/:numero/transferencia', verifyJWT, requireRole('CLIENTE'), asy
             fetch(`${CONTA_URL}/contas/${contaDestino}`),
         ]);
 
-        if (!origemRes.ok) return res.status(404).json({ status: 404, erro: 'Not Found', mensagem: 'Conta origem nÃ£o encontrada' });
+        if (!origemRes.ok) return res.status(404).json({ status: 404, erro: 'Not Found', mensagem: 'Conta origem não encontrada' });
         const origem = await origemRes.json();
 
         if (origem.cpfCliente !== userCpf) {
-            return res.status(403).json({ status: 403, erro: 'Forbidden', mensagem: 'Acesso nÃ£o permitido.' });
+            return res.status(403).json({ status: 403, erro: 'Forbidden', mensagem: 'Acesso não permitido.' });
         }
 
-        if (!destinoRes.ok) return res.status(422).json({ status: 422, erro: 'Unprocessable Entity', mensagem: 'Conta destino nÃ£o encontrada' });
+        if (!destinoRes.ok) return res.status(422).json({ status: 422, erro: 'Unprocessable Entity', mensagem: 'Conta destino não encontrada' });
         const destino = await destinoRes.json();
 
         const cpfDestino = destino.cpfCliente;
@@ -548,7 +548,7 @@ app.post('/contas/:numero/transferencia', verifyJWT, requireRole('CLIENTE'), asy
 
         const nomeOrigem = nomeOrigemRes.ok ? (await nomeOrigemRes.json()).nome : '';
         let nomeDestino = nomeDestinoRes.ok ? (await nomeDestinoRes.json()).nome : '';
-        if (cpfDestino === '09506382000') nomeDestino = 'CleuddÃ´nio';
+        if (cpfDestino === '09506382000') nomeDestino = 'Cleuddônio';
 
         const r = await fetch(`${CONTA_URL}/contas/${numero}/transferencia`, {
             method: 'POST',
@@ -568,7 +568,7 @@ app.post('/contas/:numero/transferencia', verifyJWT, requireRole('CLIENTE'), asy
         }
 
         return res.status(201).json({
-            mensagem: 'TransferÃªncia registrada',
+            mensagem: 'Transferência registrada',
             origem: { conta: numero, nome: nomeOrigem },
             destino: { conta: contaDestino, nome: nomeDestino },
             valor,
@@ -588,11 +588,11 @@ app.get('/contas/:numero/extrato', verifyJWT, async (req, res) => {
 
     try {
         const contaRes = await fetch(`${CONTA_URL}/contas/${numero}`);
-        if (!contaRes.ok) return res.status(404).json({ status: 404, erro: 'Not Found', mensagem: 'Conta nÃ£o encontrada' });
+        if (!contaRes.ok) return res.status(404).json({ status: 404, erro: 'Not Found', mensagem: 'Conta não encontrada' });
         const conta = await contaRes.json();
 
         if (tipo === 'CLIENTE' && conta.cpfCliente !== userCpf) {
-            return res.status(403).json({ status: 403, erro: 'Forbidden', mensagem: 'Acesso nÃ£o permitido.' });
+            return res.status(403).json({ status: 403, erro: 'Forbidden', mensagem: 'Acesso não permitido.' });
         }
 
         const hoje = new Date().toISOString().slice(0, 10);
@@ -603,7 +603,7 @@ app.get('/contas/:numero/extrato', verifyJWT, async (req, res) => {
 
         const diffDias = (new Date(fim) - new Date(inicio)) / (1000 * 60 * 60 * 24);
         if (diffDias > 365) {
-            return res.status(422).json({ status: 422, erro: 'Unprocessable Entity', mensagem: 'Intervalo mÃ¡ximo permitido Ã© de 365 dias.' });
+            return res.status(422).json({ status: 422, erro: 'Unprocessable Entity', mensagem: 'Intervalo máximo permitido é de 365 dias.' });
         }
 
         const r = await fetch(`${CONTA_URL}/contas/${numero}/extrato?inicio=${inicio}&fim=${fim}`, {
@@ -680,7 +680,7 @@ app.get('/gerentes/:cpf', verifyJWT, requireRole('GERENTE'), async (req, res) =>
         if (cached) return res.status(200).json(JSON.parse(cached));
 
         const r = await fetch(`${GERENTE_URL}/gerentes/${cpf}`);
-        if (r.status === 404) return res.status(404).json({ status: 404, erro: 'Not Found', mensagem: 'Gerente nÃ£o encontrado' });
+        if (r.status === 404) return res.status(404).json({ status: 404, erro: 'Not Found', mensagem: 'Gerente não encontrado' });
         if (!r.ok) return res.status(502).json({ status: 502, erro: 'Bad Gateway', mensagem: 'Erro no MS Gerente' });
 
         const gerente = await r.json();
@@ -702,7 +702,7 @@ app.put('/gerentes/:cpf', verifyJWT, requireRole('GERENTE'), async (req, res) =>
     const { email, cpf: bodyCpf, ...updates } = req.body;
 
     if (email !== undefined || (bodyCpf !== undefined && bodyCpf !== cpf)) {
-        return res.status(400).json({ status: 400, erro: 'Bad Request', mensagem: 'E-mail e CPF sÃ£o imutÃ¡veis.' });
+        return res.status(400).json({ status: 400, erro: 'Bad Request', mensagem: 'E-mail e CPF são imutáveis.' });
     }
 
     try {
@@ -733,7 +733,7 @@ app.delete('/gerentes/:cpf', verifyJWT, requireRole('GERENTE'), async (req, res)
     const { cpf: userCpf } = req.userIdentity;
 
     if (cpf === userCpf) {
-        return res.status(403).json({ status: 403, erro: 'Forbidden', mensagem: 'Um gerente nÃ£o pode remover a si mesmo.' });
+        return res.status(403).json({ status: 403, erro: 'Forbidden', mensagem: 'Um gerente não pode remover a si mesmo.' });
     }
 
     const sagaId = await publishSaga('REMOVER_GERENTE_START', { cpf, cpfSolicitante: userCpf });
@@ -794,7 +794,7 @@ app.get('/relatorios/clientes', verifyJWT, requireRole('GERENTE'), async (req, r
 
 app.get('/jobs/:jobId/status', verifyJWT, async (req, res) => {
     const job = await getJob(req.params.jobId);
-    if (!job) return res.status(404).json({ status: 404, erro: 'Not Found', mensagem: 'Job nÃ£o encontrado ou expirado.' });
+    if (!job) return res.status(404).json({ status: 404, erro: 'Not Found', mensagem: 'Job não encontrado ou expirado.' });
 
     const { resultado, ...jobSemResultado } = job;
     return res.status(200).json(jobSemResultado);
@@ -802,10 +802,10 @@ app.get('/jobs/:jobId/status', verifyJWT, async (req, res) => {
 
 app.get('/jobs/:jobId/result', verifyJWT, async (req, res) => {
     const job = await getJob(req.params.jobId);
-    if (!job) return res.status(404).json({ status: 404, erro: 'Not Found', mensagem: 'Job nÃ£o encontrado ou expirado.' });
+    if (!job) return res.status(404).json({ status: 404, erro: 'Not Found', mensagem: 'Job não encontrado ou expirado.' });
 
     if (job.status !== 'CONCLUIDO' || job.resultType !== 'inline') {
-        return res.status(409).json({ status: 409, erro: 'Conflict', mensagem: 'Job nÃ£o concluÃ­do ou nÃ£o Ã© inline.' });
+        return res.status(409).json({ status: 409, erro: 'Conflict', mensagem: 'Job não concluído ou não é inline.' });
     }
 
     return res.status(200).json(job.resultado);

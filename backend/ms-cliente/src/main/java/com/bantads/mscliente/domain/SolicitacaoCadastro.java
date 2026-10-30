@@ -22,6 +22,6 @@ public class SolicitacaoCadastro {
     public void aprovar() { validarPendente(); status = StatusSolicitacao.APROVADA; atualizadoEm = OffsetDateTime.now(); }
     public void rejeitar(String motivo) { validarPendente(); status = StatusSolicitacao.REJEITADA; motivoRejeicao = motivo; atualizadoEm = OffsetDateTime.now(); }
     public void reabrir(String motivoNaoAprovada) { status = motivoNaoAprovada == null ? StatusSolicitacao.PENDENTE : StatusSolicitacao.REJEITADA; motivoRejeicao = motivoNaoAprovada; atualizadoEm = OffsetDateTime.now(); }
-    private void validarPendente() { if (status != StatusSolicitacao.PENDENTE) throw new IllegalStateException("SolicitaÃ§Ã£o nÃ£o estÃ¡ pendente"); }
+    private void validarPendente() { if (status != StatusSolicitacao.PENDENTE) throw new IllegalStateException("Solicitação não está pendente"); }
     public String getCpf() { return cpf; } public String getNome() { return nome; } public String getEmail() { return email; } public String getTelefone() { return telefone; } public BigDecimal getSalario() { return salario; } public Endereco getEndereco() { return endereco; } public StatusSolicitacao getStatus() { return status; } public String getMotivoRejeicao() { return motivoRejeicao; } public OffsetDateTime getCriadoEm() { return criadoEm; } public OffsetDateTime getAtualizadoEm() { return atualizadoEm; }
 }

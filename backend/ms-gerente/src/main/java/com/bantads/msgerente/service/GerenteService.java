@@ -33,10 +33,10 @@ public class GerenteService {
     @Transactional
     public GerenteResponse inserir(GerenteRequest req) {
         if (repository.existsById(req.cpf())) {
-            throw new ResponseStatusException(HttpStatus.CONFLICT, "CPF jÃ¡ cadastrado");
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "CPF já cadastrado");
         }
         if (repository.existsByEmail(req.email())) {
-            throw new ResponseStatusException(HttpStatus.CONFLICT, "E-mail jÃ¡ cadastrado");
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "E-mail já cadastrado");
         }
         Gerente salvo = repository.save(new Gerente(req.cpf(), req.nome(), req.email(), req.telefone(), true));
         return dto(salvo);
@@ -45,10 +45,10 @@ public class GerenteService {
     @Transactional
     public GerenteResponse atualizar(String cpf, String nome, String telefone) {
         if (nome == null || nome.isBlank()) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Nome do gerente Ã© obrigatÃ³rio");
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Nome do gerente é obrigatório");
         }
         Gerente gerente = repository.findByCpfAndAtivoTrue(cpf)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Gerente nÃ£o encontrado"));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Gerente não encontrado"));
         gerente.atualizarDados(nome.trim(), telefone);
         return dto(repository.save(gerente));
     }
@@ -56,7 +56,7 @@ public class GerenteService {
     @Transactional
     public void desativar(String cpf) {
         Gerente gerente = repository.findById(cpf)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Gerente nÃ£o encontrado"));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Gerente não encontrado"));
         gerente.desativar();
         repository.save(gerente);
     }
@@ -80,10 +80,10 @@ public class GerenteService {
     public void reboot() {
         repository.deleteAll();
         repository.saveAll(List.of(
-                new Gerente("98574307084", "GeniÃ©ve", "ger1@bantads.com.br", "41988880001", true),
+                new Gerente("98574307084", "Geniéve", "ger1@bantads.com.br", "41988880001", true),
                 new Gerente("64065268052", "Godophredo", "ger2@bantads.com.br", "41988880002", true),
-                new Gerente("23862179060", "GyÃ¢ndula", "ger3@bantads.com.br", "41988880003", true),
-                new Gerente("40501740066", "GadamÃ¢ntio", "ger4@bantads.com.br", "41988880004", true)
+                new Gerente("23862179060", "Gyândula", "ger3@bantads.com.br", "41988880003", true),
+                new Gerente("40501740066", "Gadamântio", "ger4@bantads.com.br", "41988880004", true)
         ));
     }
 

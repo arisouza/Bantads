@@ -89,7 +89,7 @@ public class ContaCommandController {
             @RequestHeader("X-User-CPF") String cpfUsuario
     ) {
         contaCommandService.depositar(numero, request.getValor(), cpfUsuario);
-        return ResponseEntity.status(HttpStatus.CREATED).body(respostaOperacao(numero, "DepÃ³sito registrado"));
+        return ResponseEntity.status(HttpStatus.CREATED).body(respostaOperacao(numero, "Depósito registrado"));
     }
 
     @PostMapping("/{numero:[0-9]{4}}/saque")
@@ -118,7 +118,7 @@ public class ContaCommandController {
                 request.getCpfDestino(),
                 request.getNomeDestino()
         );
-        return ResponseEntity.status(HttpStatus.CREATED).body(respostaOperacao(numero, "TransferÃªncia registrada"));
+        return ResponseEntity.status(HttpStatus.CREATED).body(respostaOperacao(numero, "Transferência registrada"));
     }
 
     private MensagemResponse respostaOperacao(String numero, String mensagem) {

@@ -34,7 +34,7 @@ public class ClienteController {
         service.solicitar(solicitacao);
         String base = "/clientes/solicitacoes/" + solicitacao.cpf();
         return ResponseEntity.status(HttpStatus.CREATED).body(Map.of(
-                "mensagem", "SolicitaÃ§Ã£o enviada para anÃ¡lise",
+                "mensagem", "Solicitação enviada para análise",
                 "_links", Map.of(
                         "self", Map.of("href", base),
                         "aprovacao", Map.of("href", base + "/aprovacao"),

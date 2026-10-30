@@ -35,8 +35,8 @@ class GerenteServiceTest {
 
     @Test
     void deveInserirGerenteQuandoCpfEEmailSaoUnicos() {
-        GerenteRequest request = new GerenteRequest("98574307084", "GeniÃ©ve", "ger1@bantads.com.br", "41988880001");
-        Gerente entidade = new Gerente("98574307084", "GeniÃ©ve", "ger1@bantads.com.br", "41988880001", true);
+        GerenteRequest request = new GerenteRequest("98574307084", "Geniéve", "ger1@bantads.com.br", "41988880001");
+        Gerente entidade = new Gerente("98574307084", "Geniéve", "ger1@bantads.com.br", "41988880001", true);
 
         when(repository.existsById(request.cpf())).thenReturn(false);
         when(repository.existsByEmail(request.email())).thenReturn(false);
@@ -52,7 +52,7 @@ class GerenteServiceTest {
 
     @Test
     void deveRejeitarInsercaoComEmailDuplicado() {
-        GerenteRequest request = new GerenteRequest("98574307084", "GeniÃ©ve", "ger1@bantads.com.br", "41988880001");
+        GerenteRequest request = new GerenteRequest("98574307084", "Geniéve", "ger1@bantads.com.br", "41988880001");
         when(repository.existsById(request.cpf())).thenReturn(false);
         when(repository.existsByEmail(request.email())).thenReturn(true);
 
@@ -62,13 +62,13 @@ class GerenteServiceTest {
 
     @Test
     void deveAtualizarNomeETelefoneDoGerenteAtivo() {
-        Gerente existente = new Gerente("98574307084", "GeniÃ©ve", "ger1@bantads.com.br", "41988880001", true);
+        Gerente existente = new Gerente("98574307084", "Geniéve", "ger1@bantads.com.br", "41988880001", true);
         when(repository.findByCpfAndAtivoTrue("98574307084")).thenReturn(Optional.of(existente));
         when(repository.save(any(Gerente.class))).thenAnswer(inv -> inv.getArgument(0));
 
-        GerenteResponse resposta = service.atualizar("98574307084", "  GeniÃ©ve Silva  ", "41999990000");
+        GerenteResponse resposta = service.atualizar("98574307084", "  Geniéve Silva  ", "41999990000");
 
-        assertEquals("GeniÃ©ve Silva", resposta.nome());
+        assertEquals("Geniéve Silva", resposta.nome());
         assertEquals("41999990000", resposta.telefone());
     }
 
