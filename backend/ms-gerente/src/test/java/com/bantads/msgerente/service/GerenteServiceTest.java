@@ -1,9 +1,9 @@
 package com.bantads.msgerente.service;
 
+import com.bantads.msgerente.domain.Gerente;
 import com.bantads.msgerente.dto.GerenteRequest;
 import com.bantads.msgerente.dto.GerenteResponse;
 import com.bantads.msgerente.repository.GerenteRepository;
-import java.util.List;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -14,7 +14,9 @@ import org.springframework.http.HttpStatus;
 import org.springframework.web.server.ResponseStatusException;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -33,24 +35,26 @@ class GerenteServiceTest {
 
     @Test
     void deveInserirGerenteQuandoCpfEEmailSaoUnicos() {
-        GerenteRequest request = new GerenteRequest("98574307084", "Geniéve", "ger1@bantads.com.br", "41988880001");
-        GerenteResponse esperado = new GerenteResponse("98574307084", "Geniéve", "ger1@bantads.com.br", "41988880001", true);
+        GerenteRequest request = new GerenteRequest("98574307084", "GeniÃ©ve", "ger1@bantads.com.br", "41988880001");
+        Gerente entidade = new Gerente("98574307084", "GeniÃ©ve", "ger1@bantads.com.br", "41988880001", true);
 
-        when(repository.existePorCpf(request.cpf())).thenReturn(false);
-        when(repository.existePorEmail(request.email())).thenReturn(false);
-        when(repository.porCpf(request.cpf())).thenReturn(Optional.of(esperado));
+        when(repository.existsById(request.cpf())).thenReturn(false);
+        when(repository.existsByEmail(request.email())).thenReturn(false);
+        when(repository.save(any(Gerente.class))).thenReturn(entidade);
 
         GerenteResponse resposta = service.inserir(request);
 
-        assertEquals(esperado, resposta);
-        verify(repository).inserir(request);
+        assertEquals(request.cpf(), resposta.cpf());
+        assertEquals(request.nome(), resposta.nome());
+        assertNotNull(resposta._links().get("self"));
+        verify(repository).save(any(Gerente.class));
     }
 
     @Test
     void deveRejeitarInsercaoComEmailDuplicado() {
-        GerenteRequest request = new GerenteRequest("98574307084", "Geniéve", "ger1@bantads.com.br", "41988880001");
-        when(repository.existePorCpf(request.cpf())).thenReturn(false);
-        when(repository.existePorEmail(request.email())).thenReturn(true);
+        GerenteRequest request = new GerenteRequest("98574307084", "GeniÃ©ve", "ger1@bantads.com.br", "41988880001");
+        when(repository.existsById(request.cpf())).thenReturn(false);
+        when(repository.existsByEmail(request.email())).thenReturn(true);
 
         ResponseStatusException ex = assertThrows(ResponseStatusException.class, () -> service.inserir(request));
         assertEquals(HttpStatus.CONFLICT, ex.getStatusCode());
@@ -58,13 +62,13 @@ class GerenteServiceTest {
 
     @Test
     void deveAtualizarNomeETelefoneDoGerenteAtivo() {
-        GerenteResponse atualizado = new GerenteResponse("98574307084", "Geniéve Silva", "ger1@bantads.com.br", "41999990000", true);
-        when(repository.atualizar("98574307084", "Geniéve Silva", "41999990000")).thenReturn(1);
-        when(repository.porCpf("98574307084")).thenReturn(Optional.of(atualizado));
+        Gerente existente = new Gerente("98574307084", "GeniÃ©ve", "ger1@bantads.com.br", "41988880001", true);
+        when(repository.findByCpfAndAtivoTrue("98574307084")).thenReturn(Optional.of(existente));
+        when(repository.save(any(Gerente.class))).thenAnswer(inv -> inv.getArgument(0));
 
-        GerenteResponse resposta = service.atualizar("98574307084", "  Geniéve Silva  ", "41999990000");
+        GerenteResponse resposta = service.atualizar("98574307084", "  GeniÃ©ve Silva  ", "41999990000");
 
-        assertEquals("Geniéve Silva", resposta.nome());
+        assertEquals("GeniÃ©ve Silva", resposta.nome());
         assertEquals("41999990000", resposta.telefone());
     }
 
@@ -79,7 +83,7 @@ class GerenteServiceTest {
 
     @Test
     void deveRetornarNaoEncontradoAoDesativarGerenteInexistente() {
-        when(repository.desativar("00000000000")).thenReturn(0);
+        when(repository.findById("00000000000")).thenReturn(Optional.empty());
 
         ResponseStatusException ex = assertThrows(
                 ResponseStatusException.class,
@@ -88,4 +92,3 @@ class GerenteServiceTest {
         assertEquals(HttpStatus.NOT_FOUND, ex.getStatusCode());
     }
 }
-

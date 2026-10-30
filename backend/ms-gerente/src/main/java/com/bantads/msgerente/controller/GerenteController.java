@@ -21,7 +21,12 @@ public class GerenteController {
     public GerenteResponse porCpf(@PathVariable String cpf) { return service.porCpf(cpf); }
 
     @GetMapping
-    public Map<String, Object> listar() { return Map.of("gerentes", service.listar()); }
+    public Map<String, Object> listar() {
+        return Map.of(
+                "gerentes", service.listar(),
+                "_links", Map.of("self", Map.of("href", "/gerentes"))
+        );
+    }
 
     @PostMapping
     public ResponseEntity<GerenteResponse> inserir(@Valid @RequestBody GerenteRequest req) {
@@ -31,7 +36,7 @@ public class GerenteController {
     @PutMapping("/{cpf}")
     public GerenteResponse atualizar(@PathVariable String cpf, @RequestBody Map<String, String> body) {
         if (body.containsKey("email") || (body.containsKey("cpf") && !cpf.equals(body.get("cpf")))) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "E-mail e CPF são imutáveis");
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "E-mail e CPF sÃ£o imutÃ¡veis");
         }
         return service.atualizar(cpf, body.get("nome"), body.get("telefone"));
     }

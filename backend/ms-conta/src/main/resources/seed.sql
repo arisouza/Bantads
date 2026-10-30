@@ -1,5 +1,6 @@
 BEGIN;
 
+TRUNCATE TABLE conta.saga_command_execution;
 TRUNCATE TABLE conta.eventos_processados;
 TRUNCATE TABLE conta.movimentacao_read;
 TRUNCATE TABLE conta.conta_read;
@@ -27,7 +28,7 @@ VALUES
     (
         '00000000-0000-0000-0000-000012910002',
         '1291',
-        'Depósito',
+        'DepÃ³sito',
         '{"valor":"1000.00"}'::jsonb,
         2,
         '2020-01-01T10:00:00Z'
@@ -35,7 +36,7 @@ VALUES
     (
         '00000000-0000-0000-0000-000012910003',
         '1291',
-        'Depósito',
+        'DepÃ³sito',
         '{"valor":"900.00"}'::jsonb,
         3,
         '2020-01-01T11:00:00Z'
@@ -59,7 +60,7 @@ VALUES
     (
         '00000000-0000-0000-0000-000012910006',
         '1291',
-        'Depósito',
+        'DepÃ³sito',
         '{"valor":"2000.00"}'::jsonb,
         6,
         '2020-01-10T15:00:00Z'
@@ -75,8 +76,8 @@ VALUES
     (
         '00000000-0000-0000-0000-000012910008',
         '1291',
-        'TransferênciaOrigem',
-        '{"contaDestino":"0950","cpfDestino":"09506382000","nomeDestino":"Cleuddônio","valor":"1700.00"}'::jsonb,
+        'TransferÃªnciaOrigem',
+        '{"contaDestino":"0950","cpfDestino":"09506382000","nomeDestino":"CleuddÃ´nio","valor":"1700.00"}'::jsonb,
         8,
         '2020-01-20T12:00:00Z'
     ),
@@ -91,7 +92,7 @@ VALUES
     (
         '00000000-0000-0000-0000-000009500002',
         '0950',
-        'TransferênciaDestino',
+        'TransferÃªnciaDestino',
         '{"contaOrigem":"1291","cpfOrigem":"12912861012","nomeOrigem":"Catharyna","valor":"1700.00"}'::jsonb,
         2,
         '2020-01-20T12:00:00Z'
@@ -99,7 +100,7 @@ VALUES
     (
         '00000000-0000-0000-0000-000009500003',
         '0950',
-        'Depósito',
+        'DepÃ³sito',
         '{"valor":"1000.00"}'::jsonb,
         3,
         '2025-01-01T12:00:00Z'
@@ -107,7 +108,7 @@ VALUES
     (
         '00000000-0000-0000-0000-000009500004',
         '0950',
-        'Depósito',
+        'DepÃ³sito',
         '{"valor":"5000.00"}'::jsonb,
         4,
         '2025-01-02T10:00:00Z'
@@ -123,7 +124,7 @@ VALUES
     (
         '00000000-0000-0000-0000-000009500006',
         '0950',
-        'Depósito',
+        'DepÃ³sito',
         '{"valor":"7000.00"}'::jsonb,
         6,
         '2025-02-05T10:00:00Z'
@@ -147,7 +148,7 @@ VALUES
     (
         '00000000-0000-0000-0000-000085730002',
         '8573',
-        'Depósito',
+        'DepÃ³sito',
         '{"valor":"1000.00"}'::jsonb,
         2,
         '2025-05-05T10:00:00Z'
@@ -171,7 +172,7 @@ VALUES
     (
         '00000000-0000-0000-0000-000058870002',
         '5887',
-        'Depósito',
+        'DepÃ³sito',
         '{"valor":"150000.00"}'::jsonb,
         2,
         '2025-06-01T10:00:00Z'
@@ -187,7 +188,7 @@ VALUES
     (
         '00000000-0000-0000-0000-000076170002',
         '7617',
-        'Depósito',
+        'DepÃ³sito',
         '{"valor":"1500.00"}'::jsonb,
         2,
         '2025-07-01T10:00:00Z'
@@ -221,9 +222,9 @@ saldo_final AS (
         COALESCE(
             SUM(
                 CASE
-                    WHEN tipo IN ('Depósito', 'TransferênciaDestino')
+                    WHEN tipo IN ('DepÃ³sito', 'TransferÃªnciaDestino')
                         THEN (payload ->> 'valor')::numeric(19,4)
-                    WHEN tipo IN ('Saque', 'TransferênciaOrigem')
+                    WHEN tipo IN ('Saque', 'TransferÃªnciaOrigem')
                         THEN -((payload ->> 'valor')::numeric(19,4))
                     ELSE 0::numeric
                 END
@@ -263,13 +264,13 @@ SELECT
     objeto_id,
     timestamp,
     tipo,
-    CASE WHEN tipo = 'TransferênciaDestino' THEN payload ->> 'cpfOrigem' END AS cpf_origem,
-    CASE WHEN tipo = 'TransferênciaDestino' THEN payload ->> 'nomeOrigem' END AS nome_origem,
-    CASE WHEN tipo = 'TransferênciaOrigem' THEN payload ->> 'cpfDestino' END AS cpf_destino,
-    CASE WHEN tipo = 'TransferênciaOrigem' THEN payload ->> 'nomeDestino' END AS nome_destino,
+    CASE WHEN tipo = 'TransferÃªnciaDestino' THEN payload ->> 'cpfOrigem' END AS cpf_origem,
+    CASE WHEN tipo = 'TransferÃªnciaDestino' THEN payload ->> 'nomeOrigem' END AS nome_origem,
+    CASE WHEN tipo = 'TransferÃªnciaOrigem' THEN payload ->> 'cpfDestino' END AS cpf_destino,
+    CASE WHEN tipo = 'TransferÃªnciaOrigem' THEN payload ->> 'nomeDestino' END AS nome_destino,
     (payload ->> 'valor')::numeric(19,4) AS valor
 FROM tmp_eventos_seed
-WHERE tipo IN ('Depósito', 'Saque', 'TransferênciaOrigem', 'TransferênciaDestino')
+WHERE tipo IN ('DepÃ³sito', 'Saque', 'TransferÃªnciaOrigem', 'TransferÃªnciaDestino')
 ORDER BY objeto_id, versao;
 
 INSERT INTO conta.eventos_processados (event_id, objeto_id, versao, processado_em)
