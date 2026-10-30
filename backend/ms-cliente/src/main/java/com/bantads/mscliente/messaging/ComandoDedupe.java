@@ -1,19 +1,30 @@
 package com.bantads.mscliente.messaging;
 
-import org.springframework.jdbc.core.JdbcTemplate;
+import com.bantads.mscliente.domain.ComandoProcessado;
+import com.bantads.mscliente.domain.ComandoProcessadoId;
+import com.bantads.mscliente.repository.ComandoProcessadoRepository;
 import org.springframework.stereotype.Component;
 
 @Component
 public class ComandoDedupe {
-    private final JdbcTemplate jdbc;
+    private final ComandoProcessadoRepository repository;
 
-    public ComandoDedupe(JdbcTemplate jdbc) { this.jdbc = jdbc; }
+    public ComandoDedupe(ComandoProcessadoRepository repository) {
+        this.repository = repository;
+    }
 
     public boolean jaProcessado(String sagaId, String tipo) {
-        return !jdbc.queryForList("SELECT 1 FROM cliente.comandos_processados WHERE saga_id = ? AND tipo = ?", sagaId, tipo).isEmpty();
+        return repository.existsById(new ComandoProcessadoId(sagaId, tipo));
     }
 
     public void registrar(String sagaId, String tipo) {
-        jdbc.update("INSERT INTO cliente.comandos_processados (saga_id, tipo) VALUES (?, ?) ON CONFLICT DO NOTHING", sagaId, tipo);
+        ComandoProcessadoId id = new ComandoProcessadoId(sagaId, tipo);
+        if (!repository.existsById(id)) {
+            repository.save(new ComandoProcessado(sagaId, tipo));
+        }
+    }
+
+    public void limpar() {
+        repository.deleteAll();
     }
 }

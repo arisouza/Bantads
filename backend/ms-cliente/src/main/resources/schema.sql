@@ -4,7 +4,7 @@ CREATE TABLE IF NOT EXISTS cliente.clientes (
     nome TEXT NOT NULL,
     email TEXT NOT NULL UNIQUE,
     telefone VARCHAR(11),
-    salario NUMERIC(19,2),
+    salario NUMERIC(19,4),
     logradouro TEXT,
     numero VARCHAR(30),
     complemento TEXT,
@@ -18,7 +18,7 @@ CREATE TABLE IF NOT EXISTS cliente.solicitacoes (
     nome TEXT NOT NULL,
     email TEXT NOT NULL UNIQUE,
     telefone VARCHAR(11) NOT NULL,
-    salario NUMERIC(19,2) NOT NULL,
+    salario NUMERIC(19,4) NOT NULL,
     logradouro TEXT NOT NULL,
     numero VARCHAR(30) NOT NULL,
     complemento TEXT,
@@ -33,7 +33,8 @@ CREATE TABLE IF NOT EXISTS cliente.solicitacoes (
 );
 
 ALTER TABLE cliente.clientes ADD COLUMN IF NOT EXISTS telefone VARCHAR(11);
-ALTER TABLE cliente.clientes ADD COLUMN IF NOT EXISTS salario NUMERIC(19,2);
+ALTER TABLE cliente.clientes ADD COLUMN IF NOT EXISTS salario NUMERIC(19,4);
+ALTER TABLE cliente.clientes ALTER COLUMN salario TYPE NUMERIC(19,4);
 ALTER TABLE cliente.clientes ADD COLUMN IF NOT EXISTS logradouro TEXT;
 ALTER TABLE cliente.clientes ADD COLUMN IF NOT EXISTS numero VARCHAR(30);
 ALTER TABLE cliente.clientes ADD COLUMN IF NOT EXISTS complemento TEXT;
@@ -41,7 +42,7 @@ ALTER TABLE cliente.clientes ADD COLUMN IF NOT EXISTS cep VARCHAR(8);
 ALTER TABLE cliente.clientes ADD COLUMN IF NOT EXISTS cidade TEXT;
 ALTER TABLE cliente.clientes ADD COLUMN IF NOT EXISTS uf VARCHAR(2);
 ALTER TABLE cliente.clientes ALTER COLUMN uf TYPE VARCHAR(2);
-
+ALTER TABLE cliente.solicitacoes ALTER COLUMN salario TYPE NUMERIC(19,4);
 
 CREATE TABLE IF NOT EXISTS cliente.comandos_processados (
     saga_id TEXT NOT NULL,

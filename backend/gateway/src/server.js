@@ -305,7 +305,7 @@ app.post('/solicitacoes/:cpf/rejeicao', verifyJWT, requireRole('GERENTE'), async
         return res.status(200).json({
             ...data,
             cpf,
-            status: 'NAO_APROVADO',
+            status: 'NAO_APROVADA',
             motivo: data.motivo,
         });
     } catch (err) {

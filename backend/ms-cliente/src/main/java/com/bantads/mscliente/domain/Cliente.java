@@ -10,7 +10,7 @@ public class Cliente {
     @Column(nullable = false) private String nome;
     @Column(nullable = false, unique = true) private String email;
     @Column(length = 11) private String telefone;
-    @Column(precision = 19, scale = 2) private BigDecimal salario;
+    @Column(precision = 19, scale = 4) private BigDecimal salario;
     @Embedded private Endereco endereco;
     protected Cliente() {}
     public Cliente(String cpf, String nome, String email, String telefone, BigDecimal salario, Endereco endereco) { this.cpf = cpf; this.nome = nome; this.email = email; this.telefone = telefone; this.salario = salario; this.endereco = endereco; }

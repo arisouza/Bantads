@@ -21,7 +21,12 @@ public class GerenteController {
     public GerenteResponse porCpf(@PathVariable String cpf) { return service.porCpf(cpf); }
 
     @GetMapping
-    public Map<String, Object> listar() { return Map.of("gerentes", service.listar()); }
+    public Map<String, Object> listar() {
+        return Map.of(
+                "gerentes", service.listar(),
+                "_links", Map.of("self", Map.of("href", "/gerentes"))
+        );
+    }
 
     @PostMapping
     public ResponseEntity<GerenteResponse> inserir(@Valid @RequestBody GerenteRequest req) {

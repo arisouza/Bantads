@@ -1,5 +1,6 @@
 BEGIN;
 
+TRUNCATE TABLE conta.saga_command_execution;
 TRUNCATE TABLE conta.eventos_processados;
 TRUNCATE TABLE conta.movimentacao_read;
 TRUNCATE TABLE conta.conta_read;

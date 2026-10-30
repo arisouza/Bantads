@@ -1,6 +1,8 @@
 package com.bantads.msconta.dto;
 
-public class MensagemResponse {
+import org.springframework.hateoas.RepresentationModel;
+
+public class MensagemResponse extends RepresentationModel<MensagemResponse> {
 
     private String message;
 

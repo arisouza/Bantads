@@ -23,18 +23,32 @@ public class ClienteController {
 
     @GetMapping
     public Map<String, Object> listar(@RequestParam(required = false) String busca) {
-        return Map.of("clientes", service.listar(busca));
+        return Map.of(
+                "clientes", service.listar(busca),
+                "_links", Map.of("self", Map.of("href", "/clientes"))
+        );
     }
 
     @PostMapping
-    public ResponseEntity<Map<String, String>> solicitar(@Valid @RequestBody SolicitacaoRequest solicitacao) {
+    public ResponseEntity<Map<String, Object>> solicitar(@Valid @RequestBody SolicitacaoRequest solicitacao) {
         service.solicitar(solicitacao);
-        return ResponseEntity.status(HttpStatus.CREATED).body(Map.of("mensagem", "Solicitação enviada para análise"));
+        String base = "/clientes/solicitacoes/" + solicitacao.cpf();
+        return ResponseEntity.status(HttpStatus.CREATED).body(Map.of(
+                "mensagem", "Solicitação enviada para análise",
+                "_links", Map.of(
+                        "self", Map.of("href", base),
+                        "aprovacao", Map.of("href", base + "/aprovacao"),
+                        "rejeicao", Map.of("href", base + "/rejeicao")
+                )
+        ));
     }
 
     @GetMapping("/solicitacoes")
     public Map<String, Object> listarSolicitacoes(@RequestParam(required = false) String status) {
-        return Map.of("solicitacoes", service.listarSolicitacoes(status));
+        return Map.of(
+                "solicitacoes", service.listarSolicitacoes(status),
+                "_links", Map.of("self", Map.of("href", "/clientes/solicitacoes"))
+        );
     }
 
     @GetMapping("/solicitacoes/{cpf}")

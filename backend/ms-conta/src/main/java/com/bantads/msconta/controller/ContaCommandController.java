@@ -69,17 +69,17 @@ public class ContaCommandController {
     @DeleteMapping("/{numero:[0-9]{4}}")
     public ResponseEntity<MensagemResponse> remover(@PathVariable String numero) {
         Conta conta = contaCommandService.removerConta(numero);
-        return ResponseEntity.ok(new MensagemResponse(
-                "Conta " + conta.getNumeroConta() + " removida"
-        ));
+        MensagemResponse response = new MensagemResponse("Conta " + conta.getNumeroConta() + " removida");
+        response.add(linkTo(methodOn(ContaQueryController.class).listar()).withRel("contas"));
+        return ResponseEntity.ok(response);
     }
 
     @DeleteMapping("/cpf/{cpf}")
     public ResponseEntity<MensagemResponse> removerPorCpf(@PathVariable String cpf) {
         Conta conta = contaCommandService.removerContaPorCpf(cpf);
-        return ResponseEntity.ok(new MensagemResponse(
-                "Conta " + conta.getNumeroConta() + " do CPF " + cpf + " removida"
-        ));
+        MensagemResponse response = new MensagemResponse("Conta " + conta.getNumeroConta() + " do CPF " + cpf + " removida");
+        response.add(linkTo(methodOn(ContaQueryController.class).listar()).withRel("contas"));
+        return ResponseEntity.ok(response);
     }
 
     @PostMapping("/{numero:[0-9]{4}}/deposito")
@@ -89,7 +89,7 @@ public class ContaCommandController {
             @RequestHeader("X-User-CPF") String cpfUsuario
     ) {
         contaCommandService.depositar(numero, request.getValor(), cpfUsuario);
-        return ResponseEntity.ok(new MensagemResponse("Depósito registrado"));
+        return ResponseEntity.status(HttpStatus.CREATED).body(respostaOperacao(numero, "Depósito registrado"));
     }
 
     @PostMapping("/{numero:[0-9]{4}}/saque")
@@ -99,7 +99,7 @@ public class ContaCommandController {
             @RequestHeader("X-User-CPF") String cpfUsuario
     ) {
         contaCommandService.sacar(numero, request.getValor(), cpfUsuario);
-        return ResponseEntity.ok(new MensagemResponse("Saque registrado"));
+        return ResponseEntity.status(HttpStatus.CREATED).body(respostaOperacao(numero, "Saque registrado"));
     }
 
     @PostMapping("/{numero:[0-9]{4}}/transferencia")
@@ -118,6 +118,13 @@ public class ContaCommandController {
                 request.getCpfDestino(),
                 request.getNomeDestino()
         );
-        return ResponseEntity.ok(new MensagemResponse("Transferência registrada"));
+        return ResponseEntity.status(HttpStatus.CREATED).body(respostaOperacao(numero, "Transferência registrada"));
+    }
+
+    private MensagemResponse respostaOperacao(String numero, String mensagem) {
+        MensagemResponse response = new MensagemResponse(mensagem);
+        response.add(linkTo(methodOn(ContaQueryController.class).buscar(numero)).withRel("conta"));
+        response.add(linkTo(methodOn(ContaQueryController.class).extrato(numero, null, null)).withRel("extrato"));
+        return response;
     }
 }
