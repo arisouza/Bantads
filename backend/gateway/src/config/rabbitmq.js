@@ -8,7 +8,7 @@ const connectRabbitMQ = async (retries = 10, delay = 3000) => {
     for (let i = 0; i < retries; i++) {
         try {
             const conn = await amqp.connect(RABBITMQ_URL);
-            channel = await conn.createChannel();
+            channel = await conn.createConfirmChannel();
 
             const queues = ['saga.cmd', 'ms.email.cmd'];
             for (const q of queues) {
@@ -30,4 +30,14 @@ const getChannel = () => {
     return channel;
 };
 
-module.exports = { connectRabbitMQ, getChannel };
+const publishToQueue = async (queue, message) => {
+    const activeChannel = getChannel();
+    await activeChannel.assertQueue(queue, { durable: true });
+    activeChannel.sendToQueue(queue, Buffer.from(JSON.stringify(message)), {
+        persistent: true,
+        contentType: 'application/json'
+    });
+    await activeChannel.waitForConfirms();
+};
+
+module.exports = { connectRabbitMQ, getChannel, publishToQueue };

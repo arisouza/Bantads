@@ -14,7 +14,11 @@ import java.util.List;
 public class AuthService {
     private final UsuarioRepository usuarios;
 
-    private static final String HASH_TADS = "$argon2id$v=19$m=19456,t=2,p=1$I/uDJP8rQ8G7VcdjsGj6yg$hfVDzW7NkVMRWxf6CLMNxIEIx1wD1EmDLC0eT7rkt1s";
+    /** Hash distribuído pelo seed original, usado apenas para migração. */
+    private static final String HASH_SEED_LEGADO = "$argon2id$v=19$m=19456,t=2,p=1$I/uDJP8rQ8G7VcdjsGj6yg$hfVDzW7NkVMRWxf6CLMNxIEIx1wD1EmDLC0eT7rkt1s";
+    /** Hash usado por uma versão anterior do volume de demonstração. */
+    private static final String HASH_SEED_ANTERIOR = "$argon2id$v=19$m=16384,t=2,p=1$c2FsdHNhbHRzYWx0$LqV9aQZJ1Z2W8+tE3Z+iX/T2z3B7lQoXmJ4hXjD7wYk";
+    private static final String SENHA_SEED = "tads";
 
     private static final List<Object[]> SEED = List.of(
         new Object[]{"12912861012", "cli1@bantads.com.br", "CLIENTE"},
@@ -61,8 +65,7 @@ public class AuthService {
             ? cmd.senha()
             : gerarSenhaAleatoria();
 
-        var argon = Argon2Factory.create(Argon2Factory.Argon2Types.ARGON2id);
-        String hash = argon.hash(2, 19456, 1, senhaFinal.toCharArray());
+        String hash = hashSenha(senhaFinal);
 
         var u = new Usuario(cmd.cpf(), cmd.email(), hash, cmd.tipo(), true);
         usuarios.save(u);
@@ -90,9 +93,24 @@ public class AuthService {
     public void reboot() {
         usuarios.deleteAll();
         for (var row : SEED) {
-            var u = new Usuario((String) row[0], (String) row[1], HASH_TADS, (String) row[2], true);
+            var u = new Usuario((String) row[0], (String) row[1], hashSenha(SENHA_SEED), (String) row[2], true);
             usuarios.save(u);
         }
+    }
+
+    /**
+     * Corrige somente os usuários carregados com o hash de seed legado.
+     * Senhas criadas ou alteradas por usuários nunca são substituídas.
+     */
+    public int migrarHashesSeedLegados() {
+        int migrados = 0;
+        for (Usuario usuario : usuarios.findAll()) {
+            if (!ehHashSeedLegado(usuario.getSenha())) continue;
+            usuario.setSenha(hashSenha(SENHA_SEED));
+            usuarios.save(usuario);
+            migrados++;
+        }
+        return migrados;
     }
 
     private String gerarSenhaAleatoria() {
@@ -101,5 +119,19 @@ public class AuthService {
         var sb = new StringBuilder(10);
         for (int i = 0; i < 10; i++) sb.append(chars.charAt(rng.nextInt(chars.length())));
         return sb.toString();
+    }
+
+    private String hashSenha(String senha) {
+        var argon = Argon2Factory.create(Argon2Factory.Argon2Types.ARGON2id);
+        char[] password = senha.toCharArray();
+        try {
+            return argon.hash(2, 19456, 1, password);
+        } finally {
+            argon.wipeArray(password);
+        }
+    }
+
+    private boolean ehHashSeedLegado(String hash) {
+        return HASH_SEED_LEGADO.equals(hash) || HASH_SEED_ANTERIOR.equals(hash);
     }
 }

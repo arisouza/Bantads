@@ -5,8 +5,15 @@ const { createProxyMiddleware, fixRequestBody } = require('http-proxy-middleware
 const { v4: uuidv4 } = require('uuid');
 
 const { redisClient, connectRedis, invalidateCache } = require('./config/redis');
-const { connectRabbitMQ, getChannel } = require('./config/rabbitmq');
+const { connectRabbitMQ, publishToQueue } = require('./config/rabbitmq');
 const { verifyJWT, requireRole, SECRET } = require('./middlewares/auth');
+const {
+    authorizeReboot,
+    fetchWithTimeout,
+    jobTtlSeconds,
+    limparChavesDeTeste,
+    serviceErrorResponse
+} = require('./services/resilience');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -16,6 +23,8 @@ const GERENTE_URL = process.env.GERENTE_URL || 'http://ms-gerente:3003';
 const CONTA_URL = process.env.CONTA_URL || 'http://ms-conta:3004';
 
 const GATEWAY_BASE = process.env.GATEWAY_BASE || 'http://localhost:3000';
+const nativeFetch = globalThis.fetch;
+const fetch = (url, options) => fetchWithTimeout(nativeFetch, url, options);
 
 app.use(cors());
 app.use(express.json());
@@ -56,8 +65,12 @@ const fetchJson = async (url, opts = {}) => {
 
 const publishSaga = async (action, data, extra = {}) => {
     const sagaId = uuidv4();
-    await redisClient.set(`job:${sagaId}`, JSON.stringify({ jobId: sagaId, status: 'PENDENTE', ...extra }), { EX: 300 });
-    getChannel().sendToQueue('saga.cmd', Buffer.from(JSON.stringify({ sagaId, action, data })));
+    await redisClient.set(
+        `job:${sagaId}`,
+        JSON.stringify({ jobId: sagaId, status: 'PENDENTE', ...extra }),
+        { EX: jobTtlSeconds() }
+    );
+    await publishToQueue('saga.cmd', { sagaId, action, data });
     return sagaId;
 };
 
@@ -68,7 +81,7 @@ const getJob = async (jobId) => {
 
 app.get('/health', (req, res) => res.status(200).json({ status: 'UP' }));
 
-app.post('/reboot', async (req, res) => {
+app.post('/reboot', authorizeReboot, async (req, res) => {
     try {
         const [rCliente, rGerente, rConta, rAuth] = await Promise.all([
             fetch(`${CLIENTE_URL}/clientes/reboot`, { method: 'POST' }),
@@ -83,18 +96,18 @@ app.post('/reboot', async (req, res) => {
             rConta.ok ? rConta.json() : {},
         ]);
 
-        const keys = await redisClient.keys('*');
-        if (keys.length > 0) await redisClient.del(keys);
+        const chavesRemovidas = await limparChavesDeTeste(redisClient);
 
         return res.status(200).json({
             status: 'ok',
             clientes: cli.clientes ?? 5,
             gerentes: ger.gerentes ?? 4,
             contas: cnt.contas ?? 5,
+            chavesRedisRemovidas: chavesRemovidas,
         });
     } catch (err) {
         console.error('Reboot error:', err.message);
-        return res.status(200).json({ status: 'ok', clientes: 5, gerentes: 4, contas: 5 });
+        return serviceErrorResponse(res, err);
     }
 });
 
@@ -137,6 +150,9 @@ app.post('/login', async (req, res) => {
 
         return res.status(200).json({ auth: true, token, tipo, usuario: { cpf, nome, email } });
     } catch (err) {
+        if (err.name === 'ServiceTimeoutError') {
+            return res.status(504).json({ auth: false, message: 'Tempo limite ao autenticar.' });
+        }
         return res.status(500).json({ auth: false, message: 'Erro interno no login' });
     }
 });
@@ -292,12 +308,12 @@ app.post('/solicitacoes/:cpf/rejeicao', verifyJWT, requireRole('GERENTE'), async
         const data = dtoSolicitacao(await r.json());
         if (data.email) {
             try {
-                getChannel().sendToQueue('ms.email.cmd', Buffer.from(JSON.stringify({
+                await publishToQueue('ms.email.cmd', {
                     destinatario: data.email,
                     tipo: 'REJEICAO',
                     assunto: 'Sua solicitação BANTADS foi rejeitada',
                     dados: { nome: data.nome, motivo: data.motivo }
-                })), { persistent: true });
+                });
             } catch (emailError) {
                 console.error('Falha ao publicar e-mail de rejeição:', emailError.message);
             }

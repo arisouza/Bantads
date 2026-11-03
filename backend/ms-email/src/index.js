@@ -1,5 +1,3 @@
-const amqp = require('amqplib');
-const nodemailer = require('nodemailer');
 const fs = require('fs');
 const path = require('path');
 
@@ -10,12 +8,17 @@ const EMAIL_PASS = process.env.EMAIL_PASS;
 // O arquivo e o volume são deliberadamente preservados para os testes do grupo.
 const SENHA_PATH = path.join('/app', 'senha_recente.txt');
 
-const transporter = EMAIL_USER && EMAIL_PASS
-    ? nodemailer.createTransport({
+const criarTransporter = () => {
+    if (!EMAIL_USER || !EMAIL_PASS) return null;
+    // Dependências de infraestrutura só são carregadas quando o processo vai
+    // realmente integrar com SMTP/RabbitMQ. Assim a regra de negócio pode ser
+    // testada isoladamente sem simular módulos externos.
+    const nodemailer = require('nodemailer');
+    return nodemailer.createTransport({
         service: 'gmail',
         auth: { user: EMAIL_USER, pass: EMAIL_PASS }
-    })
-    : null;
+    });
+};
 
 const textoSeguro = (valor) => String(valor ?? '')
     .replace(/&/g, '&amp;')
@@ -71,6 +74,7 @@ const processEmail = async (msg, channel) => {
         console.log(`[EMAIL] Email para: ${destinatario} | Tipo: ${tipo}`);
         registrarSenhaParaTeste(destinatario, dados?.senha);
 
+        const transporter = criarTransporter();
         if (transporter) {
             await transporter.sendMail({
                 from: `"BANTADS" <${EMAIL_USER}>`,
@@ -96,6 +100,7 @@ const processEmail = async (msg, channel) => {
 
 const start = async () => {
     try {
+        const amqp = require('amqplib');
         const conn = await amqp.connect(RABBITMQ_URL);
         const channel = await conn.createChannel();
 
@@ -115,6 +120,7 @@ if (require.main === module) start();
 
 module.exports = {
     buildHtml,
+    criarTransporter,
     processEmail,
     registrarSenhaParaTeste,
     responderSaga,
