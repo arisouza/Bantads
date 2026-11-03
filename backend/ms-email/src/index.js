@@ -42,13 +42,6 @@ const buildHtml = (content) => {
     return `<pre>${textoSeguro(JSON.stringify(dados, null, 2))}</pre>`;
 };
 
-const responderSaga = (channel, sagaId, tipo, erro) => {
-    if (!sagaId) return;
-    const resposta = { sagaId, tipo, payload: {} };
-    if (erro) resposta.erro = erro;
-    channel.sendToQueue('orquestrador.reply', Buffer.from(JSON.stringify(resposta)), { persistent: true });
-};
-
 const validarMensagem = ({ destinatario, tipo, dados }) => {
     if (!tipo || typeof tipo !== 'string') throw new Error('Tipo de e-mail não informado.');
     if (!destinatario || typeof destinatario !== 'string') throw new Error('Destinatário inválido.');
@@ -89,11 +82,9 @@ const processEmail = async (msg, channel) => {
             console.log('[EMAIL] SMTP não configurado; e-mail registrado para teste local.');
         }
 
-        responderSaga(channel, sagaId, 'EMAIL_ENVIADO');
         channel.ack(msg);
     } catch (err) {
         console.error('Erro ao processar mensagem de e-mail:', err.message);
-        responderSaga(channel, content?.sagaId, 'EMAIL_FAILED', err.message);
         channel.nack(msg, false, false);
     }
 };
@@ -123,7 +114,6 @@ module.exports = {
     criarTransporter,
     processEmail,
     registrarSenhaParaTeste,
-    responderSaga,
     start,
     validarMensagem
 };

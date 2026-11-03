@@ -30,7 +30,7 @@ test('exige destinatario, tipo e senha no e-mail de senha inicial', () => {
     assert.throws(() => validarMensagem({ destinatario: 'a@b.com', dados: {} }), /Tipo/);
 });
 
-test('confirma a saga em ambiente local quando SMTP nao esta configurado', async () => {
+test('processa o e-mail em ambiente local sem publicar resposta ao orquestrador', async () => {
     const canal = canalFalso();
     const originalLog = console.log;
     console.log = () => {};
@@ -42,16 +42,13 @@ test('confirma a saga em ambiente local quando SMTP nao esta configurado', async
         await processEmail(msg, canal);
         assert.equal(canal.acks.length, 1);
         assert.equal(canal.nacks.length, 0);
-        assert.deepEqual(canal.respostas, [{
-            fila: 'orquestrador.reply',
-            corpo: { sagaId: 'saga-email-1', tipo: 'EMAIL_ENVIADO', payload: {} }
-        }]);
+        assert.deepEqual(canal.respostas, []);
     } finally {
         console.log = originalLog;
     }
 });
 
-test('informa EMAIL_FAILED e envia a mensagem invalida para a DLQ', async () => {
+test('descarta a mensagem invalida sem publicar EMAIL_FAILED ao orquestrador', async () => {
     const canal = canalFalso();
     const originalError = console.error;
     console.error = () => {};
@@ -60,9 +57,7 @@ test('informa EMAIL_FAILED e envia a mensagem invalida para a DLQ', async () => 
         await processEmail(msg, canal);
         assert.equal(canal.acks.length, 0);
         assert.deepEqual(canal.nacks, [{ msg, allUpTo: false, requeue: false }]);
-        assert.equal(canal.respostas[0].corpo.sagaId, 'saga-email-2');
-        assert.equal(canal.respostas[0].corpo.tipo, 'EMAIL_FAILED');
-        assert.match(canal.respostas[0].corpo.erro, /Senha inicial/);
+        assert.deepEqual(canal.respostas, []);
     } finally {
         console.error = originalError;
     }

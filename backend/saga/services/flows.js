@@ -75,13 +75,15 @@ const aprovarCliente = {
         },
         {
             nome: 'email',
-            sucesso: 'EMAIL_ENVIADO',
-            falha: 'EMAIL_FAILED',
             executar: async (ctx, id) => {
-                msg.email(id, ctx.email, 'SENHA_INICIAL', 'Sua conta BANTADS foi criada!', {
-                    senha: await segredos.obter(id),
-                    cpf: ctx.cpf
-                });
+                try {
+                    msg.email(id, ctx.email, 'SENHA_INICIAL', 'Sua conta BANTADS foi criada!', {
+                        senha: await segredos.obter(id),
+                        cpf: ctx.cpf
+                    });
+                } catch (erro) {
+                    console.error(`[SAGA] Falha ao publicar e-mail da aprovação ${id}:`, erro.message);
+                }
             }
         }
     ]

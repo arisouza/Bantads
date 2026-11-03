@@ -51,6 +51,10 @@ const makeHarness = () => {
             executar: publishPrimary('conta'),
             compensacao: { comando: 'DELETE_CONTA', sucesso: ['CONTA_REMOVIDA'], falha: ['CONTA_FAILED'] },
             desfazer: compensar('DELETE_CONTA')
+        },
+        {
+            nome: 'email',
+            executar: async () => {}
         }
     ];
 
@@ -144,6 +148,29 @@ test('executa compensacoes em ordem inversa e aguarda cada resposta', async () =
     }
 });
 
+test('conclui sem aguardar resposta do e-mail e ignora respostas atrasadas', async () => {
+    const harness = makeHarness();
+    try {
+        await harness.orchestrator.iniciar({ sagaId: 'saga-1', action: 'TESTE', data: { cpf: '111' } });
+        await resposta(harness.orchestrator, 'CLIENTE_CREATED');
+        await resposta(harness.orchestrator, 'AUTH_CREATED');
+        await resposta(harness.orchestrator, 'CONTA_CREATED');
+
+        const saga = JSON.parse(harness.values.get('saga:saga-1'));
+        assert.equal(saga.status, 'CONCLUIDO');
+        assert.equal(JSON.parse(harness.values.get('job:saga-1')).status, 'CONCLUIDO');
+        assert.equal([...harness.timers].filter((timer) => timer.active).length, 0);
+
+        await resposta(harness.orchestrator, 'EMAIL_ENVIADO');
+        await resposta(harness.orchestrator, 'EMAIL_FAILED');
+
+        assert.equal(JSON.parse(harness.values.get('saga:saga-1')).status, 'CONCLUIDO');
+        assert.equal(harness.published.filter((item) => item.startsWith('compensacao:')).length, 0);
+    } finally {
+        harness.restore();
+    }
+});
+
 test('falha de compensacao finaliza o job e registra o erro', async () => {
     const harness = makeHarness();
     try {
@@ -210,7 +237,7 @@ test('recupera compensacao em andamento apos reinicializacao', async () => {
     }
 });
 
-test('mantem os contratos reais de compensacao de R9', () => {
+const carregarFlowsReais = ({ email = () => {} } = {}) => {
     const noopRedis = { get: async () => null, set: async () => 'OK', del: async () => {} };
     require.cache[redisPath] = {
         id: redisPath, filename: redisPath, loaded: true,
@@ -218,7 +245,7 @@ test('mantem os contratos reais de compensacao de R9', () => {
     };
     require.cache[messagingPath] = {
         id: messagingPath, filename: messagingPath, loaded: true,
-        exports: { cliente: () => {}, gerente: () => {}, auth: () => {}, conta: () => {}, email: () => {} }
+        exports: { cliente: () => {}, gerente: () => {}, auth: () => {}, conta: () => {}, email }
     };
     require.cache[queriesPath] = {
         id: queriesPath, filename: queriesPath, loaded: true,
@@ -230,19 +257,78 @@ test('mantem os contratos reais de compensacao de R9', () => {
     };
     delete require.cache[flowsPath];
 
+    return {
+        flows: require(flowsPath),
+        restore: () => {
+            delete require.cache[flowsPath];
+            delete require.cache[redisPath];
+            delete require.cache[messagingPath];
+            delete require.cache[queriesPath];
+            delete require.cache[segredosPath];
+        }
+    };
+};
+
+test('mantem as compensacoes transacionais e torna o e-mail de R9 fire-and-forget', () => {
+    const harness = carregarFlowsReais();
     try {
-        const flows = require(flowsPath);
-        const passos = flows.APROVAR_CLIENTE_START.passos;
-        const conta = passos.find((passo) => passo.nome === 'conta');
+        const r9 = harness.flows.APROVAR_CLIENTE_START.passos;
+        const cliente = r9.find((passo) => passo.nome === 'cliente');
+        const auth = r9.find((passo) => passo.nome === 'auth');
+        const conta = r9.find((passo) => passo.nome === 'conta');
+        const email = r9.find((passo) => passo.nome === 'email');
+
+        assert.equal(cliente.compensacao.comando, 'ROLLBACK_CLIENTE');
+        assert.deepEqual(cliente.compensacao.sucesso, ['CLIENTE_ROLLBACK_DONE']);
+        assert.deepEqual(cliente.compensacao.falha, ['CLIENTE_FAILED']);
+        assert.equal(auth.compensacao.comando, 'ROLLBACK_AUTH');
+        assert.deepEqual(auth.compensacao.sucesso, ['AUTH_ROLLBACK_DONE']);
+        assert.deepEqual(auth.compensacao.falha, ['AUTH_GERENTE_REVOKE_FAILED']);
         assert.equal(conta.compensacao.comando, 'DELETE_CONTA');
         assert.deepEqual(conta.compensacao.sucesso, ['CONTA_REMOVIDA']);
         assert.deepEqual(conta.compensacao.falha, ['CONTA_FAILED']);
+        assert.equal(email.sucesso, undefined);
+        assert.equal(email.falha, undefined);
+        assert.equal(email.compensacao, undefined);
     } finally {
-        delete require.cache[flowsPath];
-        delete require.cache[redisPath];
-        delete require.cache[messagingPath];
-        delete require.cache[queriesPath];
-        delete require.cache[segredosPath];
+        harness.restore();
+    }
+});
+
+test('R9 absorve falha local ao publicar o e-mail', async () => {
+    let tentativas = 0;
+    const originalError = console.error;
+    console.error = () => {};
+    const harness = carregarFlowsReais({
+        email: () => {
+            tentativas += 1;
+            throw new Error('RabbitMQ indisponível');
+        }
+    });
+    try {
+        const email = harness.flows.APROVAR_CLIENTE_START.passos.find((passo) => passo.nome === 'email');
+        await assert.doesNotReject(email.executar({ email: 'cliente@bantads.com', cpf: '111' }, 'saga-r9'));
+        assert.equal(tentativas, 1);
+    } finally {
+        console.error = originalError;
+        harness.restore();
+    }
+});
+
+test('R13 e R15 continuam com e-mail sem espera e compensacoes transacionais', () => {
+    const harness = carregarFlowsReais();
+    try {
+        const r13 = harness.flows.INSERIR_GERENTE_START.passos;
+        const r15 = harness.flows.REMOVER_GERENTE_START.passos;
+        assert.equal(r13.find((passo) => passo.nome === 'email').sucesso, undefined);
+        assert.equal(r15.find((passo) => passo.nome === 'email').sucesso, undefined);
+        assert.equal(r13.find((passo) => passo.nome === 'gerente').compensacao.comando, 'ROLLBACK_GERENTE');
+        assert.equal(r13.find((passo) => passo.nome === 'auth').compensacao.comando, 'ROLLBACK_AUTH');
+        assert.equal(r15.find((passo) => passo.nome === 'gerente').compensacao.comando, 'REACTIVATE_GERENTE');
+        assert.equal(r15.find((passo) => passo.nome === 'auth').compensacao.comando, 'REACTIVATE_AUTH_GERENTE');
+        assert.equal(r15.find((passo) => passo.nome === 'conta').compensacao.comando, 'REASSOCIAR_CONTAS');
+    } finally {
+        harness.restore();
     }
 });
 
