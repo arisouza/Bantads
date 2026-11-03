@@ -54,6 +54,19 @@ describe('Gerentes', () => {
     expect(fixture.nativeElement.textContent).toContain('41988880001');
   });
 
+  it('deve exibir zero quando o gerente não possui clientes', () => {
+    iniciarComLista({ gerentes: [{ ...gerente, quantidadeClientes: 0 }] });
+
+    expect(fixture.nativeElement.textContent).toContain('0');
+    expect(fixture.nativeElement.textContent).not.toContain('Indisponível');
+  });
+
+  it('deve exibir indisponível quando a quantidade não puder ser consultada', () => {
+    iniciarComLista({ gerentes: [{ ...gerente, quantidadeClientes: null }] });
+
+    expect(fixture.nativeElement.textContent).toContain('Indisponível');
+  });
+
   it('deve exibir estado vazio', () => {
     iniciarComLista({ gerentes: [] });
     expect(fixture.nativeElement.textContent).toContain('Nenhum gerente encontrado.');

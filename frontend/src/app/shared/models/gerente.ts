@@ -7,7 +7,7 @@ export interface Gerente {
 }
 
 export interface GerenteListagem extends Gerente {
-  quantidadeClientes: number;
+  quantidadeClientes: number | null;
 }
 
 export interface GerentesResponse {

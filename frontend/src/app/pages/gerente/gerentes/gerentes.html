@@ -106,7 +106,7 @@
                   <td>{{ gerente.email }}</td>
                   <td class="sem-quebra">{{ gerente.telefone }}</td>
                   <td><span class="status ativo">{{ gerente.ativo ? 'Ativo' : 'Inativo' }}</span></td>
-                  <td>{{ gerente.quantidadeClientes }}</td>
+                  <td>{{ gerente.quantidadeClientes ?? 'Indisponível' }}</td>
                   <td>
                     <div class="acoes">
                       <button mat-stroked-button type="button" (click)="abrirEdicao(gerente)" [disabled]="processando() || modalRemocaoAberto()">Editar</button>

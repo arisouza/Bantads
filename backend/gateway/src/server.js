@@ -14,6 +14,7 @@ const {
     limparChavesDeTeste,
     serviceErrorResponse
 } = require('./services/resilience');
+const { comporGerentesComQuantidade } = require('./services/gerentes');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -643,26 +644,11 @@ app.get('/gerentes', verifyJWT, requireRole('GERENTE'), async (req, res) => {
 
         const { gerentes: lista } = await gerRes.json();
 
-        const cpfs = lista.map(g => g.cpf).join(',');
-        const qtdMap = {};
-        if (cpfs) {
-            try {
-                const cntRes = await fetch(`${CONTA_URL}/contas/gerente/menos-clientes?cpfs=${encodeURIComponent(cpfs)}`);
-                if (cntRes.ok) {
-                    for (const g of lista) {
-                        const r = await fetch(`${CONTA_URL}/contas/gerente/${g.cpf}`);
-                        if (r.ok) {
-                            const body = await r.json();
-                            qtdMap[g.cpf] = (body.contas ?? []).length;
-                        }
-                    }
-                }
-            } catch { }
-        }
-
-        const result = lista.map(g => ({
-            ...g,
-            quantidadeClientes: qtdMap[g.cpf] ?? 0,
+        const result = await comporGerentesComQuantidade(
+            lista,
+            (cpf) => fetch(`${CONTA_URL}/contas/gerente/${cpf}`)
+        );
+        result.forEach(g => Object.assign(g, {
             _links: {
                 self: { href: `${GATEWAY_BASE}/gerentes/${g.cpf}` },
                 atualizacao: { href: `${GATEWAY_BASE}/gerentes/${g.cpf}` },
