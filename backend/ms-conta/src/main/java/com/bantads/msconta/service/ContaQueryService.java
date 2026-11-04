@@ -10,6 +10,7 @@ import com.bantads.msconta.dto.ContasGerenteResponse;
 import com.bantads.msconta.dto.ExtratoResponse;
 import com.bantads.msconta.dto.GerenteMenosClientesResponse;
 import com.bantads.msconta.dto.MovimentacaoResponse;
+import com.bantads.msconta.dto.SaldoResponse;
 import com.bantads.msconta.exception.ContaNaoEncontradaException;
 import com.bantads.msconta.exception.ValorInvalidoException;
 import com.bantads.msconta.repository.query.ContaReadRepository;
@@ -52,6 +53,16 @@ public class ContaQueryService {
         ContaRead conta = contaReadRepository.findByCpfCliente(cpfCliente)
                 .orElseThrow(() -> new ContaNaoEncontradaException(cpfCliente));
         return toContaResponse(conta);
+    }
+
+    public SaldoResponse buscarSaldoPorNumero(String numeroConta) {
+        ContaResponse conta = buscarPorNumero(numeroConta);
+        return new SaldoResponse(conta.getNumeroConta(), conta.getCpfCliente(), conta.getSaldo());
+    }
+
+    public SaldoResponse buscarSaldoPorCpf(String cpfCliente) {
+        ContaResponse conta = buscarPorCpf(cpfCliente);
+        return new SaldoResponse(conta.getNumeroConta(), conta.getCpfCliente(), conta.getSaldo());
     }
 
     public List<ContaResponse> listarTodas() {

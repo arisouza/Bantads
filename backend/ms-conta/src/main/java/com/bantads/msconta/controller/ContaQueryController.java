@@ -5,6 +5,7 @@ import com.bantads.msconta.dto.ContaResponse;
 import com.bantads.msconta.dto.ContasGerenteResponse;
 import com.bantads.msconta.dto.ExtratoResponse;
 import com.bantads.msconta.dto.GerenteMenosClientesResponse;
+import com.bantads.msconta.dto.SaldoResponse;
 import com.bantads.msconta.service.ContaQueryService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -46,10 +47,28 @@ public class ContaQueryController {
         return ResponseEntity.ok(response);
     }
 
+    @GetMapping("/{numero:[0-9]{4}}/saldo")
+    public ResponseEntity<SaldoResponse> saldoPorNumero(@PathVariable String numero) {
+        SaldoResponse response = contaQueryService.buscarSaldoPorNumero(numero);
+        response.add(linkTo(methodOn(ContaQueryController.class).saldoPorNumero(numero)).withSelfRel());
+        response.add(linkTo(methodOn(ContaQueryController.class).buscar(numero)).withRel("conta"));
+        response.add(linkTo(methodOn(ContaQueryController.class).extrato(numero, null, null)).withRel("extrato"));
+        return ResponseEntity.ok(response);
+    }
+
     @GetMapping("/cliente/{cpf}")
     public ResponseEntity<ContaResponse> buscarPorCpf(@PathVariable String cpf) {
         ContaResponse response = contaQueryService.buscarPorCpf(cpf);
         adicionarLinks(response);
+        return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/cliente/{cpf}/saldo")
+    public ResponseEntity<SaldoResponse> saldoPorCpf(@PathVariable String cpf) {
+        SaldoResponse response = contaQueryService.buscarSaldoPorCpf(cpf);
+        response.add(linkTo(methodOn(ContaQueryController.class).saldoPorCpf(cpf)).withSelfRel());
+        response.add(linkTo(methodOn(ContaQueryController.class).buscarPorCpf(cpf)).withRel("conta"));
+        response.add(linkTo(methodOn(ContaQueryController.class).extrato(response.getNumeroConta(), null, null)).withRel("extrato"));
         return ResponseEntity.ok(response);
     }
 
@@ -103,6 +122,7 @@ public class ContaQueryController {
     private void adicionarLinks(ContaResponse response) {
         String numero = response.getNumeroConta();
         response.add(linkTo(methodOn(ContaQueryController.class).buscar(numero)).withSelfRel());
+        response.add(linkTo(methodOn(ContaQueryController.class).saldoPorNumero(numero)).withRel("saldo"));
         response.add(linkTo(methodOn(ContaCommandController.class).depositar(numero, null, null)).withRel("deposito"));
         response.add(linkTo(methodOn(ContaCommandController.class).sacar(numero, null, null)).withRel("saque"));
         response.add(linkTo(methodOn(ContaCommandController.class).transferir(numero, null, null)).withRel("transferencia"));
