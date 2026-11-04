@@ -2,7 +2,10 @@ package com.bantads.msconta.messaging;
 
 import com.bantads.msconta.domain.entity.Conta;
 import com.bantads.msconta.domain.entity.SagaCommandExecution;
+import com.bantads.msconta.dto.ContaMenorSaldoResponse;
+import com.bantads.msconta.dto.GerenteMenosClientesResponse;
 import com.bantads.msconta.service.ContaCommandService;
+import com.bantads.msconta.service.ContaQueryService;
 import com.bantads.msconta.service.SagaCommandExecutionService;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -18,17 +21,20 @@ import java.util.Optional;
 public class SagaCommandConsumer {
 
     private final ContaCommandService contaCommandService;
+    private final ContaQueryService contaQueryService;
     private final SagaCommandExecutionService sagaCommandExecutionService;
     private final SagaReplyPublisher sagaReplyPublisher;
     private final ObjectMapper objectMapper;
 
     public SagaCommandConsumer(
             ContaCommandService contaCommandService,
+            ContaQueryService contaQueryService,
             SagaCommandExecutionService sagaCommandExecutionService,
             SagaReplyPublisher sagaReplyPublisher,
             ObjectMapper objectMapper
     ) {
         this.contaCommandService = contaCommandService;
+        this.contaQueryService = contaQueryService;
         this.sagaCommandExecutionService = sagaCommandExecutionService;
         this.sagaReplyPublisher = sagaReplyPublisher;
         this.objectMapper = objectMapper;
@@ -61,6 +67,8 @@ public class SagaCommandConsumer {
                 );
                 case "TRANSFERIR_CONTAS_GERENTE" -> processarTransferirContasGerente(command, execution);
                 case "REASSOCIAR_CONTAS" -> processarReassociarContas(command, execution);
+                case "IDENTIFICAR_GERENTE_MENOS_CLIENTES" -> processarIdentificarGerenteMenosClientes(command, execution);
+                case "IDENTIFICAR_CONTA_MENOR_SALDO" -> processarIdentificarContaMenorSaldo(command, execution);
                 case "DELETE_CONTA", "REMOVER_CONTA" -> processarRemoverConta(
                         command,
                         execution
@@ -232,6 +240,59 @@ public class SagaCommandConsumer {
         SagaReplyMessage reply = new SagaReplyMessage();
         reply.setSagaId(command.getSagaId());
         reply.setTipo("CONTAS_GERENTE_TRANSFERIDAS");
+        reply.setPayload(responsePayload);
+        reply.setTimestamp(command.getTimestamp());
+        reply.setStatus("CONCLUIDO");
+        reply.setErro(null);
+        sagaReplyPublisher.publicar(reply);
+    }
+
+    private void processarIdentificarGerenteMenosClientes(
+            SagaCommandMessage command,
+            SagaCommandExecution execution
+    ) throws JsonProcessingException {
+        List<String> cpfsGerentesAtivos = getStringList(command.getPayload(), "cpfsGerentesAtivos");
+        GerenteMenosClientesResponse resultado =
+                contaQueryService.escolherGerenteComMenosClientes(cpfsGerentesAtivos);
+
+        Map<String, Object> responsePayload = new HashMap<>();
+        responsePayload.put("cpfGerente", resultado.getCpfGerente());
+        responsePayload.put("quantidadeClientes", resultado.getQuantidadeClientes());
+
+        sagaCommandExecutionService.concluir(execution, objectMapper.writeValueAsString(responsePayload));
+
+        SagaReplyMessage reply = new SagaReplyMessage();
+        reply.setSagaId(command.getSagaId());
+        reply.setTipo("GERENTE_MENOS_CLIENTES_IDENTIFICADO");
+        reply.setPayload(responsePayload);
+        reply.setTimestamp(command.getTimestamp());
+        reply.setStatus("CONCLUIDO");
+        reply.setErro(null);
+        sagaReplyPublisher.publicar(reply);
+    }
+
+    private void processarIdentificarContaMenorSaldo(
+            SagaCommandMessage command,
+            SagaCommandExecution execution
+    ) throws JsonProcessingException {
+        String cpfGerente = getString(command.getPayload(), "cpfGerente");
+        ContaMenorSaldoResponse resultado =
+                contaQueryService.buscarContaMenorSaldoDoGerente(cpfGerente);
+
+        Map<String, Object> responsePayload = new HashMap<>();
+        responsePayload.put("cpfGerente", resultado.getCpfGerente());
+        responsePayload.put("semConta", resultado.isSemConta());
+        if (resultado.getConta() != null) {
+            responsePayload.put("numeroConta", resultado.getConta().getNumeroConta());
+            responsePayload.put("cpfCliente", resultado.getConta().getCpfCliente());
+            responsePayload.put("saldo", resultado.getConta().getSaldo());
+        }
+
+        sagaCommandExecutionService.concluir(execution, objectMapper.writeValueAsString(responsePayload));
+
+        SagaReplyMessage reply = new SagaReplyMessage();
+        reply.setSagaId(command.getSagaId());
+        reply.setTipo("CONTA_MENOR_SALDO_IDENTIFICADA");
         reply.setPayload(responsePayload);
         reply.setTimestamp(command.getTimestamp());
         reply.setStatus("CONCLUIDO");
