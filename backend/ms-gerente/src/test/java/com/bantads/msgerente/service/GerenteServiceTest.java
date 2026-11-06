@@ -3,6 +3,7 @@ package com.bantads.msgerente.service;
 import com.bantads.msgerente.domain.Gerente;
 import com.bantads.msgerente.dto.GerenteRequest;
 import com.bantads.msgerente.dto.GerenteResponse;
+import com.bantads.msgerente.repository.ComandoProcessadoRepository;
 import com.bantads.msgerente.repository.GerenteRepository;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
@@ -26,11 +27,14 @@ class GerenteServiceTest {
     @Mock
     private GerenteRepository repository;
 
+    @Mock
+    private ComandoProcessadoRepository comandosProcessados;
+
     private GerenteService service;
 
     @BeforeEach
     void setUp() {
-        service = new GerenteService(repository);
+        service = new GerenteService(repository, comandosProcessados);
     }
 
     @Test
@@ -90,5 +94,12 @@ class GerenteServiceTest {
                 () -> service.desativar("00000000000")
         );
         assertEquals(HttpStatus.NOT_FOUND, ex.getStatusCode());
+    }
+
+    @Test
+    void deveLimparComandosProcessadosERecriarSeedsNoReboot() {
+        service.reboot();
+        verify(comandosProcessados).deleteAll();
+        verify(repository).deleteAll();
     }
 }

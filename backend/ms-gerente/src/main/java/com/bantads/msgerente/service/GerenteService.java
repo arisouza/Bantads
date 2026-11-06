@@ -3,8 +3,10 @@ package com.bantads.msgerente.service;
 import com.bantads.msgerente.domain.Gerente;
 import com.bantads.msgerente.dto.GerenteRequest;
 import com.bantads.msgerente.dto.GerenteResponse;
+import com.bantads.msgerente.repository.ComandoProcessadoRepository;
 import com.bantads.msgerente.repository.GerenteRepository;
 import java.util.List;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -13,8 +15,17 @@ import org.springframework.web.server.ResponseStatusException;
 @Service
 public class GerenteService {
     private final GerenteRepository repository;
+    private final ComandoProcessadoRepository comandosProcessados;
 
-    public GerenteService(GerenteRepository repository) { this.repository = repository; }
+    public GerenteService(GerenteRepository repository) {
+        this(repository, null);
+    }
+
+    @Autowired
+    public GerenteService(GerenteRepository repository, ComandoProcessadoRepository comandosProcessados) {
+        this.repository = repository;
+        this.comandosProcessados = comandosProcessados;
+    }
 
     public GerenteResponse porCpf(String cpf) {
         return repository.findById(cpf)
@@ -78,6 +89,9 @@ public class GerenteService {
 
     @Transactional
     public void reboot() {
+        if (comandosProcessados != null) {
+            comandosProcessados.deleteAll();
+        }
         repository.deleteAll();
         repository.saveAll(List.of(
                 new Gerente("98574307084", "Geniéve", "ger1@bantads.com.br", "41988880001", true),

@@ -47,6 +47,7 @@ public class ContaCommandController {
         );
         ContaResponse response = contaQueryService.deAgregado(conta);
         response.add(linkTo(methodOn(ContaQueryController.class).buscar(conta.getNumeroConta())).withSelfRel());
+        response.add(linkTo(methodOn(ContaQueryController.class).saldoPorNumero(conta.getNumeroConta())).withRel("saldo"));
         response.add(linkTo(methodOn(ContaCommandController.class).depositar(conta.getNumeroConta(), null, null)).withRel("deposito"));
         response.add(linkTo(methodOn(ContaCommandController.class).sacar(conta.getNumeroConta(), null, null)).withRel("saque"));
         response.add(linkTo(methodOn(ContaCommandController.class).transferir(conta.getNumeroConta(), null, null)).withRel("transferencia"));

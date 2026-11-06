@@ -37,7 +37,10 @@ public class ContaQueryController {
         for (ContaResponse conta : contas) {
             adicionarLinks(conta);
         }
-        return ResponseEntity.ok(java.util.Map.of("contas", contas));
+        return ResponseEntity.ok(java.util.Map.of(
+                "contas", contas,
+                "_links", java.util.Map.of("self", java.util.Map.of("href", linkTo(methodOn(ContaQueryController.class).listar()).toUri().toString()))
+        ));
     }
 
     @GetMapping("/{numero:[0-9]{4}}")
