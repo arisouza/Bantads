@@ -9,10 +9,12 @@ import com.bantads.mscliente.dto.EnderecoResponse;
 import com.bantads.mscliente.dto.SolicitacaoRequest;
 import com.bantads.mscliente.dto.SolicitacaoResponse;
 import com.bantads.mscliente.repository.ClienteRepository;
+import com.bantads.mscliente.repository.ComandoProcessadoRepository;
 import com.bantads.mscliente.repository.SolicitacaoRepository;
 import java.math.BigDecimal;
 import java.time.OffsetDateTime;
 import java.util.List;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -22,8 +24,18 @@ import org.springframework.web.server.ResponseStatusException;
 public class ClienteService {
     private final ClienteRepository clientes;
     private final SolicitacaoRepository solicitacoes;
+    private final ComandoProcessadoRepository comandosProcessados;
 
-    public ClienteService(ClienteRepository clientes, SolicitacaoRepository solicitacoes) { this.clientes = clientes; this.solicitacoes = solicitacoes; }
+    public ClienteService(ClienteRepository clientes, SolicitacaoRepository solicitacoes) {
+        this(clientes, solicitacoes, null);
+    }
+
+    @Autowired
+    public ClienteService(ClienteRepository clientes, SolicitacaoRepository solicitacoes, ComandoProcessadoRepository comandosProcessados) {
+        this.clientes = clientes;
+        this.solicitacoes = solicitacoes;
+        this.comandosProcessados = comandosProcessados;
+    }
 
     public ClienteResponse porCpf(String cpf) {
         return clientes.findById(cpf).map(this::dto).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
@@ -101,6 +113,9 @@ public class ClienteService {
 
     @Transactional
     public void reboot() {
+        if (comandosProcessados != null) {
+            comandosProcessados.deleteAll();
+        }
         solicitacoes.deleteAll();
         clientes.deleteAll();
         clientes.saveAll(List.of(

@@ -4,8 +4,11 @@ import com.bantads.msconta.domain.entity.ContaRead;
 import com.bantads.msconta.domain.entity.MovimentacaoRead;
 import com.bantads.msconta.domain.event.TipoEventoEnum;
 import com.bantads.msconta.dto.ContaMenorSaldoResponse;
+import com.bantads.msconta.dto.ContasGerenteResponse;
 import com.bantads.msconta.dto.ExtratoResponse;
 import com.bantads.msconta.dto.GerenteMenosClientesResponse;
+import com.bantads.msconta.dto.SaldoResponse;
+import com.bantads.msconta.exception.ContaNaoEncontradaException;
 import com.bantads.msconta.exception.ValorInvalidoException;
 import com.bantads.msconta.repository.query.ContaReadRepository;
 import com.bantads.msconta.repository.query.MovimentacaoReadRepository;
@@ -18,6 +21,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import java.math.BigDecimal;
 import java.time.OffsetDateTime;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -145,6 +149,51 @@ class ContaQueryServiceTest {
                 ValorInvalidoException.class,
                 () -> service.buscarExtrato("1291", null, "2020-01-31")
         );
+    }
+
+    @Test
+    void deveConsultarSaldoPorNumeroEPorCpf() {
+        ContaRead conta = new ContaRead();
+        conta.setNumeroConta("1291");
+        conta.setCpfCliente("12912861012");
+        conta.setCpfGerente("98574307084");
+        conta.setSaldo(new BigDecimal("800.0000"));
+        conta.setDataCriacao(OffsetDateTime.now());
+
+        when(contaReadRepository.findById("1291")).thenReturn(Optional.of(conta));
+        when(contaReadRepository.findByCpfCliente("12912861012")).thenReturn(Optional.of(conta));
+
+        SaldoResponse porNumero = service.buscarSaldoPorNumero("1291");
+        SaldoResponse porCpf = service.buscarSaldoPorCpf("12912861012");
+
+        assertEquals("1291", porNumero.getNumeroConta());
+        assertEquals("800.00", porNumero.getSaldo());
+        assertEquals("12912861012", porCpf.getCpfCliente());
+        assertEquals("800.00", porCpf.getSaldo());
+    }
+
+    @Test
+    void deveLancarExcecaoAoConsultarSaldoDeContaInexistente() {
+        when(contaReadRepository.findById("9999")).thenReturn(Optional.empty());
+        assertThrows(ContaNaoEncontradaException.class, () -> service.buscarSaldoPorNumero("9999"));
+    }
+
+    @Test
+    void deveListarContasDoGerenteComQuantidadeClientes() {
+        ContaRead c1 = new ContaRead();
+        c1.setNumeroConta("1291");
+        c1.setCpfCliente("12912861012");
+        c1.setCpfGerente("98574307084");
+        c1.setSaldo(new BigDecimal("800.0000"));
+        c1.setDataCriacao(OffsetDateTime.now());
+
+        when(contaReadRepository.findByCpfGerente("98574307084")).thenReturn(List.of(c1));
+
+        ContasGerenteResponse resp = service.buscarPorGerente("98574307084");
+
+        assertEquals("98574307084", resp.getCpfGerente());
+        assertEquals(1, resp.getQuantidadeClientes());
+        assertEquals("800.00", resp.getContas().get(0).getSaldo());
     }
 }
 

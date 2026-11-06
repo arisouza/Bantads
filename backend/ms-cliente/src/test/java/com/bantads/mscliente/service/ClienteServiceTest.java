@@ -10,7 +10,9 @@ import static org.mockito.Mockito.when;
 
 import com.bantads.mscliente.domain.SolicitacaoCadastro;
 import com.bantads.mscliente.domain.StatusSolicitacao;
+import com.bantads.mscliente.dto.SolicitacaoRequest;
 import com.bantads.mscliente.repository.ClienteRepository;
+import com.bantads.mscliente.repository.ComandoProcessadoRepository;
 import com.bantads.mscliente.repository.SolicitacaoRepository;
 import java.math.BigDecimal;
 import java.time.OffsetDateTime;
@@ -33,11 +35,14 @@ class ClienteServiceTest {
     @Mock
     private SolicitacaoRepository solicitacoes;
 
+    @Mock
+    private ComandoProcessadoRepository comandosProcessados;
+
     private ClienteService service;
 
     @BeforeEach
     void setUp() {
-        service = new ClienteService(clientes, solicitacoes);
+        service = new ClienteService(clientes, solicitacoes, comandosProcessados);
     }
 
     @Test
@@ -106,6 +111,35 @@ class ClienteServiceTest {
         assertThat(resultado).hasSize(2);
         assertThat(resultado.get(0).status()).isEqualTo("PENDENTE");
         assertThat(resultado.get(1).status()).isEqualTo("APROVADA");
+    }
+
+    @Test
+    void solicitarRecusaCpfOuEmailDuplicado() {
+        SolicitacaoRequest req = new SolicitacaoRequest(
+            "12345678901", "Cliente", "cli@bantads.com.br", "41999990000",
+            new BigDecimal("2500.00"), "Rua A", "10", null, "80000000", "Curitiba", "PR"
+        );
+        when(clientes.existsByCpfOrEmail(req.cpf(), req.email())).thenReturn(true);
+
+        assertThatThrownBy(() -> service.solicitar(req))
+            .isInstanceOfSatisfying(ResponseStatusException.class, erro ->
+                assertThat(erro.getStatusCode()).isEqualTo(HttpStatus.CONFLICT));
+    }
+
+    @Test
+    void rollbackClienteReabreSolicitacaoOuMarcaRejeitadaEApagaComandosNoReboot() {
+        SolicitacaoCadastro solicitacao = solicitacao();
+        solicitacao.aprovar();
+        when(solicitacoes.findById(solicitacao.getCpf())).thenReturn(Optional.of(solicitacao));
+
+        service.rollbackCliente(solicitacao.getCpf(), "E-mail já cadastrado");
+
+        assertThat(solicitacao.getStatus()).isEqualTo(StatusSolicitacao.REJEITADA);
+        assertThat(solicitacao.getMotivoRejeicao()).isEqualTo("E-mail já cadastrado");
+        verify(clientes).deleteById(solicitacao.getCpf());
+
+        service.reboot();
+        verify(comandosProcessados).deleteAll();
     }
 
     private SolicitacaoCadastro solicitacao() {
