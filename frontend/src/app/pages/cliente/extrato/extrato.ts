@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, inject, OnInit } from '@angular/core';
+import { ChangeDetectorRef, Component, inject, OnInit } from '@angular/core';
 import {
   FormBuilder,
   ReactiveFormsModule,
@@ -48,6 +48,7 @@ export class Extrato implements OnInit {
   private readonly formBuilder = inject(FormBuilder);
   private readonly authService = inject(AuthService);
   private readonly contaService = inject(ContaService);
+  private readonly cdr = inject(ChangeDetectorRef);
 
   extrato: ExtratoResponse | null = null;
   diasDoExtrato: DiaExtrato[] = [];
@@ -115,6 +116,7 @@ export class Extrato implements OnInit {
       ),
       finalize(() => {
         this.carregando = false;
+        this.cdr.detectChanges();
       })
     ).subscribe({
       next: resposta => {
@@ -193,7 +195,7 @@ export class Extrato implements OnInit {
       dataAtual = dataAtual.plus({ days: 1 });
     }
 
-    return dias;
+    return dias.reverse();
   }
 
   movimentacaoAumentaSaldo(

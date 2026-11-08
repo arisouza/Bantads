@@ -22,6 +22,7 @@ import java.math.RoundingMode;
 import java.time.Duration;
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
+import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.List;
@@ -31,6 +32,8 @@ public class ContaQueryService {
 
     private static final int INTERVALO_MAXIMO_DIAS = 365;
     private static final int INTERVALO_PADRAO_DIAS = 30;
+    private static final ZoneId ZONA_SISTEMA =
+            ZoneId.of("America/Sao_Paulo");
 
     private final ContaReadRepository contaReadRepository;
     private final MovimentacaoReadRepository movimentacaoReadRepository;
@@ -258,7 +261,9 @@ public class ContaQueryService {
             throw new ValorInvalidoException("Data de início é obrigatória");
         }
         if (raw.length() == 10) {
-            return LocalDate.parse(raw).atStartOfDay().atOffset(ZoneOffset.UTC);
+            return LocalDate.parse(raw)
+                    .atStartOfDay(ZONA_SISTEMA)
+                    .toOffsetDateTime();
         }
         return OffsetDateTime.parse(raw);
     }
@@ -268,7 +273,11 @@ public class ContaQueryService {
             throw new ValorInvalidoException("Data de fim é obrigatória");
         }
         if (raw.length() == 10) {
-            return LocalDate.parse(raw).plusDays(1).atStartOfDay().atOffset(ZoneOffset.UTC).minusNanos(1);
+            return LocalDate.parse(raw)
+                    .plusDays(1)
+                    .atStartOfDay(ZONA_SISTEMA)
+                    .toOffsetDateTime()
+                    .minusNanos(1);
         }
         return OffsetDateTime.parse(raw);
     }

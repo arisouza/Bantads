@@ -175,10 +175,12 @@
 }
 
 .movimentacao--entrada {
+  color: #276ef1;
   border-left-color: #276ef1;
 }
 
 .movimentacao--saida {
+  color: #dc3545;
   border-left-color: #dc3545;
 }
 
@@ -191,6 +193,14 @@
 .movimentacao__informacoes span {
   color: #67708a;
   font-size: 14px;
+}
+
+.movimentacao--entrada .movimentacao__informacoes span {
+  color: #276ef1;
+}
+
+.movimentacao--saida .movimentacao__informacoes span {
+  color: #dc3545;
 }
 
 .movimentacao__valor {
