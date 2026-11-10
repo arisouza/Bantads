@@ -9,6 +9,7 @@ import com.bantads.msconta.dto.ExtratoResponse;
 import com.bantads.msconta.dto.GerenteMenosClientesResponse;
 import com.bantads.msconta.dto.SaldoResponse;
 import com.bantads.msconta.exception.ContaNaoEncontradaException;
+import com.bantads.msconta.exception.ContaNaoPertenceException;
 import com.bantads.msconta.exception.ValorInvalidoException;
 import com.bantads.msconta.repository.query.ContaReadRepository;
 import com.bantads.msconta.repository.query.MovimentacaoReadRepository;
@@ -41,7 +42,11 @@ class ContaQueryServiceTest {
 
     @BeforeEach
     void setUp() {
-        service = new ContaQueryService(contaReadRepository, movimentacaoReadRepository);
+        service = new ContaQueryService(
+                contaReadRepository,
+                movimentacaoReadRepository,
+                new ContaPosseGuard()
+        );
     }
 
     @Test
@@ -75,7 +80,7 @@ class ContaQueryServiceTest {
 
     @Test
     void deveCalcularSaldoDeAberturaNoExtratoERecusarIntervaloMaiorQue365Dias() {
-        when(contaReadRepository.existsById("1291")).thenReturn(true);
+        stubContaExistente("1291");
 
         MovimentacaoRead depAnterior = new MovimentacaoRead();
         depAnterior.setId(UUID.randomUUID());
@@ -108,7 +113,7 @@ class ContaQueryServiceTest {
 
     @Test
     void deveUsarUltimos30DiasQuandoDatasNaoInformadasECalcularSaldoFechamento() {
-        when(contaReadRepository.existsById("1291")).thenReturn(true);
+        stubContaExistente("1291");
         when(movimentacaoReadRepository.findByNumeroContaAndTimestampLessThanOrderByTimestampAsc(eq("1291"), any()))
                 .thenReturn(List.of());
 
@@ -139,7 +144,7 @@ class ContaQueryServiceTest {
 
     @Test
     void deveRecusarExtratoComApenasUmaDataInformada() {
-        when(contaReadRepository.existsById("1291")).thenReturn(true);
+        stubContaExistente("1291");
 
         assertThrows(
                 ValorInvalidoException.class,
@@ -149,6 +154,16 @@ class ContaQueryServiceTest {
                 ValorInvalidoException.class,
                 () -> service.buscarExtrato("1291", null, "2020-01-31")
         );
+    }
+
+    private void stubContaExistente(String numeroConta) {
+        ContaRead conta = new ContaRead();
+        conta.setNumeroConta(numeroConta);
+        conta.setCpfCliente("12912861012");
+        conta.setCpfGerente("98574307084");
+        conta.setSaldo(new BigDecimal("800.0000"));
+        conta.setDataCriacao(OffsetDateTime.now());
+        when(contaReadRepository.findById(numeroConta)).thenReturn(Optional.of(conta));
     }
 
     @Test
@@ -194,6 +209,65 @@ class ContaQueryServiceTest {
         assertEquals("98574307084", resp.getCpfGerente());
         assertEquals(1, resp.getQuantidadeClientes());
         assertEquals("800.00", resp.getContas().get(0).getSaldo());
+    }
+
+    @Test
+    void deveRecusarConsultaDeSaldoQuandoClienteNaoEDonoDaConta() {
+        ContaRead conta = new ContaRead();
+        conta.setNumeroConta("1291");
+        conta.setCpfCliente("12912861012");
+        conta.setCpfGerente("98574307084");
+        conta.setSaldo(new BigDecimal("800.0000"));
+        conta.setDataCriacao(OffsetDateTime.now());
+
+        when(contaReadRepository.findById("1291")).thenReturn(Optional.of(conta));
+
+        assertThrows(
+                ContaNaoPertenceException.class,
+                () -> service.buscarSaldoPorNumero("1291", "09506382000", "CLIENTE")
+        );
+    }
+
+    @Test
+    void devePermitirConsultaDeExtratoQuandoClienteEDonoDaConta() {
+        ContaRead conta = new ContaRead();
+        conta.setNumeroConta("1291");
+        conta.setCpfCliente("12912861012");
+        conta.setCpfGerente("98574307084");
+        conta.setSaldo(new BigDecimal("800.0000"));
+        conta.setDataCriacao(OffsetDateTime.now());
+
+        when(contaReadRepository.findById("1291")).thenReturn(Optional.of(conta));
+        when(movimentacaoReadRepository.findByNumeroContaAndTimestampLessThanOrderByTimestampAsc(eq("1291"), any()))
+                .thenReturn(List.of());
+        when(movimentacaoReadRepository.findByNumeroContaAndTimestampGreaterThanEqualAndTimestampLessThanEqualOrderByTimestampAsc(
+                eq("1291"), any(), any())).thenReturn(List.of());
+
+        ExtratoResponse extrato = service.buscarExtrato(
+                "1291",
+                "2020-02-01",
+                "2020-02-28",
+                "12912861012",
+                "CLIENTE"
+        );
+
+        assertEquals("1291", extrato.getNumeroConta());
+        assertEquals("0.00", extrato.getSaldoAbertura());
+    }
+
+    @Test
+    void devePermitirConsultaQuandoUsuarioEGerenteMesmoSemSerDono() {
+        ContaRead conta = new ContaRead();
+        conta.setNumeroConta("1291");
+        conta.setCpfCliente("12912861012");
+        conta.setCpfGerente("98574307084");
+        conta.setSaldo(new BigDecimal("800.0000"));
+        conta.setDataCriacao(OffsetDateTime.now());
+
+        when(contaReadRepository.findById("1291")).thenReturn(Optional.of(conta));
+
+        SaldoResponse saldo = service.buscarSaldoPorNumero("1291", "98574307084", "GERENTE");
+        assertEquals("800.00", saldo.getSaldo());
     }
 }
 

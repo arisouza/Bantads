@@ -10,6 +10,7 @@ import com.bantads.msconta.service.ContaQueryService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -44,34 +45,50 @@ public class ContaQueryController {
     }
 
     @GetMapping("/{numero:[0-9]{4}}")
-    public ResponseEntity<ContaResponse> buscar(@PathVariable String numero) {
-        ContaResponse response = contaQueryService.buscarPorNumero(numero);
+    public ResponseEntity<ContaResponse> buscar(
+            @PathVariable String numero,
+            @RequestHeader(value = "X-User-CPF", required = false) String cpfUsuario,
+            @RequestHeader(value = "X-User-Tipo", required = false) String tipoUsuario
+    ) {
+        ContaResponse response = contaQueryService.buscarPorNumero(numero, cpfUsuario, tipoUsuario);
         adicionarLinks(response);
         return ResponseEntity.ok(response);
     }
 
     @GetMapping("/{numero:[0-9]{4}}/saldo")
-    public ResponseEntity<SaldoResponse> saldoPorNumero(@PathVariable String numero) {
-        SaldoResponse response = contaQueryService.buscarSaldoPorNumero(numero);
-        response.add(linkTo(methodOn(ContaQueryController.class).saldoPorNumero(numero)).withSelfRel());
-        response.add(linkTo(methodOn(ContaQueryController.class).buscar(numero)).withRel("conta"));
-        response.add(linkTo(methodOn(ContaQueryController.class).extrato(numero, null, null)).withRel("extrato"));
+    public ResponseEntity<SaldoResponse> saldoPorNumero(
+            @PathVariable String numero,
+            @RequestHeader(value = "X-User-CPF", required = false) String cpfUsuario,
+            @RequestHeader(value = "X-User-Tipo", required = false) String tipoUsuario
+    ) {
+        SaldoResponse response = contaQueryService.buscarSaldoPorNumero(numero, cpfUsuario, tipoUsuario);
+        response.add(linkTo(methodOn(ContaQueryController.class).saldoPorNumero(numero, null, null)).withSelfRel());
+        response.add(linkTo(methodOn(ContaQueryController.class).buscar(numero, null, null)).withRel("conta"));
+        response.add(linkTo(methodOn(ContaQueryController.class).extrato(numero, null, null, null, null)).withRel("extrato"));
         return ResponseEntity.ok(response);
     }
 
     @GetMapping("/cliente/{cpf}")
-    public ResponseEntity<ContaResponse> buscarPorCpf(@PathVariable String cpf) {
-        ContaResponse response = contaQueryService.buscarPorCpf(cpf);
+    public ResponseEntity<ContaResponse> buscarPorCpf(
+            @PathVariable String cpf,
+            @RequestHeader(value = "X-User-CPF", required = false) String cpfUsuario,
+            @RequestHeader(value = "X-User-Tipo", required = false) String tipoUsuario
+    ) {
+        ContaResponse response = contaQueryService.buscarPorCpf(cpf, cpfUsuario, tipoUsuario);
         adicionarLinks(response);
         return ResponseEntity.ok(response);
     }
 
     @GetMapping("/cliente/{cpf}/saldo")
-    public ResponseEntity<SaldoResponse> saldoPorCpf(@PathVariable String cpf) {
-        SaldoResponse response = contaQueryService.buscarSaldoPorCpf(cpf);
-        response.add(linkTo(methodOn(ContaQueryController.class).saldoPorCpf(cpf)).withSelfRel());
-        response.add(linkTo(methodOn(ContaQueryController.class).buscarPorCpf(cpf)).withRel("conta"));
-        response.add(linkTo(methodOn(ContaQueryController.class).extrato(response.getNumeroConta(), null, null)).withRel("extrato"));
+    public ResponseEntity<SaldoResponse> saldoPorCpf(
+            @PathVariable String cpf,
+            @RequestHeader(value = "X-User-CPF", required = false) String cpfUsuario,
+            @RequestHeader(value = "X-User-Tipo", required = false) String tipoUsuario
+    ) {
+        SaldoResponse response = contaQueryService.buscarSaldoPorCpf(cpf, cpfUsuario, tipoUsuario);
+        response.add(linkTo(methodOn(ContaQueryController.class).saldoPorCpf(cpf, null, null)).withSelfRel());
+        response.add(linkTo(methodOn(ContaQueryController.class).buscarPorCpf(cpf, null, null)).withRel("conta"));
+        response.add(linkTo(methodOn(ContaQueryController.class).extrato(response.getNumeroConta(), null, null, null, null)).withRel("extrato"));
         return ResponseEntity.ok(response);
     }
 
@@ -114,21 +131,23 @@ public class ContaQueryController {
     public ResponseEntity<ExtratoResponse> extrato(
             @PathVariable String numero,
             @RequestParam(required = false) String inicio,
-            @RequestParam(required = false) String fim
+            @RequestParam(required = false) String fim,
+            @RequestHeader(value = "X-User-CPF", required = false) String cpfUsuario,
+            @RequestHeader(value = "X-User-Tipo", required = false) String tipoUsuario
     ) {
-        ExtratoResponse response = contaQueryService.buscarExtrato(numero, inicio, fim);
-        response.add(linkTo(methodOn(ContaQueryController.class).extrato(numero, inicio, fim)).withSelfRel());
-        response.add(linkTo(methodOn(ContaQueryController.class).buscar(numero)).withRel("conta"));
+        ExtratoResponse response = contaQueryService.buscarExtrato(numero, inicio, fim, cpfUsuario, tipoUsuario);
+        response.add(linkTo(methodOn(ContaQueryController.class).extrato(numero, inicio, fim, null, null)).withSelfRel());
+        response.add(linkTo(methodOn(ContaQueryController.class).buscar(numero, null, null)).withRel("conta"));
         return ResponseEntity.ok(response);
     }
 
     private void adicionarLinks(ContaResponse response) {
         String numero = response.getNumeroConta();
-        response.add(linkTo(methodOn(ContaQueryController.class).buscar(numero)).withSelfRel());
-        response.add(linkTo(methodOn(ContaQueryController.class).saldoPorNumero(numero)).withRel("saldo"));
+        response.add(linkTo(methodOn(ContaQueryController.class).buscar(numero, null, null)).withSelfRel());
+        response.add(linkTo(methodOn(ContaQueryController.class).saldoPorNumero(numero, null, null)).withRel("saldo"));
         response.add(linkTo(methodOn(ContaCommandController.class).depositar(numero, null, null)).withRel("deposito"));
         response.add(linkTo(methodOn(ContaCommandController.class).sacar(numero, null, null)).withRel("saque"));
         response.add(linkTo(methodOn(ContaCommandController.class).transferir(numero, null, null)).withRel("transferencia"));
-        response.add(linkTo(methodOn(ContaQueryController.class).extrato(numero, null, null)).withRel("extrato"));
+        response.add(linkTo(methodOn(ContaQueryController.class).extrato(numero, null, null, null, null)).withRel("extrato"));
     }
 }

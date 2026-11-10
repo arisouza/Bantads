@@ -37,34 +37,55 @@ public class ContaQueryService {
 
     private final ContaReadRepository contaReadRepository;
     private final MovimentacaoReadRepository movimentacaoReadRepository;
+    private final ContaPosseGuard contaPosseGuard;
 
     public ContaQueryService(
             ContaReadRepository contaReadRepository,
-            MovimentacaoReadRepository movimentacaoReadRepository
+            MovimentacaoReadRepository movimentacaoReadRepository,
+            ContaPosseGuard contaPosseGuard
     ) {
         this.contaReadRepository = contaReadRepository;
         this.movimentacaoReadRepository = movimentacaoReadRepository;
+        this.contaPosseGuard = contaPosseGuard;
     }
 
     public ContaResponse buscarPorNumero(String numeroConta) {
+        return buscarPorNumero(numeroConta, null, null);
+    }
+
+    public ContaResponse buscarPorNumero(String numeroConta, String cpfUsuario, String tipoUsuario) {
         ContaRead conta = contaReadRepository.findById(numeroConta)
                 .orElseThrow(() -> new ContaNaoEncontradaException(numeroConta));
+        contaPosseGuard.garantirAcessoConta(conta.getCpfCliente(), cpfUsuario, tipoUsuario);
         return toContaResponse(conta);
     }
 
     public ContaResponse buscarPorCpf(String cpfCliente) {
+        return buscarPorCpf(cpfCliente, null, null);
+    }
+
+    public ContaResponse buscarPorCpf(String cpfCliente, String cpfUsuario, String tipoUsuario) {
+        contaPosseGuard.garantirAcessoPorCpfConsultado(cpfCliente, cpfUsuario, tipoUsuario);
         ContaRead conta = contaReadRepository.findByCpfCliente(cpfCliente)
                 .orElseThrow(() -> new ContaNaoEncontradaException(cpfCliente));
         return toContaResponse(conta);
     }
 
     public SaldoResponse buscarSaldoPorNumero(String numeroConta) {
-        ContaResponse conta = buscarPorNumero(numeroConta);
+        return buscarSaldoPorNumero(numeroConta, null, null);
+    }
+
+    public SaldoResponse buscarSaldoPorNumero(String numeroConta, String cpfUsuario, String tipoUsuario) {
+        ContaResponse conta = buscarPorNumero(numeroConta, cpfUsuario, tipoUsuario);
         return new SaldoResponse(conta.getNumeroConta(), conta.getCpfCliente(), conta.getSaldo());
     }
 
     public SaldoResponse buscarSaldoPorCpf(String cpfCliente) {
-        ContaResponse conta = buscarPorCpf(cpfCliente);
+        return buscarSaldoPorCpf(cpfCliente, null, null);
+    }
+
+    public SaldoResponse buscarSaldoPorCpf(String cpfCliente, String cpfUsuario, String tipoUsuario) {
+        ContaResponse conta = buscarPorCpf(cpfCliente, cpfUsuario, tipoUsuario);
         return new SaldoResponse(conta.getNumeroConta(), conta.getCpfCliente(), conta.getSaldo());
     }
 
@@ -143,9 +164,19 @@ public class ContaQueryService {
     }
 
     public ExtratoResponse buscarExtrato(String numeroConta, String inicioRaw, String fimRaw) {
-        if (!contaReadRepository.existsById(numeroConta)) {
-            throw new ContaNaoEncontradaException(numeroConta);
-        }
+        return buscarExtrato(numeroConta, inicioRaw, fimRaw, null, null);
+    }
+
+    public ExtratoResponse buscarExtrato(
+            String numeroConta,
+            String inicioRaw,
+            String fimRaw,
+            String cpfUsuario,
+            String tipoUsuario
+    ) {
+        ContaRead conta = contaReadRepository.findById(numeroConta)
+                .orElseThrow(() -> new ContaNaoEncontradaException(numeroConta));
+        contaPosseGuard.garantirAcessoConta(conta.getCpfCliente(), cpfUsuario, tipoUsuario);
 
         OffsetDateTime[] periodoDatas = resolverPeriodoExtrato(inicioRaw, fimRaw);
         OffsetDateTime inicio = periodoDatas[0];
