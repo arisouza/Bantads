@@ -46,12 +46,12 @@ public class ContaCommandController {
                 request.getCpfsGerentesAtivos()
         );
         ContaResponse response = contaQueryService.deAgregado(conta);
-        response.add(linkTo(methodOn(ContaQueryController.class).buscar(conta.getNumeroConta())).withSelfRel());
-        response.add(linkTo(methodOn(ContaQueryController.class).saldoPorNumero(conta.getNumeroConta())).withRel("saldo"));
+        response.add(linkTo(methodOn(ContaQueryController.class).buscar(conta.getNumeroConta(), null, null)).withSelfRel());
+        response.add(linkTo(methodOn(ContaQueryController.class).saldoPorNumero(conta.getNumeroConta(), null, null)).withRel("saldo"));
         response.add(linkTo(methodOn(ContaCommandController.class).depositar(conta.getNumeroConta(), null, null)).withRel("deposito"));
         response.add(linkTo(methodOn(ContaCommandController.class).sacar(conta.getNumeroConta(), null, null)).withRel("saque"));
         response.add(linkTo(methodOn(ContaCommandController.class).transferir(conta.getNumeroConta(), null, null)).withRel("transferencia"));
-        response.add(linkTo(methodOn(ContaQueryController.class).extrato(conta.getNumeroConta(), null, null)).withRel("extrato"));
+        response.add(linkTo(methodOn(ContaQueryController.class).extrato(conta.getNumeroConta(), null, null, null, null)).withRel("extrato"));
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
@@ -62,7 +62,7 @@ public class ContaCommandController {
     ) {
         Conta conta = contaCommandService.alterarGerente(numero, request.getCpfGerenteNovo());
         ContaResponse response = contaQueryService.deAgregado(conta);
-        response.add(linkTo(methodOn(ContaQueryController.class).buscar(numero)).withSelfRel());
+        response.add(linkTo(methodOn(ContaQueryController.class).buscar(numero, null, null)).withSelfRel());
         response.add(linkTo(methodOn(ContaQueryController.class).buscarPorGerente(conta.getCpfGerente())).withRel("gerente"));
         return ResponseEntity.ok(response);
     }
@@ -124,8 +124,8 @@ public class ContaCommandController {
 
     private MensagemResponse respostaOperacao(String numero, String mensagem) {
         MensagemResponse response = new MensagemResponse(mensagem);
-        response.add(linkTo(methodOn(ContaQueryController.class).buscar(numero)).withRel("conta"));
-        response.add(linkTo(methodOn(ContaQueryController.class).extrato(numero, null, null)).withRel("extrato"));
+        response.add(linkTo(methodOn(ContaQueryController.class).buscar(numero, null, null)).withRel("conta"));
+        response.add(linkTo(methodOn(ContaQueryController.class).extrato(numero, null, null, null, null)).withRel("extrato"));
         return response;
     }
 }
