@@ -1,7 +1,6 @@
-const { getChannel } = require('../config/rabbitmq');
+const { publishToQueue } = require('../config/rabbitmq');
 
-const publicar = (fila, mensagem) =>
-    getChannel().sendToQueue(fila, Buffer.from(JSON.stringify(mensagem)), { persistent: true });
+const publicar = (fila, mensagem) => publishToQueue(fila, mensagem);
 
 const comandoSimples = (fila) => (sagaId, action, data) => publicar(fila, { sagaId, action, data });
 

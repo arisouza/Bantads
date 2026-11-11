@@ -5,6 +5,13 @@ spring:
   application:
     name: ms-conta
 
+  # Executada em todo boot e segura para volumes já existentes. O schema
+  # principal continua em database/ms-conta/schema.sql para bancos novos.
+  sql:
+    init:
+      mode: always
+      schema-locations: classpath:db/schema-compat.sql
+
   datasource:
     url: jdbc:postgresql://${DB_HOST:postgres}:5432/${DB_NAME:bantads}
     username: ${DB_USER:postgres}

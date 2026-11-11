@@ -1,9 +1,30 @@
 const CLIENTE_URL = process.env.CLIENTE_URL || 'http://ms-cliente:3002';
 const GERENTE_URL = process.env.GERENTE_URL || 'http://ms-gerente:3003';
 const CONTA_URL = process.env.CONTA_URL || 'http://ms-conta:3004';
+const HTTP_TIMEOUT_MS = Number(process.env.SAGA_HTTP_TIMEOUT_MS || 10000);
 
-const getJson = async (url) => {
-    const res = await fetch(url);
+class QueryTimeoutError extends Error {
+    constructor(url) {
+        super(`Timeout ao consultar ${url}`);
+        this.name = 'QueryTimeoutError';
+    }
+}
+
+const fetchWithTimeout = async (url, options = {}, nativeFetch = fetch, timeoutMs = HTTP_TIMEOUT_MS) => {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), timeoutMs);
+    try {
+        return await nativeFetch(url, { ...options, signal: controller.signal });
+    } catch (error) {
+        if (controller.signal.aborted) throw new QueryTimeoutError(url);
+        throw error;
+    } finally {
+        clearTimeout(timeout);
+    }
+};
+
+const getJson = async (url, nativeFetch) => {
+    const res = await fetchWithTimeout(url, {}, nativeFetch);
     if (!res.ok) throw new Error(`Consulta falhou (${res.status}): ${url}`);
     return res.json();
 };
@@ -35,4 +56,12 @@ const contaParaNovoGerente = async (cpfNovo) => {
     };
 };
 
-module.exports = { gerentesAtivos, contasDoGerente, cliente, contaParaNovoGerente };
+module.exports = {
+    QueryTimeoutError,
+    contaParaNovoGerente,
+    contasDoGerente,
+    cliente,
+    fetchWithTimeout,
+    gerentesAtivos,
+    getJson
+};

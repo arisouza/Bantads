@@ -14,10 +14,21 @@ const consumir = (channel, fila, tratar) => channel.consume(fila, async (msg) =>
     channel.ack(msg);
 });
 
+let reconnectTimer;
+
+const agendarReconexao = () => {
+    if (reconnectTimer) return;
+    console.warn('[SAGA] RabbitMQ desconectado; nova tentativa em 5s.');
+    reconnectTimer = setTimeout(() => {
+        reconnectTimer = undefined;
+        init();
+    }, 5000);
+};
+
 const init = async () => {
     try {
         await connectRedis();
-        const channel = await connectRabbitMQ();
+        const channel = await connectRabbitMQ({ onClose: agendarReconexao });
         await recuperarPendentes();
 
         consumir(channel, 'saga.cmd', iniciar);
@@ -27,7 +38,7 @@ const init = async () => {
         console.log('Orquestrador SAGA inicializado e consumindo filas...');
     } catch (error) {
         console.error('Falha ao inicializar o Orquestrador SAGA:', error);
-        process.exit(1);
+        agendarReconexao();
     }
 };
 

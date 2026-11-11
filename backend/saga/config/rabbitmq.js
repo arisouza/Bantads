@@ -6,10 +6,19 @@ const FILAS_COMANDO = ['ms.cliente.cmd', 'ms.conta.cmd', 'ms.gerente.cmd', 'ms.a
 const FILAS_DLQ = FILAS_COMANDO.map((fila) => `${fila}.dlq`);
 
 let channel;
+let connection;
 
-const connectRabbitMQ = async () => {
-    const conn = await amqp.connect(RABBITMQ_URL);
-    channel = await conn.createChannel();
+const connectRabbitMQ = async ({ onClose } = {}) => {
+    if (channel) return channel;
+
+    connection = await amqp.connect(RABBITMQ_URL);
+    connection.on('error', (error) => console.error('[SAGA] Erro de conexão RabbitMQ:', error.message));
+    connection.on('close', () => {
+        connection = undefined;
+        channel = undefined;
+        onClose?.();
+    });
+    channel = await connection.createConfirmChannel();
 
     await channel.assertExchange('bantads.dlx', 'direct', { durable: true });
 
@@ -40,8 +49,18 @@ const getChannel = () => {
     return channel;
 };
 
+const publishToQueue = async (queue, message) => {
+    const activeChannel = getChannel();
+    activeChannel.sendToQueue(queue, Buffer.from(JSON.stringify(message)), {
+        persistent: true,
+        contentType: 'application/json'
+    });
+    await activeChannel.waitForConfirms();
+};
+
 module.exports = {
     connectRabbitMQ,
     getChannel,
+    publishToQueue,
     FILAS_DLQ
 };
