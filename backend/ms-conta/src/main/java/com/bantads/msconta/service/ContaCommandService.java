@@ -235,7 +235,7 @@ public class ContaCommandService {
 
             Map<String, String> payloadOrigem = new LinkedHashMap<>();
             payloadOrigem.put("contaDestino", contaDestino);
-            payloadOrigem.put("cpfDestino", cpfDestino);
+            payloadOrigem.put("cpfDestino", firstNonBlank(cpfDestino, destino.getCpfCliente()));
             payloadOrigem.put("nomeDestino", nomeDestino);
             payloadOrigem.put("valor", valor.toPlainString());
 

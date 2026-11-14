@@ -212,7 +212,6 @@ services:
       NODE_ENV: ${NODE_ENV:-development}
       REBOOT_TOKEN: ${REBOOT_TOKEN:-}
       HTTP_TIMEOUT_MS: ${HTTP_TIMEOUT_MS:-10000}
-      JOB_TTL_SECONDS: ${JOB_TTL_SECONDS:-1800}
       GATEWAY_BASE: http://localhost:3000
       NODE_OPTIONS: --max-old-space-size=192
     ports: ["3000:3000", "8000:3000"]
