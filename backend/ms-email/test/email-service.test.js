@@ -24,6 +24,17 @@ test('protege campos dinamicos contra HTML no conteudo de rejeicao', () => {
     assert.doesNotMatch(html, /<script>/);
 });
 
+test('monta template amigavel para GERENTE_ALTERADO da SAGA R13', () => {
+    const html = buildHtml({
+        tipo: 'GERENTE_ALTERADO',
+        dados: { nome: 'Catharyna', gerente: 'Godophredo' }
+    });
+    assert.match(html, /Catharyna/);
+    assert.match(html, /Godophredo/);
+    assert.match(html, /gerente responsável pela sua conta foi alterado/);
+    assert.doesNotMatch(html, /<pre>/);
+});
+
 test('exige destinatario, tipo e senha no e-mail de senha inicial', () => {
     assert.throws(() => validarMensagem({ tipo: 'SENHA_INICIAL', destinatario: '', dados: {} }), /Destinatário inválido/);
     assert.throws(() => validarMensagem({ tipo: 'SENHA_INICIAL', destinatario: 'a@b.com', dados: {} }), /Senha inicial/);

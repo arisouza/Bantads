@@ -13,7 +13,6 @@ import { Transferencia } from './pages/cliente/transferencia/transferencia';
 import { Extrato } from './pages/cliente/extrato/extrato';
 
 // Gerente
-import { InicioGerente } from './pages/gerente/inicio';
 import { Gerente } from './pages/gerente/autocadastro/gerente';
 import { Clientes } from './pages/gerente/clientes/clientes';
 import { Gerentes } from './pages/gerente/gerentes/gerentes';
@@ -31,9 +30,9 @@ export const routes: Routes = [
   { path: 'cliente/transferencia', component: Transferencia, canActivate: [authGuard], data: { roles: ['CLIENTE'] } }, // R6
   { path: 'cliente/extrato', component: Extrato, canActivate: [authGuard], data: { roles: ['CLIENTE'] } }, // R7
    
-  // Rotas do gerente
-  { path: 'gerente', component: InicioGerente, canActivate: [authGuard], data: { roles: ['GERENTE'] } },  
-  { path: 'gerente/solicitacoes', component: Gerente, canActivate: [authGuard], data: { roles: ['GERENTE'] } },
+  // Rotas do gerente — R8: tela inicial = solicitações de autocadastro
+  { path: 'gerente', component: Gerente, canActivate: [authGuard], data: { roles: ['GERENTE'] } },
+  { path: 'gerente/solicitacoes', redirectTo: 'gerente', pathMatch: 'full' },
   { path: 'gerente/clientes', component: Clientes, canActivate: [authGuard], data: { roles: ['GERENTE'] } }, // consultar todos (R11)
   { path: 'gerente/gerentes', component: Gerentes, canActivate: [authGuard], data: { roles: ['GERENTE'] } }, // CRUD gerentes (R12, R13, R14, R15)
   { path: 'gerente/relatorios', component: Relatorio, canActivate: [authGuard], data: { roles: ['GERENTE'] } }, // relatório de clientes (R16)
