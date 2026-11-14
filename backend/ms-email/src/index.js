@@ -39,6 +39,13 @@ const buildHtml = (content) => {
     if (tipo === 'GERENTE_REMOVIDO') {
         return '<p>Informamos que seu gerente foi alterado.</p>';
     }
+    if (tipo === 'GERENTE_ALTERADO') {
+        const nomeCliente = textoSeguro(dados?.nome);
+        const nomeGerente = textoSeguro(dados?.gerente);
+        return `<p>Olá${nomeCliente ? `, ${nomeCliente}` : ''}.</p>`
+            + `<p>Informamos que o gerente responsável pela sua conta foi alterado`
+            + `${nomeGerente ? ` para <strong>${nomeGerente}</strong>` : ''}.</p>`;
+    }
     return `<pre>${textoSeguro(JSON.stringify(dados, null, 2))}</pre>`;
 };
 

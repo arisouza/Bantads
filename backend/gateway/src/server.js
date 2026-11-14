@@ -564,8 +564,7 @@ app.post('/contas/:numero/transferencia', verifyJWT, requireRole('CLIENTE'), asy
         ]);
 
         const nomeOrigem = nomeOrigemRes.ok ? (await nomeOrigemRes.json()).nome : '';
-        let nomeDestino = nomeDestinoRes.ok ? (await nomeDestinoRes.json()).nome : '';
-        if (cpfDestino === '09506382000') nomeDestino = 'Cleuddônio';
+        const nomeDestino = nomeDestinoRes.ok ? (await nomeDestinoRes.json()).nome : '';
 
         const r = await fetch(`${CONTA_URL}/contas/${numero}/transferencia`, {
             method: 'POST',
