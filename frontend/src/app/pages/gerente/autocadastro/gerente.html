@@ -140,42 +140,46 @@
             </tbody>
           </table>
 
-          @if (recusandoCpf() !== null) {
-            <section class="formulario-recusa" aria-label="Recusar solicitação">
-              <h2>Recusar solicitação</h2>
-
-              <label for="motivoRecusa">Motivo da recusa</label>
-              <textarea
-                id="motivoRecusa"
-                rows="4"
-                maxlength="500"
-                placeholder="Informe o motivo da recusa"
-                [value]="motivoRecusa()"
-                [disabled]="processando() !== null"
-                (input)="motivoRecusa.set($any($event.target).value)">
-              </textarea>
-
-              <div class="acoes">
-                <button
-                  mat-flat-button
-                  type="button"
-                  [disabled]="motivoRecusa().trim().length === 0 || processando() !== null"
-                  (click)="confirmarRecusa()">
-                  Confirmar recusa
-                </button>
-
-                <button
-                  mat-stroked-button
-                  type="button"
-                  [disabled]="processando() !== null"
-                  (click)="cancelarRecusa()">
-                  Cancelar
-                </button>
-              </div>
-            </section>
-          }
         </div>
       }
     </section>
   </section>
 </app-authenticated-layout>
+
+<app-modal
+  [aberto]="recusandoCpf() !== null"
+  titulo="Recusar solicitação"
+  (fechar)="cancelarRecusa()">
+  @if (solicitacaoRecusando(); as solicitacao) {
+    <p>Cliente: <strong>{{ solicitacao.nome }}</strong></p>
+
+    <label for="motivoRecusa">Motivo da recusa</label>
+    <textarea
+      id="motivoRecusa"
+      rows="4"
+      maxlength="500"
+      placeholder="Informe o motivo da recusa"
+      [value]="motivoRecusa()"
+      [disabled]="processando() !== null"
+      (input)="motivoRecusa.set($any($event.target).value)">
+    </textarea>
+
+    <div class="acoes">
+      <button
+        mat-stroked-button
+        type="button"
+        [disabled]="processando() !== null"
+        (click)="cancelarRecusa()">
+        Cancelar
+      </button>
+
+      <button
+        mat-flat-button
+        type="button"
+        [disabled]="motivoRecusa().trim().length === 0 || processando() !== null"
+        (click)="confirmarRecusa()">
+        Confirmar recusa
+      </button>
+    </div>
+  }
+</app-modal>

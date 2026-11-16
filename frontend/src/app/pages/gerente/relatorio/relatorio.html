@@ -137,6 +137,10 @@
                   Gerente
                 </th>
 
+                <th scope="col">
+                  CPF do gerente
+                </th>
+
               </tr>
 
             </thead>
@@ -189,6 +193,12 @@
                   <td>
 
                     {{ cliente.nomeGerente || '—' }}
+
+                  </td>
+
+                  <td class="sem-quebra">
+
+                    {{ formatarCpf(cliente.cpfGerente) }}
 
                   </td>
 

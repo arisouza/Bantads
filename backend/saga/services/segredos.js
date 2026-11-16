@@ -1,8 +1,11 @@
-const { redisClient } = require('../config/redis');
-const chave = (sagaId) => `saga:${sagaId}:senha`;
+// Senhas transitórias não podem ser persistidas no estado da SAGA.
+// Elas permanecem somente na memória do processo até o passo de e-mail.
+const valores = new Map();
 
 module.exports = {
-    guardar: async (sagaId, senha) => senha && redisClient.set(chave(sagaId), senha, { EX: 3600 }),
-    obter: (sagaId) => redisClient.get(chave(sagaId)),
-    descartar: (sagaId) => redisClient.del(chave(sagaId))
+    guardar: async (sagaId, senha) => {
+        if (senha) valores.set(sagaId, senha);
+    },
+    obter: async (sagaId) => valores.get(sagaId) ?? null,
+    descartar: async (sagaId) => valores.delete(sagaId)
 };

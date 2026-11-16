@@ -9,12 +9,17 @@ const { connectRabbitMQ, publishToQueue } = require('./config/rabbitmq');
 const { verifyJWT, requireRole, SECRET } = require('./middlewares/auth');
 const {
     authorizeReboot,
+    adquirirLockReboot,
     fetchWithTimeout,
     jobTtlSeconds,
+    liberarLockReboot,
     limparChavesDeTeste,
-    serviceErrorResponse
+    serviceErrorResponse,
+    validarRespostaReboot,
+    verificarSagasAtivas
 } = require('./services/resilience');
 const { comporGerentesComQuantidade } = require('./services/gerentes');
+const { comporRelatorioClientes } = require('./services/relatorios');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -65,6 +70,9 @@ const fetchJson = async (url, opts = {}) => {
 };
 
 const publishSaga = async (action, data, extra = {}) => {
+    if (await redisClient.exists('maintenance:reboot')) {
+        throw new Error('Operação temporariamente bloqueada durante a restauração do ambiente.');
+    }
     const sagaId = uuidv4();
     await redisClient.set(
         `job:${sagaId}`,
@@ -83,19 +91,30 @@ const getJob = async (jobId) => {
 app.get('/health', (req, res) => res.status(200).json({ status: 'UP' }));
 
 app.post('/reboot', authorizeReboot, async (req, res) => {
+    let lockAdquirido = false;
     try {
-        const [rCliente, rGerente, rConta, rAuth] = await Promise.all([
-            fetch(`${CLIENTE_URL}/clientes/reboot`, { method: 'POST' }),
-            fetch(`${GERENTE_URL}/gerentes/reboot`, { method: 'POST' }),
-            fetch(`${CONTA_URL}/contas/reboot`, { method: 'POST' }),
-            fetch(`${AUTH_URL}/auth/reboot`, { method: 'POST' }),
-        ]);
+        await adquirirLockReboot(redisClient);
+        lockAdquirido = true;
+        await verificarSagasAtivas(redisClient);
 
-        const [cli, ger, cnt] = await Promise.all([
-            rCliente.ok ? rCliente.json() : {},
-            rGerente.ok ? rGerente.json() : {},
-            rConta.ok ? rConta.json() : {},
-        ]);
+        const servicos = [
+            ['MS Cliente', `${CLIENTE_URL}/clientes/reboot`, { campo: 'clientes', valor: 5 }],
+            ['MS Gerente', `${GERENTE_URL}/gerentes/reboot`, { campo: 'gerentes', valor: 4 }],
+            ['MS Conta', `${CONTA_URL}/contas/reboot`, { campo: 'contas', valor: 5 }],
+            ['MS Auth', `${AUTH_URL}/auth/reboot`, undefined],
+        ];
+
+        const resultados = await Promise.allSettled(servicos.map(async ([nome, url, quantidade]) => {
+            const response = await fetch(url, { method: 'POST' });
+            return validarRespostaReboot(nome, response, quantidade);
+        }));
+        const falhas = resultados
+            .filter(resultado => resultado.status === 'rejected')
+            .map(resultado => resultado.reason?.message || 'erro desconhecido');
+        if (falhas.length > 0) {
+            throw new Error(`Restauração não concluída: ${falhas.join(' | ')}`);
+        }
+        const [cli, ger, cnt] = resultados.map(resultado => resultado.value);
 
         const chavesRemovidas = await limparChavesDeTeste(redisClient);
 
@@ -109,6 +128,8 @@ app.post('/reboot', authorizeReboot, async (req, res) => {
     } catch (err) {
         console.error('Reboot error:', err.message);
         return serviceErrorResponse(res, err);
+    } finally {
+        if (lockAdquirido) await liberarLockReboot(redisClient);
     }
 });
 
@@ -667,6 +688,10 @@ app.get('/gerentes', verifyJWT, requireRole('GERENTE'), async (req, res) => {
 });
 
 app.post('/gerentes', verifyJWT, requireRole('GERENTE'), async (req, res) => {
+    if (typeof req.body?.senha !== 'string' || req.body.senha.trim() === '') {
+        return res.status(400).json({ status: 400, erro: 'Bad Request', mensagem: 'Senha do gerente é obrigatória.' });
+    }
+
     const sagaId = await publishSaga('INSERIR_GERENTE_START', req.body);
     res.set('Location', `/jobs/${sagaId}/status`);
     return res.status(202).json({ jobId: sagaId, status: 'PENDENTE' });
@@ -758,28 +783,7 @@ app.get('/relatorios/clientes', verifyJWT, requireRole('GERENTE'), async (req, r
             const { contas: contaLista } = await contaRes.json();
             const { gerentes: gerLista } = await gerRes.json();
 
-            const contaByCliente = {};
-            for (const c of contaLista) contaByCliente[c.cpfCliente] = c;
-
-            const gerById = {};
-            for (const g of gerLista) gerById[g.cpf] = g;
-
-            const rows = cliLista.map(cli => {
-                const conta = contaByCliente[cli.cpf];
-                const ger = conta ? gerById[conta.cpfGerente] : null;
-                return {
-                    cpf: cli.cpf,
-                    nome: cli.nome,
-                    email: cli.email,
-                    salario: cli.salario,
-                    numeroConta: conta?.numero ?? null,
-                    saldo: conta?.saldo ?? '0.00',
-                    cpfGerente: conta?.cpfGerente ?? null,
-                    nomeGerente: ger?.nome ?? null,
-                };
-            });
-
-            rows.sort((a, b) => collator.compare(a.nome, b.nome));
+            const rows = comporRelatorioClientes(cliLista, contaLista, gerLista, collator);
 
             const job = { jobId, status: 'CONCLUIDO', resultType: 'inline', resultado: { clientes: rows } };
             await redisClient.set(`job:${jobId}`, JSON.stringify(job), { EX: 300 });

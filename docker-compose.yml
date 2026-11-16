@@ -260,8 +260,6 @@ services:
       RABBITMQ_URL: amqp://${RABBITMQ_USER:-admin}:${RABBITMQ_PASSWORD:-admin}@rabbitmq:5672
       EMAIL_USER: ${EMAIL_USER:-}
       EMAIL_PASS: ${EMAIL_PASS:-}
-    volumes:
-      - ./senha_recente.txt:/app/senha_recente.txt
     depends_on:
       rabbitmq: {condition: service_healthy}
     networks: [bantads-network]

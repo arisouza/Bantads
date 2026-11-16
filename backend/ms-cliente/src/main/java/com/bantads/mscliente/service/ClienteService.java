@@ -43,7 +43,20 @@ public class ClienteService {
 
     public List<ClienteResponse> listar(String busca) {
         String termo = busca == null ? "" : busca.trim();
-        return clientes.findByCpfContainingIgnoreCaseOrNomeContainingIgnoreCaseOrderByNomeAsc(termo, termo).stream().map(this::dto).toList();
+        if (termo.isEmpty()) {
+            return clientes.findByCpfContainingIgnoreCaseOrNomeContainingIgnoreCaseOrderByNomeAsc("", "")
+                    .stream().map(this::dto).toList();
+        }
+
+        String cpfNormalizado = termo.replaceAll("\\D", "");
+        boolean pesquisaPorCpf = cpfNormalizado.length() > 0 && termo.matches("[\\d.()\\-\\s]+");
+        if (!pesquisaPorCpf) {
+            return clientes.findByNomeContainingIgnoreCaseOrderByNomeAsc(termo)
+                    .stream().map(this::dto).toList();
+        }
+
+        return clientes.findByCpfContainingIgnoreCaseOrderByNomeAsc(cpfNormalizado)
+                .stream().map(this::dto).toList();
     }
 
     @Transactional

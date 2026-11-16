@@ -1,12 +1,6 @@
-const fs = require('fs');
-const path = require('path');
-
 const RABBITMQ_URL = process.env.RABBITMQ_URL || 'amqp://admin:admin@localhost:5672';
 const EMAIL_USER = process.env.EMAIL_USER;
 const EMAIL_PASS = process.env.EMAIL_PASS;
-
-// O arquivo e o volume são deliberadamente preservados para os testes do grupo.
-const SENHA_PATH = path.join('/app', 'senha_recente.txt');
 
 const criarTransporter = () => {
     if (!EMAIL_USER || !EMAIL_PASS) return null;
@@ -55,13 +49,6 @@ const validarMensagem = ({ destinatario, tipo, dados }) => {
     if (tipo === 'SENHA_INICIAL' && !dados?.senha) throw new Error('Senha inicial não informada.');
 };
 
-const registrarSenhaParaTeste = (destinatario, senha) => {
-    if (!senha) return;
-    const linha = `email: ${destinatario}\nsenha: ${senha}\n---\n`;
-    fs.writeFileSync(SENHA_PATH, linha, { encoding: 'utf-8', flag: 'w' });
-    console.log(`[EMAIL] Senha gravada em ${SENHA_PATH}: ${senha}`);
-};
-
 const processEmail = async (msg, channel) => {
     if (!msg) return;
 
@@ -72,8 +59,6 @@ const processEmail = async (msg, channel) => {
         validarMensagem(content);
 
         console.log(`[EMAIL] Email para: ${destinatario} | Tipo: ${tipo}`);
-        registrarSenhaParaTeste(destinatario, dados?.senha);
-
         const transporter = criarTransporter();
         if (transporter) {
             await transporter.sendMail({
@@ -84,8 +69,8 @@ const processEmail = async (msg, channel) => {
             });
             console.log(`[EMAIL] E-mail enviado para ${destinatario}`);
         } else {
-            // Sem SMTP no ambiente local, considera-se processado: o conteúdo
-            // continua auditável no log e a senha inicial no volume de testes.
+            // Sem SMTP no ambiente local, considera-se processado para permitir
+            // testes locais sem simular um servidor SMTP.
             console.log('[EMAIL] SMTP não configurado; e-mail registrado para teste local.');
         }
 
@@ -120,7 +105,6 @@ module.exports = {
     buildHtml,
     criarTransporter,
     processEmail,
-    registrarSenhaParaTeste,
     start,
     validarMensagem
 };

@@ -7,6 +7,7 @@ import org.springframework.jdbc.datasource.init.ResourceDatabasePopulator;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.transaction.annotation.Transactional;
 
 import javax.sql.DataSource;
 import java.util.LinkedHashMap;
@@ -32,16 +33,15 @@ public class HealthController {
     }
 
     @PostMapping({"/reboot", "/contas/reboot"})
+    @Transactional
     public ResponseEntity<Map<String, Object>> reboot() {
-        try {
-            ClassPathResource resource = new ClassPathResource("seed.sql");
-            if (resource.exists()) {
-                ResourceDatabasePopulator populator = new ResourceDatabasePopulator(resource);
-                populator.execute(dataSource);
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
+        ClassPathResource resource = new ClassPathResource("seed.sql");
+        if (!resource.exists()) {
+            throw new IllegalStateException("Seed do MS Conta não encontrado.");
         }
+
+        ResourceDatabasePopulator populator = new ResourceDatabasePopulator(resource);
+        populator.execute(dataSource);
 
         Map<String, Object> body = new LinkedHashMap<>();
         body.put("status", "ok");

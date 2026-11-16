@@ -54,7 +54,11 @@ public class AuthConsumer {
                     reply.put("payload", Map.of("cpf", cpf, "email", email, "senha", result.senha()));
                 }
                 case "CREATE_AUTH_GERENTE" -> {
-                    authService.criarUsuario(new AuthService.CriarUsuarioCmd(cpf, email, (String) data.get("senha"), "GERENTE"));
+                    String senha = (String) data.get("senha");
+                    if (senha == null || senha.isBlank()) {
+                        throw new ResponseStatusException(org.springframework.http.HttpStatus.BAD_REQUEST, "Senha do gerente é obrigatória");
+                    }
+                    authService.criarUsuario(new AuthService.CriarUsuarioCmd(cpf, email, senha, "GERENTE"));
                     reply.put("tipo", "AUTH_GERENTE_CREATED");
                     reply.put("payload", Map.of("cpf", cpf));
                 }
