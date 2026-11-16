@@ -1,5 +1,7 @@
 const DEFAULT_HTTP_TIMEOUT_MS = 10_000;
 const DEFAULT_JOB_TTL_SECONDS = 1_800;
+const REBOOT_LOCK_KEY = 'maintenance:reboot';
+const REBOOT_LOCK_TTL_SECONDS = 120;
 
 class ServiceTimeoutError extends Error {
     constructor(url, timeoutMs) {
@@ -7,6 +9,14 @@ class ServiceTimeoutError extends Error {
         this.name = 'ServiceTimeoutError';
         this.url = url;
         this.timeoutMs = timeoutMs;
+    }
+}
+
+class RebootConflictError extends Error {
+    constructor(message) {
+        super(message);
+        this.name = 'RebootConflictError';
+        this.statusCode = 409;
     }
 }
 
@@ -54,11 +64,83 @@ const authorizeReboot = (req, res, next) => {
 };
 
 const serviceErrorResponse = (res, error) => {
+    if (error instanceof RebootConflictError) {
+        return res.status(error.statusCode).json({
+            status: error.statusCode,
+            erro: 'Conflict',
+            mensagem: error.message
+        });
+    }
     if (error instanceof ServiceTimeoutError) {
         return res.status(504).json({ status: 504, erro: 'Gateway Timeout', mensagem: 'Um serviço interno excedeu o tempo limite de resposta.' });
     }
     return res.status(500).json({ status: 500, erro: 'Internal Server Error', mensagem: error.message });
 };
+
+const validarRespostaReboot = async (nome, response, quantidadeEsperada) => {
+    if (!response.ok) {
+        throw new Error(`${nome}: HTTP ${response.status} durante a restauração.`);
+    }
+
+    let body;
+    try {
+        body = await response.json();
+    } catch {
+        throw new Error(`${nome}: resposta JSON inválida durante a restauração.`);
+    }
+
+    if (!body || body.status !== 'ok') {
+        throw new Error(`${nome}: resposta de restauração inválida.`);
+    }
+
+    if (quantidadeEsperada !== undefined && body[quantidadeEsperada.campo] !== quantidadeEsperada.valor) {
+        throw new Error(
+            `${nome}: quantidade restaurada inválida (esperado ${quantidadeEsperada.valor}).`
+        );
+    }
+
+    return body;
+};
+
+const verificarSagasAtivas = async (redisClient) => {
+    const ativas = [];
+
+    for await (const key of redisClient.scanIterator({ MATCH: 'saga:*', COUNT: 100 })) {
+        if (key.split(':').length !== 2) continue;
+        const raw = await redisClient.get(key);
+        if (!raw) continue;
+
+        let saga;
+        try {
+            saga = JSON.parse(raw);
+        } catch {
+            throw new RebootConflictError(`Não foi possível verificar o estado da SAGA ${key}.`);
+        }
+
+        if (['EM_ANDAMENTO', 'COMPENSANDO'].includes(saga?.status)) {
+            ativas.push(key.slice('saga:'.length));
+        }
+    }
+
+    if (ativas.length > 0) {
+        throw new RebootConflictError(
+            `Restauração bloqueada: existem SAGAs em andamento (${ativas.join(', ')}).`
+        );
+    }
+};
+
+const adquirirLockReboot = async (redisClient) => {
+    const adquirido = await redisClient.set(
+        REBOOT_LOCK_KEY,
+        new Date().toISOString(),
+        { NX: true, EX: REBOOT_LOCK_TTL_SECONDS }
+    );
+    if (adquirido !== 'OK') {
+        throw new RebootConflictError('Já existe uma restauração em andamento.');
+    }
+};
+
+const liberarLockReboot = (redisClient) => redisClient.del(REBOOT_LOCK_KEY);
 
 const limparChavesDeTeste = async (redisClient) => {
     const patterns = ['cache:*', 'job:*', 'sessao:*', 'sessao:cpf:*', 'revoked:*', 'saga:*'];
@@ -74,11 +156,17 @@ const limparChavesDeTeste = async (redisClient) => {
 module.exports = {
     DEFAULT_HTTP_TIMEOUT_MS,
     DEFAULT_JOB_TTL_SECONDS,
+    REBOOT_LOCK_KEY,
     ServiceTimeoutError,
+    RebootConflictError,
     authorizeReboot,
+    adquirirLockReboot,
     fetchWithTimeout,
     httpTimeoutMs,
     jobTtlSeconds,
+    liberarLockReboot,
     limparChavesDeTeste,
-    serviceErrorResponse
+    serviceErrorResponse,
+    validarRespostaReboot,
+    verificarSagasAtivas
 };

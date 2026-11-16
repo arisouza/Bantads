@@ -93,18 +93,18 @@ export class GerenteService {
         return this.jobService.getResult<RemoverGerenteResponse>(job.jobId);
       }),
       switchMap(resultado => {
+        const payload = resultado?.resultado ?? resultado;
         if (
-          !resultado ||
-          !resultado.resultado ||
-          typeof resultado.resultado.mensagem !== 'string' ||
-          typeof resultado.resultado.quantidadeContas !== 'number'
+          !payload ||
+          typeof payload.mensagem !== 'string' ||
+          typeof payload.quantidadeContas !== 'number'
         ) {
           return throwError(() => new Error(
             'Resposta incompatível ao obter o resultado da remoção do gerente.'
           ));
         }
 
-        return [resultado];
+        return [{ resultado: payload }];
       })
     );
   }

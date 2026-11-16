@@ -14,6 +14,7 @@ import { MatButtonModule } from '@angular/material/button';
 import {
   AuthenticatedLayoutComponent
 } from '../../../shared/components/authenticated-layout/authenticated-layout';
+import { ModalComponent } from '../../../shared/components/modal/modal';
 
 import {
   GERENTE_MENU_ITEMS
@@ -38,7 +39,8 @@ import {
   imports: [
     DatePipe,
     MatButtonModule,
-    AuthenticatedLayoutComponent
+    AuthenticatedLayoutComponent,
+    ModalComponent
   ],
   templateUrl: './gerente.html',
   styleUrl: './gerente.css'
@@ -67,6 +69,7 @@ export class Gerente implements OnInit {
   };
   
   readonly recusandoCpf = signal<string | null>(null);
+  readonly solicitacaoRecusando = signal<Solicitacao | null>(null);
   readonly motivoRecusa = signal('');
 
   ngOnInit(): void {
@@ -145,10 +148,12 @@ export class Gerente implements OnInit {
   this.mensagemSucesso.set('');
   this.motivoRecusa.set('');
   this.recusandoCpf.set(solicitacao.cpf);
+  this.solicitacaoRecusando.set(solicitacao);
   }
 
   cancelarRecusa(): void {
   this.recusandoCpf.set(null);
+  this.solicitacaoRecusando.set(null);
   this.motivoRecusa.set('');
   }
   
@@ -173,6 +178,7 @@ export class Gerente implements OnInit {
             : item
         ));
         this.recusandoCpf.set(null);
+        this.solicitacaoRecusando.set(null);
         this.motivoRecusa.set('');
         this.mensagemSucesso.set('Solicitação recusada com sucesso.');
       },

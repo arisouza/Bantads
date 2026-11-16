@@ -4,6 +4,7 @@ const segredos = require('./segredos');
 
 const TIMEOUT_PASSO_MS = 30000;
 const ESTADO_TTL = 3600;
+const REBOOT_LOCK_KEY = 'maintenance:reboot';
 const COMPENSACAO = /^(ROLLBACK|REACTIVATE|REASSOCIAR|DELETE|REMOVER)/;
 
 const timers = new Map();
@@ -199,6 +200,10 @@ const avancar = async (saga) => {
 };
 
 const iniciar = async ({ sagaId, action, data }) => {
+    if (await redisClient.exists(REBOOT_LOCK_KEY)) {
+        console.warn(`[SAGA] Comando ${action} ignorado durante a restauração (${sagaId}).`);
+        return;
+    }
     if (!flows[action]) return console.warn(`[SAGA] Ação desconhecida: ${action} (sagaId: ${sagaId})`);
 
     const { senha, ...ctx } = data ?? {};
